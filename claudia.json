@@ -1,0 +1,11 @@
+{
+  "lambda": {
+    "role": "jarvis-bot-executor",
+    "name": "jarvis-bot",
+    "region": "us-west-2"
+  },
+  "api": {
+    "id": "xuer4rlerb",
+    "module": "bot"
+  }
+}
