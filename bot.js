@@ -1,15 +1,16 @@
-// API builder to create AWS API Gateways
-var ApiBuilder = require("claudia-api-builder");
 const qs = require('querystring');
 const aws = require('aws-sdk');
+var http = require('http');
+var http_request = require('sync-request'); // DEMO ONLY
 const promiseDelay = require('promise-delay');
-var api = new ApiBuilder();
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
+const slackDelayedReply = botBuilder.slackDelayedReply;
+
 
 const lambda = new aws.Lambda();
 
-const SLACK_AUTH = "https://slack.com/api/oauth.access";
+const SLACK_AUTH = "https://slack.com/api_gateway/oauth.access";
 const CLIENT_ID = "81979454913.97303513202";
 const CLIENT_SECRET = "ab85e84c73978ce51d8e28103de895d9";
 const SCOPES = "bot";  // Space separated
@@ -20,10 +21,11 @@ const QUESTION = "question";
 const STATE = "statement";
 const JARVIS = "jarvis";
 
-var name = "";
+var name = "";  // DEMO ONLY
 
+/* Needed after demo, make into different lambda function??
 // Authorization
-api.get('/auth', function(req){
+api_gateway.get('/auth', function(req){
     var code = req.queryString.code;
     var state = req.queryString.state;
     var query = {
@@ -42,10 +44,10 @@ api.get('/auth', function(req){
 );
 
 // UNUSED FOR NOW
-api.get('/auth2', function(req){
+api_gateway.get('/auth2', function(req){
     var error = req.queryString.error;
     if(error != undefined){
-        // TODO Handle error here
+        //Handle error here
     }
     // Store bot user token
     else{
@@ -56,79 +58,102 @@ api.get('/auth2', function(req){
     }
 
 });
+*/
 
-// User command entry point
-api.post('/jarvis', function(req){
-    var command = req.post.text;    // Users command (Everything after /jarvis)
-    name = req.post.user_name;      // Users slack name
+const api = botBuilder((message, apiRequest) => {
+
+    return new Promise((resolve, reject) => {
+        lambda.invoke({
+            FunctionName: apiRequest.lambdaContext.functionName,
+            InvocationType: 'Event',
+            Payload: JSON.stringify({
+                slackEvent: message // this will enable us to detect the event later and filter it
+            }),
+            Qualifier: apiRequest.lambdaContext.functionVersion
+        }, (err, done) => {
+            if (err) return reject(err);
+
+            resolve();
+        });
+    })
+        .then(() => {
+            return new SlackTemplate("Thinking...").channelMessage(true).get();
+        })
+        .catch(() => {
+            return new SlackTemplate("Error!").get();
+        });
+
+});
+
+api.intercept((event) => {
+    if (!event.slackEvent) // if this is a normal web request, let it run
+        return event;
+
+    var data = event.slackEvent;
+    var command = data.text;    // Users command (Everything after /jarvis)
+    //name = event.slackEvent.user_name;      // Users slack name
     var res = parseUserCommand(command);
+    if(res === undefined){
+        res = "There was an error on my end - response undefined."
+    }
     var message = new SlackTemplate(res);
     //message.addAttachment("A").addText(res);  // Attachment to message
-    return message.channelMessage(true).get();
+    return promiseDelay(1000)
+        .then(() => {
+            return slackDelayedReply(data, message.channelMessage(true).get())
+        })
+        .then(() => false); // prevent normal execution
 });
+
+// AI.api call
+function aiQuery(phrase){
+    var response = "";
+    var query = {
+        v: '20150910',
+        query: phrase,
+        lang: 'en',
+        sessionId: '1234'
+    };
+    var addr = "https://api.api.ai/v1/query" + "?" + qs.stringify(query);
+    // DEMO ONLY - synchronous call
+    response = http_request('GET', addr, {
+        'headers': {
+           'Authorization': 'Bearer 6faa8c514cb742c59ab1029ce3f48bc7'
+        }
+    });
+    response = JSON.parse(response.body);
+    response = response.result.fulfillment.speech;
+    return response;
+}
 
 // Parse user command and formulate response
 function parseUserCommand(arg){
     var response = "Error: Command not found.";
-    // Empty arg?
-    if(arg === undefined || arg === null || arg === ""){
-        response = "Error: Your arg was empty.";
-    }
-    // Valid user arg
-    else{
-        response = pickResponse(parseInput(arg));
-        response = parseResponse(response);
-    }
+    response = pickResponse(arg);
+    response = parseResponse(response);
+
     return response;
 }
 
 // Decide what kind of question the user asked
 // Or if it's a statement
 function pickResponse(arg){
-    var first = arg[0].toString().toLowerCase();
+    var array = parseInput(arg);
+    var first = array[0].toString().toLowerCase();
     var response;
 
-    if(isCommand(first)){
+    if(arg === "" || arg === " "){
+        response = dictionary.statements.empty;
+    }
+    // Lets first check if it's a command to save on computation time
+    else if(isCommand(first)){
         response = dictionary.commands[first];
     }
-    // Statement or Question
-    // Will not be very in-depth for 2016 demo
+    // Hit API.ai for a response
     else {
-        response = getResponse(arg);
-    }
-
-    return response;
-}
-
-// Get type of message from keyword - assuming not a command
-// Slapped together for demo until AI calls are used
-function getResponse(arg){
-    var response = "Hmm, something went wrong on my end.";
-    var resultKey = undefined;
-
-    // Get LAST instance of key
-    for(var i = 0; i < arg.length; i++){
-        var word = arg[i];
-        for(var key in keyWords){
-            if(keyWords.hasOwnProperty(key) && key.toString() === word) {
-                resultKey = key;
-            }
-        }
-    }
-
-    switch(keyWords[resultKey]){
-        case JARVIS:
-            response = dictionary.questions.jarvis[resultKey];
-            break;
-        case QUESTION:
-            response = dictionary.questions.unknown[
-            Math.floor(Math.random() * Object.keys(dictionary.questions.unknown).length) + 1
-                ];
-            break;
-        default:
-            response = dictionary.statements.unknown[
-            Math.floor(Math.random() * Object.keys(dictionary.statements.unknown).length) + 1
-                ];
+        response = aiQuery(arg);
+        // If an API.ai intent turned this into a command
+        response = isCommand(response) ? dictionary.commands[response] : response;
     }
 
     return response;
@@ -165,7 +190,7 @@ function listCommands(){
             str += key + "\t\t" + commandList[key] + "\n";
         }
     }
-    return toCodeBlock(str);
+    return "Here are my available commands:\n" + toCodeBlock(str);
 }
 
 // Turn string into slack codeblock
@@ -177,18 +202,6 @@ function toCodeBlock(str){
 
 
 module.exports = api;
-
-
-// Keywords
-var keyWords = {
-    work: JARVIS,
-    cost: JARVIS,
-    who: QUESTION,
-    what: QUESTION,
-    where: QUESTION,
-    when: QUESTION,
-    how: QUESTION
-};
 
 // Commands with description
 var commandList = {
@@ -203,12 +216,14 @@ var commandList = {
 };
 
 // Response dictionary
-// TEMP for demo - Turn into AI api calls in future
+// TEMP for demo - Turn into AI api_gateway calls in future
 var dictionary = {
     questions: {
         jarvis:{
             work: "I exist in an AWS Lambda function, currently in demo form. I wake up when you send me a message " +
-                    "and think of a clever response. After I respond, I go to sleep again to save on usage costs.",
+                    "and think of a clever response. After I respond, I go to sleep again to save on usage costs.\n\n" +
+                    "To communicate with me, type /jarvis then a command.\n" +
+                    "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
             cost: "I'm free! Unless you ask me more then a million questions per month..."
         },
         unknown: {
@@ -220,6 +235,8 @@ var dictionary = {
 
     statements: {
 
+        empty: "To communicate with me, type /jarvis then a command.\n" +
+        "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
         unknown: {
             1: "Sorry "+ NAME +", I don't know what that means.",
             2: "I'm not sure how to respond to that.",
