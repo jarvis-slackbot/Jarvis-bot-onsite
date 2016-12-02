@@ -4,9 +4,10 @@
   "description": "Claudia bot for Jarvis.",
   "main": "bot.js",
   "dependencies": {
-    "aws-sdk": "^2.7.7",
+    "aws-sdk": "^2.7.10",
     "body-parser": "^1.15.2",
-    "claudia-api-builder": "",
+    "claudia": "^2.2.0",
+    "claudia-api-builder": "^2.2.0",
     "claudia-bot-builder": "^2.2.0",
     "co": "^4.6.0",
     "co-request": "^1.0.0",
