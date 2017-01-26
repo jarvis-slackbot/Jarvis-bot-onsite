@@ -23,42 +23,43 @@ const JARVIS = "jarvis";
 
 var name = "";  // DEMO ONLY
 
+// AWS cloud watch
+var cw = new aws.CloudWatch({apiVersion: '2010-08-01'});
+// AWS EC2
+var ec2 = new aws.EC2({apiVersion: '2016-11-15'});
+
+
 /* Needed after demo, make into different lambda function??
 // Authorization
 api_gateway.get('/auth', function(req){
-    var code = req.queryString.code;
-    var state = req.queryString.state;
-    var query = {
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        code: code
-    };
-
-    query = qs.stringify(query);
-
-
-    return SLACK_AUTH + "?" + query;
+     var code = req.queryString.code;
+     var state = req.queryString.state;
+     var query = {
+         client_id: CLIENT_ID,
+         client_secret: CLIENT_SECRET,
+         code: code
+     };
+     query = qs.stringify(query);
+     return SLACK_AUTH + "?" + query;
 }, {
-    success: {code: 302}
-}
-);
-
+        success: {code: 302}
+     }
+ );
 // UNUSED FOR NOW
 api_gateway.get('/auth2', function(req){
-    var error = req.queryString.error;
-    if(error != undefined){
+     var error = req.queryString.error;
+     if(error != undefined){
         //Handle error here
-    }
-    // Store bot user token
-    else{
-        var json = JSON.parse(req.body);
-        var bot_id = json.bot.bot_user_id;
-        var bot_access_token = json.bot.bot_access_token;
-        process.env.BOT_TOKEN = bot_access_token;
-    }
-
-});
-*/
+     }
+     // Store bot user token
+     else{
+         var json = JSON.parse(req.body);
+         var bot_id = json.bot.bot_user_id;
+         var bot_access_token = json.bot.bot_access_token;
+         process.env.BOT_TOKEN = bot_access_token;
+     }
+ });
+ */
 
 const api = botBuilder((message, apiRequest) => {
 
@@ -98,11 +99,9 @@ api.intercept((event) => {
     }
     var message = new SlackTemplate(res);
     //message.addAttachment("A").addText(res);  // Attachment to message
-    return promiseDelay(1000)
-        .then(() => {
-            return slackDelayedReply(data, message.channelMessage(true).get())
-        })
-        .then(() => false); // prevent normal execution
+
+    return slackDelayedReply(data, message.channelMessage(true).get());
+     
 });
 
 // AI.api call
@@ -119,7 +118,7 @@ function aiQuery(phrase){
     // DEMO ONLY - synchronous call
     ai = http_request('GET', addr, {
         'headers': {
-           'Authorization': 'Bearer 6faa8c514cb742c59ab1029ce3f48bc7'
+            'Authorization': 'Bearer 6faa8c514cb742c59ab1029ce3f48bc7'
         }
     });
     try {
@@ -207,6 +206,36 @@ function toCodeBlock(str){
     return backticks + str + backticks;
 }
 
+function retrieveAWSData(cmd){
+    var response = 'Unknown Error';
+
+    switch(cmd){
+        case 'status':
+            response = "status checked!";
+            break;
+        default:
+            response = dictionary.commands[cmd];
+
+    }
+
+    return response;
+}
+
+// Server up or down
+function getStatus(){
+    var params = {
+        InstanceIds: ['ami-f173cc91'],
+        DryRun: true
+    };
+
+    ec2.describeInstances(params, function(err, data) {
+        if (err) {
+            console.log("Error", err.stack);
+        } else {
+            console.log("Success", JSON.stringify(data));
+        }
+    });
+}
 
 module.exports = api;
 
@@ -228,9 +257,9 @@ var dictionary = {
     questions: {
         jarvis:{
             work: "I exist in an AWS Lambda function, currently in demo form. I wake up when you send me a message " +
-                    "and think of a clever response. After I respond, I go to sleep again to save on usage costs.\n\n" +
-                    "To communicate with me, type /jarvis then a command.\n" +
-                    "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
+            "and think of a clever response. After I respond, I go to sleep again to save on usage costs.\n\n" +
+            "To communicate with me, type /jarvis then a command.\n" +
+            "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
             cost: "I'm free! Unless you ask me more then a million questions per month..."
         },
         unknown: {
@@ -261,6 +290,6 @@ var dictionary = {
         disk: "The storage bucket has 189GB of data.",
         jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
         health: "Server health is currently very good, at 98%. " +
-                "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
+        "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
     }
 };

@@ -5,6 +5,7 @@
   "main": "bot.js",
   "dependencies": {
     "aws-sdk": "^2.7.10",
+    "bluebird": "^3.4.7",
     "body-parser": "^1.15.2",
     "claudia": "^2.2.0",
     "claudia-api-builder": "^2.2.0",
