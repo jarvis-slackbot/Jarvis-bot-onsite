@@ -42,81 +42,6 @@ claudia.json
 
 
 
-# C programming section
-# Object files
-#*.o
-#*.ko
-#*.obj
-#*.elf
-
-# Precompiled Headers
-#*.gch
-#*.pch
-
-# Libraries
-#*.lib
-#*.la
-#*.lo
-
-# Assembly
-#*.a
-#*.s
-
-# Shared objects (inc. Windows DLLs)
-#*.dll
-#*.so
-#.so.*
-#*.dylib
-
-# Executables
-#*.exe
-#*.out
-#*.app
-#*.i*86
-#*.i
-#*.x86_64
-#*.hex
-
-# Debug files
-#*.dSYM/
-#*.su
-
-
-
-
-# C++ programming section
-# Compiled Object files
-#*.slo
-#*.lo
-#*.o
-#*.obj
-
-# Precompiled Headers
-#*.gch
-#*.pch
-
-# Compiled Dynamic libraries
-#*.so
-#*.dylib
-#*.dll
-
-# Fortran module files
-#*.mod
-#*.smod
-
-# Compiled Static libraries
-#*.lai
-#*.la
-#*.a
-#*.lib
-
-# Executables
-#*.exe
-#*.out
-#*.app
-
-
-
 
 # JAVA programming files
 #*.class
@@ -267,27 +192,3 @@ node_modules
 
 # Rope project settings
 #.ropeproject
-
-
-
-
-
-# Word Press section
-#*.log
-#wp-config.php
-#wp-content/advanced-cache.php
-#wp-content/backup-db/
-#wp-content/backups/
-#wp-content/blogs.dir/
-#wp-content/cache/
-#wp-content/upgrade/
-#wp-content/uploads/
-#wp-content/wp-cache-config.php
-#wp-content/plugins/hello.php
-
-#/.htaccess
-#/license.txt
-#/readme.html
-#/sitemap.xml
-#/sitemap.xml.gz
-
