@@ -1,3 +1,4 @@
+'use strict';
 const qs = require('querystring');
 const aws = require('aws-sdk');
 var http = require('http');
@@ -24,9 +25,9 @@ const JARVIS = "jarvis";
 var name = "";  // DEMO ONLY
 
 // AWS cloud watch
-var cw = new aws.CloudWatch({apiVersion: '2010-08-01'});
+const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 // AWS EC2
-var ec2 = new aws.EC2({apiVersion: '2016-11-15'});
+const ec2 = new aws.EC2({region: 'us-west-2', maxRetries: 15, apiVersion: '2016-11-15'});
 
 
 /* Needed after demo, make into different lambda function??
@@ -84,24 +85,39 @@ const api = botBuilder((message, apiRequest) => {
             return new SlackTemplate("Error!").get();
         });
 
-});
+}, { platforms: ['slackSlashCommand'] });
 
 api.intercept((event) => {
     if (!event.slackEvent) // if this is a normal web request, let it run
         return event;
 
     var data = event.slackEvent;
-    var command = data.text;    // Users command (Everything after /jarvis)
+    var userMsg = data.text;    // Users command (Everything after /jarvis)
     //name = event.slackEvent.user_name;      // Users slack name
-    var res = parseUserCommand(command);
-    if(res === undefined){
-        res = "There was an error on my end - response undefined."
-    }
-    var message = new SlackTemplate(res);
+    var res = pickResponse(userMsg);
     //message.addAttachment("A").addText(res);  // Attachment to message
-
-    return slackDelayedReply(data, message.channelMessage(true).get());
-     
+    // Does not work without this delay
+    return promiseDelay(1000)
+        .then(() => {
+            // AI or test response
+            if(typeof res === 'string' || res instanceof String){
+                var message = new SlackTemplate(res);
+                return slackDelayedReply(data, message.channelMessage(true).get());
+            }
+            // Response that pinged AWS (res is a Promise function)
+            // TODO - Error checking for promise function
+            else {
+                return res.then((msg) => {
+                    var message = new SlackTemplate(msg);
+                    return slackDelayedReply(data, message.channelMessage(true).get());
+                }).then(() => false).catch((err) => {
+                    var errorMsg = "Error: " + err;
+                    var message = new SlackTemplate(errorMsg);
+                    return slackDelayedReply(data, message.channelMessage(true).get());
+                });
+            }
+        })
+        .then(() => false); // prevent normal execution
 });
 
 // AI.api call
@@ -133,10 +149,18 @@ function aiQuery(phrase){
 }
 
 // Parse user command and formulate response
-function parseUserCommand(arg){
-    var response = "Error: Command not found.";
-    response = pickResponse(arg);
-    response = parseResponse(response);
+// Response should be a promise function
+function parseUserCommand(cmd){
+    var response;
+
+    // Commands list
+    switch(cmd){
+        case 'status':
+            response = getStatus();
+            break;
+        default:
+            response = "Command error";
+    }
 
     return response;
 }
@@ -150,6 +174,9 @@ function pickResponse(arg){
 
     if(arg === "" || arg === " "){
         response = dictionary.statements.empty;
+    }
+    else if(isAWSCommand(first)){
+        response = parseUserCommand(first);
     }
     // Lets first check if it's a command to save on computation time
     else if(isCommand(first)){
@@ -182,6 +209,16 @@ function parseInput(message){
 function isCommand(firstWord){
     var res = false;
     if(dictionary.commands[firstWord] !== undefined){
+        res = true;
+    }
+
+    return res;
+}
+
+// If the command requires a fetch from AWS
+function isAWSCommand(firstWord){
+    var res = false;
+    if(dictionary.AWSCommands[firstWord] !== undefined){
         res = true;
     }
 
@@ -222,20 +259,33 @@ function retrieveAWSData(cmd){
 }
 
 // Server up or down
-function getStatus(){
-    var params = {
-        InstanceIds: ['ami-f173cc91'],
-        DryRun: true
-    };
+let getStatus = function() {
 
-    ec2.describeInstances(params, function(err, data) {
-        if (err) {
-            console.log("Error", err.stack);
-        } else {
-            console.log("Success", JSON.stringify(data));
-        }
+    return new Promise(function (resolve, reject) {
+        var params = {
+            DryRun: false,
+            InstanceIds: ['i-080905c8c5e7d52b7']
+        };
+
+        ec2.describeInstances(params, function (err, data) {
+            if (err) {
+                reject(err.toString());
+            } else {
+                var instance = data.Reservations[0].Instances[0];
+                var state = instance.State.Name.toString();
+                var name = instance.KeyName;
+                var msg = "The server " + name + " is " + state;
+                if(state === 'running'){
+                    msg += " as of " + instance.LaunchTime;
+                }
+                msg += ".";
+                resolve(msg);
+            }
+        });
+
+
     });
-}
+};
 
 module.exports = api;
 
@@ -286,10 +336,13 @@ var dictionary = {
         man: "Sorry "+ NAME +", I have not been given a user manual yet.",
         cpu: "CPU usage is currently at 62%.",
         ram: "There is 2.67GB of memory available. 29.33GB is currently occupied.",
-        status: "The server is online. It has been up for 24 days, 3 hours and 7 minutes.",
         disk: "The storage bucket has 189GB of data.",
         jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
         health: "Server health is currently very good, at 98%. " +
         "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
+    },
+
+    AWSCommands:{
+        status: "status"
     }
 };
