@@ -17,13 +17,6 @@ const CLIENT_SECRET = "ab85e84c73978ce51d8e28103de895d9";
 const SCOPES = "bot";  // Space separated
 const TOKEN = "5aPJyd1E0IrszzWpRCBl0LnS";
 
-const NAME = "{{name}}";
-const QUESTION = "question";
-const STATE = "statement";
-const JARVIS = "jarvis";
-
-var name = "";  // DEMO ONLY
-
 // AWS cloud watch
 const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 // AWS EC2
@@ -172,28 +165,21 @@ function pickResponse(arg){
     var first = array[0].toString().toLowerCase();
     var response;
 
-    if(arg === "" || arg === " "){
-        response = dictionary.statements.empty;
-    }
-    else if(isAWSCommand(first)){
+    if(isAWSCommand(first)){
         response = parseUserCommand(first);
     }
     // Lets first check if it's a command to save on computation time
     else if(isCommand(first)){
-        response = dictionary.commands[first];
+        response = commandList.commands[first];
     }
     // Hit API.ai for a response
     else {
         response = aiQuery(arg);
         // If an API.ai intent turned this into a command
-        response = isCommand(response) ? dictionary.commands[response] : response;
+        response = isCommand(response) ? commandList.commands[response] : response;
     }
 
     return response;
-}
-
-function parseResponse(response){
-    return response.replace(new RegExp(NAME, 'g'), name);
 }
 
 // Clean and splice input.
@@ -208,7 +194,7 @@ function parseInput(message){
 
 function isCommand(firstWord){
     var res = false;
-    if(dictionary.commands[firstWord] !== undefined){
+    if(commandList.commands[firstWord] !== undefined){
         res = true;
     }
 
@@ -218,7 +204,7 @@ function isCommand(firstWord){
 // If the command requires a fetch from AWS
 function isAWSCommand(firstWord){
     var res = false;
-    if(dictionary.AWSCommands[firstWord] !== undefined){
+    if(commandList.AWSCommands[firstWord] !== undefined){
         res = true;
     }
 
@@ -228,9 +214,9 @@ function isAWSCommand(firstWord){
 // Commands
 function listCommands(){
     var str = "";
-    for(var key in commandList){
-        if (commandList.hasOwnProperty(key)){
-            str += key + "\t\t" + commandList[key] + "\n";
+    for(var key in helpList){
+        if (helpList.hasOwnProperty(key)){
+            str += key + "\t\t" + helpList[key] + "\n";
         }
     }
     return "Here are my available commands:\n" + toCodeBlock(str);
@@ -243,44 +229,36 @@ function toCodeBlock(str){
     return backticks + str + backticks;
 }
 
-function retrieveAWSData(cmd){
-    var response = 'Unknown Error';
 
-    switch(cmd){
-        case 'status':
-            response = "status checked!";
-            break;
-        default:
-            response = dictionary.commands[cmd];
-
-    }
-
-    return response;
-}
-
-// Server up or down
+// Server up or down (EC2 Only)
 let getStatus = function() {
-
-    // TODO - Add checking for server name as second part of command
 
     return new Promise(function (resolve, reject) {
         var params = {
-            DryRun: false,
-            InstanceIds: ['i-080905c8c5e7d52b7']
+            DryRun: false
         };
 
         ec2.describeInstances(params, function (err, data) {
             if (err) {
                 reject(err.toString());
             } else {
-                var instance = data.Reservations[0].Instances[0];
-                var state = instance.State.Name.toString();
-                var name = instance.KeyName;
-                var msg = "The server " + name + " is " + state;
-                if(state === 'running'){
-                    msg += " as of " + instance.LaunchTime;
-                }
-                msg += ".";
+                var res = data.Reservations;
+                var msg = "";
+
+                res.forEach(function(reservation){
+                    var instance = reservation.Instances;
+                    instance.forEach(function(inst){
+                        var state = inst.State.Name.toString();
+                        var name = getEC2Name(inst);
+                        var id = inst.InstanceId;
+                        msg += name + " (" + id + ")" + " is " + state;
+                        if(state === 'running'){
+                            msg += " since " + inst.LaunchTime;
+                        }
+                        msg += ".\n\n";
+                    });
+                });
+
                 resolve(msg);
             }
         });
@@ -289,10 +267,23 @@ let getStatus = function() {
     });
 };
 
+// Get the name of an EC2 instance
+function getEC2Name(instance){
+    var tags = instance.Tags;
+    var name = "Unknown";
+    tags.forEach(function(tag){
+        if(tag.Key === "Name"){
+            name = tag.Value;
+        }
+    });
+
+    return name;
+}
+
 module.exports = api;
 
 // Commands with description
-var commandList = {
+var helpList = {
     help: "Lists available commands.",
     man: "Display user manual.",
     cpu: "Current server CPU usage.",
@@ -303,39 +294,12 @@ var commandList = {
     health: "Overall percentage of uptime vs downtime of the server"
 };
 
-// Response dictionary
-// TEMP for demo - Turn into AI api_gateway calls in future
-var dictionary = {
-    questions: {
-        jarvis:{
-            work: "I exist in an AWS Lambda function, currently in demo form. I wake up when you send me a message " +
-            "and think of a clever response. After I respond, I go to sleep again to save on usage costs.\n\n" +
-            "To communicate with me, type /jarvis then a command.\n" +
-            "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
-            cost: "I'm free! Unless you ask me more then a million questions per month..."
-        },
-        unknown: {
-            1: "Sorry "+ NAME +", I don't know how to answer that.",
-            2: "Please try asking your question again.",
-            3: "I'm not smart enough to answer that yet!"
-        }
-    },
-
-    statements: {
-
-        empty: "To communicate with me, type /jarvis then a command.\n" +
-        "Type:\n" + toCodeBlock("/jarvis help") + "\nfor more information.",
-        unknown: {
-            1: "Sorry "+ NAME +", I don't know what that means.",
-            2: "I'm not sure how to respond to that.",
-            3: "Can you please rephrase that? ",
-            4: "Try using one of my commands. (/jarvis help)"
-        }
-    },
-
+// Response commandList
+var commandList = {
+    // Add commands here that do not gather data from AWS
     commands:{
         help: listCommands(),
-        man: "Sorry "+ NAME +", I have not been given a user manual yet.",
+        man: "Sorry, I have not been given a user manual yet.",
         cpu: "CPU usage is currently at 62%.",
         ram: "There is 2.67GB of memory available. 29.33GB is currently occupied.",
         disk: "The storage bucket has 189GB of data.",
@@ -344,6 +308,7 @@ var dictionary = {
         "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
     },
 
+    // Add new AWS commands here
     AWSCommands:{
         status: "status"
     }
