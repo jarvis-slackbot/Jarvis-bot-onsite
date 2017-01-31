@@ -261,7 +261,7 @@ function retrieveAWSData(cmd){
 // Server up or down
 let getStatus = function() {
 
-    // TODO - Add checking for server name as second part of command.
+    // TODO - Add checking for server name as second part of command
 
     return new Promise(function (resolve, reject) {
         var params = {
