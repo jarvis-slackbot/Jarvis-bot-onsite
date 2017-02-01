@@ -3,6 +3,7 @@ claudia.json
 .ignore.save
 
 package.json
+*.swp
 
 # General ignores
 #*.html
