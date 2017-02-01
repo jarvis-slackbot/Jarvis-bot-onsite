@@ -1,0 +1,61 @@
+0 info it worked if it ends with ok
+1 verbose cli [ 'C:\\Program Files\\aPrograms\\nodejs\\node.exe',
+1 verbose cli   'C:\\Program Files\\aPrograms\\nodejs\\node_modules\\npm\\bin\\npm-cli.js',
+1 verbose cli   'install',
+1 verbose cli   'clear.js' ]
+2 info using npm@3.10.9
+3 info using node@v6.9.2
+4 silly loadCurrentTree Starting
+5 silly install loadCurrentTree
+6 silly install readLocalPackageData
+7 silly fetchPackageMetaData clear.js
+8 silly fetchOtherPackageData clear.js
+9 silly cache add args [ 'clear.js', null ]
+10 verbose cache add spec clear.js
+11 silly cache add parsed spec Result {
+11 silly cache add   raw: 'clear.js',
+11 silly cache add   scope: null,
+11 silly cache add   escapedName: 'clear.js',
+11 silly cache add   name: null,
+11 silly cache add   rawSpec: 'clear.js',
+11 silly cache add   spec: 'C:\\Users\\sauls\\zProgramming\\GitHub\\Jarvis-bot\\clear.js',
+11 silly cache add   type: 'local' }
+12 silly addLocalTarball shasum (computed) f100944e2f23b66825923e1b3718d6d2f0a92e8b
+13 verbose addTmpTarball C:\Users\sauls\zProgramming\GitHub\Jarvis-bot\clear.js not in flight; adding
+14 verbose correctMkdir C:\Users\sauls\AppData\Roaming\npm-cache correctMkdir not in flight; initializing
+15 verbose addTmpTarball validating metadata from C:\Users\sauls\zProgramming\GitHub\Jarvis-bot\clear.js
+16 verbose tar unpack C:\Users\sauls\zProgramming\GitHub\Jarvis-bot\clear.js
+17 verbose tar unpacking to C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd
+18 silly gentlyRm C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd is being purged
+19 verbose gentlyRm don't care about contents; nuking C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd
+20 silly gunzTarPerm modes [ '777', '666' ]
+21 error not a package C:\Users\sauls\zProgramming\GitHub\Jarvis-bot\clear.js
+22 error addLocal Could not install C:\Users\sauls\zProgramming\GitHub\Jarvis-bot\clear.js
+23 silly fetchPackageMetaData Error: ENOENT: no such file or directory, open 'C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json'
+23 silly fetchPackageMetaData     at Error (native)
+23 silly fetchPackageMetaData  error for clear.js { Error: ENOENT: no such file or directory, open 'C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json'
+23 silly fetchPackageMetaData     at Error (native)
+23 silly fetchPackageMetaData   errno: -4058,
+23 silly fetchPackageMetaData   code: 'ENOENT',
+23 silly fetchPackageMetaData   syscall: 'open',
+23 silly fetchPackageMetaData   path: 'C:\\Users\\sauls\\AppData\\Local\\Temp\\npm-7644-4c5b0b90\\unpack-f36571dd\\package.json' }
+24 silly rollbackFailedOptional Starting
+25 silly rollbackFailedOptional Finishing
+26 silly runTopLevelLifecycles Finishing
+27 silly install printInstalled
+28 verbose stack Error: ENOENT: no such file or directory, open 'C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json'
+28 verbose stack     at Error (native)
+29 verbose cwd C:\Users\sauls\zProgramming\GitHub\Jarvis-bot
+30 error Windows_NT 10.0.14393
+31 error argv "C:\\Program Files\\aPrograms\\nodejs\\node.exe" "C:\\Program Files\\aPrograms\\nodejs\\node_modules\\npm\\bin\\npm-cli.js" "install" "clear.js"
+32 error node v6.9.2
+33 error npm  v3.10.9
+34 error path C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json
+35 error code ENOENT
+36 error errno -4058
+37 error syscall open
+38 error enoent ENOENT: no such file or directory, open 'C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json'
+39 error enoent ENOENT: no such file or directory, open 'C:\Users\sauls\AppData\Local\Temp\npm-7644-4c5b0b90\unpack-f36571dd\package.json'
+39 error enoent This is most likely not a problem with npm itself
+39 error enoent and is related to npm not being able to find a file.
+40 verbose exit [ -4058, true ]
