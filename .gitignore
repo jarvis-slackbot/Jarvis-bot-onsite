@@ -2,6 +2,8 @@
 claudia.json
 .ignore.save
 
+package.json
+
 # General ignores
 #*.html
 #*.css
