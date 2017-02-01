@@ -74,8 +74,8 @@ const api = botBuilder((message, apiRequest) => {
         .then(() => {
             return new SlackTemplate("Thinking...").channelMessage(true).get();
         })
-        .catch(() => {
-            return new SlackTemplate("Error!").get();
+        .catch((err) => {
+            return new SlackTemplate("Error! " + err.toString()).get();
         });
 
 }, { platforms: ['slackSlashCommand'] });
