@@ -64,7 +64,7 @@ claudia.json
 # Logs
 #logs
 #*.log
-#npm-debug.log*
+npm-debug.log*
 
 # Runtime data
 #pids
