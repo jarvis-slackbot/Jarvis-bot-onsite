@@ -1,6 +1,7 @@
 #Custom ignores
 claudia.json
 .ignore.save
+trash
 
 # General ignores
 #*.html
