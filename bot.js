@@ -11,6 +11,16 @@ const slackDelayedReply = botBuilder.slackDelayedReply;
 
 const lambda = new aws.Lambda();
 
+// Slack colors
+const SLACK_GREEN = 'good';
+const SLACK_YELLOW = 'warning';
+const SLACK_RED = 'danger';
+
+// EC2 server states
+const EC2_ONLINE = 'running';
+const EC2_OFFLINE = 'stopped';
+const EC2_TERM = 'terminated';
+
 const SLACK_AUTH = "https://slack.com/api_gateway/oauth.access";
 const CLIENT_ID = "81979454913.97303513202";
 const CLIENT_SECRET = "ab85e84c73978ce51d8e28103de895d9";
@@ -21,6 +31,9 @@ const TOKEN = "5aPJyd1E0IrszzWpRCBl0LnS";
 const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 // AWS EC2
 const ec2 = new aws.EC2({region: 'us-west-2', maxRetries: 15, apiVersion: '2016-11-15'});
+
+// Attachment number
+var attachNum = 0;
 
 
 /* Needed after demo, make into different lambda function??
@@ -75,7 +88,8 @@ const api = botBuilder((message, apiRequest) => {
             return new SlackTemplate("Thinking...").channelMessage(true).get();
         })
         .catch((err) => {
-            return new SlackTemplate("Error! " + err.toString()).get();
+            var error = "Error: " + err.toString();
+            return new SlackTemplate(error).channelMessage(true).get();
         });
 
 }, { platforms: ['slackSlashCommand'] });
@@ -98,11 +112,11 @@ api.intercept((event) => {
                 return slackDelayedReply(data, message.channelMessage(true).get());
             }
             // Response that pinged AWS (res is a Promise function)
+            // msg should be a SlackTemplate object
             // TODO - Error checking for promise function
             else {
                 return res.then((msg) => {
-                    var message = new SlackTemplate(msg);
-                    return slackDelayedReply(data, message.channelMessage(true).get());
+                    return slackDelayedReply(data, msg.channelMessage(true).get());
                 }).then(() => false).catch((err) => {
                     var errorMsg = "Error: " + err;
                     var message = new SlackTemplate(errorMsg);
@@ -234,32 +248,44 @@ function toCodeBlock(str){
 let getStatus = function() {
 
     return new Promise(function (resolve, reject) {
+
+        var slackMsg = new SlackTemplate();
+
         var params = {
             DryRun: false
         };
 
         ec2.describeInstances(params, function (err, data) {
             if (err) {
-                reject(err.toString());
+                reject(errorMessage(err));
             } else {
                 var res = data.Reservations;
-                var msg = "";
 
                 res.forEach(function(reservation){
                     var instance = reservation.Instances;
                     instance.forEach(function(inst){
+                        var msg = "";
+                        slackMsg.addAttachment(getAttachNum());
+
                         var state = inst.State.Name.toString();
                         var name = getEC2Name(inst);
                         var id = inst.InstanceId;
                         msg += name + " (" + id + ")" + " is " + state;
-                        if(state === 'running'){
+                        if(state === EC2_ONLINE){
                             msg += " since " + inst.LaunchTime;
+                            slackMsg.addColor(SLACK_GREEN);
+                        }
+                        else if (state === EC2_OFFLINE || state === EC2_TERM){
+                            slackMsg.addColor(SLACK_RED);
+                        }
+                        else{
+                            slackMsg.addColor(SLACK_YELLOW);
                         }
                         msg += ".\n\n";
+                        slackMsg.addText(msg);
                     });
                 });
-
-                resolve(msg);
+                resolve(slackMsg);
             }
         });
 
@@ -278,6 +304,20 @@ function getEC2Name(instance){
     });
 
     return name;
+}
+
+// Get next attachment number
+function getAttachNum(){
+    attachNum++;
+    return attachNum.toString();
+}
+
+// Error message formater
+function errorMessage(text){
+    return new SlackTemplate().
+        addAttachment("err").
+        addColor(SLACK_RED).
+        addText(text.toString());
 }
 
 module.exports = api;
