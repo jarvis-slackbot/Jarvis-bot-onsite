@@ -21,6 +21,10 @@ const EC2_ONLINE = 'running';
 const EC2_OFFLINE = 'stopped';
 const EC2_TERM = 'terminated';
 
+// AMI states
+const AMI_AVBL = 'available';
+const AMI_PEND = 'pending';
+
 const SLACK_AUTH = "https://slack.com/api_gateway/oauth.access";
 const CLIENT_ID = "81979454913.97303513202";
 const CLIENT_SECRET = "ab85e84c73978ce51d8e28103de895d9";
@@ -118,9 +122,7 @@ api.intercept((event) => {
                 return res.then((msg) => {
                     return slackDelayedReply(data, msg.channelMessage(true).get());
                 }).then(() => false).catch((err) => {
-                    var errorMsg = "Error: " + err;
-                    var message = new SlackTemplate(errorMsg);
-                    return slackDelayedReply(data, message.channelMessage(true).get());
+                    return slackDelayedReply(data, err.channelMessage(true).get());
                 });
             }
         })
@@ -155,23 +157,6 @@ function aiQuery(phrase){
     return response;
 }
 
-// Parse user command and formulate response
-// Response should be a promise function
-function parseUserCommand(cmd){
-    var response;
-
-    // Commands list
-    switch(cmd){
-        case 'status':
-            response = getStatus();
-            break;
-        default:
-            response = "Command error";
-    }
-
-    return response;
-}
-
 // Decide what kind of question the user asked
 // Or if it's a statement
 function pickResponse(arg){
@@ -180,7 +165,7 @@ function pickResponse(arg){
     var response;
 
     if(isAWSCommand(first)){
-        response = parseUserCommand(first);
+        response = commandList.AWSCommands[first];
     }
     // Lets first check if it's a command to save on computation time
     else if(isCommand(first)){
@@ -246,7 +231,6 @@ function toCodeBlock(str){
 
 // Server up or down (EC2 Only)
 let getStatus = function() {
-
     return new Promise(function (resolve, reject) {
 
         var slackMsg = new SlackTemplate();
@@ -257,7 +241,7 @@ let getStatus = function() {
 
         ec2.describeInstances(params, function (err, data) {
             if (err) {
-                reject(errorMessage(err));
+                reject(errorMessage(err.message));
             } else {
                 var res = data.Reservations;
 
@@ -265,11 +249,12 @@ let getStatus = function() {
                     var instance = reservation.Instances;
                     instance.forEach(function(inst){
                         var msg = "";
-                        slackMsg.addAttachment(getAttachNum());
-
                         var state = inst.State.Name.toString();
                         var name = getEC2Name(inst);
                         var id = inst.InstanceId;
+
+                        slackMsg.addAttachment(getAttachNum());
+
                         msg += name + " (" + id + ")" + " is " + state;
                         if(state === EC2_ONLINE){
                             msg += " since " + inst.LaunchTime;
@@ -290,6 +275,87 @@ let getStatus = function() {
         });
 
 
+    });
+};
+
+// Get the state of all AMI images owned by user.
+// Finds all images used by the users instances and gets status of those instances.
+let getAMIStatus = function(){
+    return new Promise(function (resolve, reject) {
+
+        var slackMsg = new SlackTemplate();
+
+        var paramsInst = {
+            DryRun: false
+        };
+
+        ec2.describeInstances(paramsInst, function (err, data) {
+
+            var imageList = [];
+
+            var res = data.Reservations;
+
+            // Extract images from JSON instance info
+            res.forEach(function(reservation){
+                var instances = reservation.Instances;
+                instances.forEach(function(inst){
+                    var name = inst.ImageId;
+                    if(imageList.indexOf(name) <= -1)
+                        imageList.push(name);
+                });
+            });
+
+            if(imageList.length <= 0){
+                var errMsg = "No AMIs found.";
+                slackMsg.addAttachment(getAttachNum());
+                slackMsg.addText(errMsg);
+                resolve(slackMsg);
+            }
+            else {
+                var paramsImg = {
+                    DryRun: false,
+                    ImageIds: imageList
+                };
+
+                ec2.describeImages(paramsImg, function (err, data) {
+                    if (err) {
+                        reject(errorMessage(err.message));
+                    }
+                    else {
+                        var images = data.Images;
+
+                        images.forEach(function (image) {
+                            var name = image.Name;
+                            var state = image.State;
+                            var msg = "";
+
+                            slackMsg.addAttachment(getAttachNum());
+
+                            msg += name + " is " + state + ".";
+
+                            if (state === AMI_AVBL) {
+                                slackMsg.addColor(SLACK_GREEN);
+                            }
+                            // Include reason if not available.
+                            else {
+                                var code = image.StateReason.Code;
+                                var reason = image.StateReason.Message;
+                                var color = (state === AMI_PEND) ? SLACK_YELLOW : SLACK_RED;
+                                msg += "\n" +
+                                    "Reason: " +
+                                    reason +
+                                    "(Code: " + code + ")";
+                                slackMsg.addColor(color);
+                            }
+                            msg += "\n\n";
+                            slackMsg.addText(msg);
+                        });
+                        resolve(slackMsg);
+                    }
+                });
+            }
+
+        });
     });
 };
 
@@ -314,10 +380,11 @@ function getAttachNum(){
 
 // Error message formater
 function errorMessage(text){
+    var str = 'Error: \n' + text.toString();
     return new SlackTemplate().
         addAttachment("err").
         addColor(SLACK_RED).
-        addText(text.toString());
+        addText(str);
 }
 
 module.exports = api;
@@ -350,6 +417,7 @@ var commandList = {
 
     // Add new AWS commands here
     AWSCommands:{
-        status: "status"
+        status: getStatus(),
+        ami: getAMIStatus()
     }
 };
