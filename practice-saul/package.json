@@ -1,8 +1,8 @@
 {
-  "name": "jarvis-bot-saul",
+  "name": "jarvis-bot",
   "version": "1.0.0",
-  "description": "Claudia bot for Jarvis.",
-  "main": "bot.js",
+  "description": "Practice bot.",
+  "main": "api-builder.js",
   "dependencies": {
     "aws-sdk": "^2.7.10",
     "bluebird": "^3.4.7",
@@ -27,7 +27,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "claudia:create": "claudia create --region us-west-2 --api-module bot --configure-slack-slash-command",
+    "claudia:create": "claudia create --region us-west-2 --api-module bot --configure-slack-slash-command", 
+    "cc": "claudia create --region us-west-2 --api-module",
     "ccsa": "claudia create --region us-west-2 --configure-slack-slash-app --api-module",
     "ccss": "claudia create --region us-west-2 --configure-slack-slash-command --api-module"
   },

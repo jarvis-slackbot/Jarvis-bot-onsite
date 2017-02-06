@@ -1,4 +1,21 @@
 var ApiBuilder = require('claudia-api-builder')
+	, api = new ApiBuilder();
+
+module.exports = api;
+
+api.get('/hello', function () {
+	return "Hello There.";
+});
+
+
+/* 
+Lookup claudia-api-builder ojbect constructor.
+Not sure how exporting objects work... propably a design pattern and not a function module type of export
+*/
+
+
+/* FROM Example
+var ApiBuilder = require('claudia-api-builder')
 	, api = new ApiBuilder()
 	, superb = require('superb')
 //    , express = require('express')
@@ -15,13 +32,8 @@ console.log('THIS: ' + JSON.stringify(api));
 //    console.log(obj);
 //});
 
-/* 
-Lookup claudia-api-builder ojbect constructor.
-Not sure how exporting objects work... propably a design pattern and not a function module type of export
+
 */
-
-
-
 
 
 
