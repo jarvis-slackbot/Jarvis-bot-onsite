@@ -3,6 +3,9 @@ claudia.json
 .ignore.save
 trash
 
+package.json
+*.swp
+
 # General ignores
 #*.html
 #*.css
@@ -65,7 +68,7 @@ trash
 # Logs
 #logs
 #*.log
-#npm-debug.log*
+npm-debug.log*
 
 # Runtime data
 #pids
