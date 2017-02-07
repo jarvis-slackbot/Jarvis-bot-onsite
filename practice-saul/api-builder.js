@@ -1,10 +1,15 @@
 var ApiBuilder = require('claudia-api-builder')
-	, api = new ApiBuilder();
+    , superb = require('superb')
+	, api = new ApiBuilder()
+;
 
 module.exports = api;
 
 api.get('/hello', function () {
 	return "Hello There.";
+});
+api.get('/', function (request) {
+	return request.queryString.name + ' is ' + superb();
 });
 
 
