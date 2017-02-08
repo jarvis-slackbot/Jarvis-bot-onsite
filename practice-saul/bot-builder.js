@@ -10,3 +10,15 @@ module.exports = botBuilder(function (request) {
 });
 //Couldn't see if this worked well, needed an access token or configure with something(from possible configurations) to obtain one.
 //In video, person sent a message/request and replied back with same info, like above.
+
+
+
+/* For Later
+add 2nd arg
+, { platforms: ['slackSlashCommand', 'alexa', 'slackSlashApp'] }    //slash app might not be real
+POSSIBLE SCRIPT
+claudia create --region us-west-2 --name staticName --config seperateStaticConfig.json --role staticRolePerhapsShared --description infoNotFromPackageJson --api-module botFile
+
+
+
+*/
