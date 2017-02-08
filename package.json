@@ -1,7 +1,7 @@
 {
   "name": "jarvis-bot-saul",
   "version": "1.0.0",
-  "description": "Claudia bot for Jarvis. Saul.",
+  "description": "Claudia bot for Jarvis (Saul).",
   "main": "bot.js",
   "dependencies": {
     "aws-sdk": "^2.7.10",
@@ -25,14 +25,20 @@
     "superb": "^1.3.0",
     "sync-request": "^3.0.1"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "ntl": "^1.1.3"
+  },
   "scripts": {
-    "claudia:create": "claudia create --region us-west-2 --api-module bot --configure-slack-slash-command", 
+    "claudia:create": "claudia create --region us-west-2 --api-module bot --configure-slack-slash-command",
     "cc": "claudia create --region us-west-2 --api-module",
     "ccsa": "claudia create --region us-west-2 --configure-slack-slash-app --api-module",
     "ccss": "claudia create --region us-west-2 --configure-slack-slash-command --api-module",
     "sa": "--configure-slack-slash-app",
-    "ss": "--configure-slack-slash-command"
+    "ss": "--configure-slack-slash-command",
+    "deploy": "claudia create --version dev --region us-west-2 --api-module bot",
+    "release": "claudia set-version --version production",
+    "testing": "claudia update --version testing --test-lambda -event testScript.js",
+    "start": "ntl"
   },
   "repository": {
     "type": "git",
