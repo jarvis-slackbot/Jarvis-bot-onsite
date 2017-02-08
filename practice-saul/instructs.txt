@@ -1,0 +1,5 @@
+most scripts already written in package.json.
+
+claudia create + other custom options
+npm run cc File
+
