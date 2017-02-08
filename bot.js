@@ -7,8 +7,6 @@ const slackDelayedReply = botBuilder.slackDelayedReply;
 const lambda = new aws.Lambda();
 const msg = require('./message.js');
 
-// AWS cloud watch
-const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 
 const api = botBuilder((message, apiRequest) => {
 

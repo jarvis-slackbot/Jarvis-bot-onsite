@@ -132,6 +132,7 @@ var commandList = {
     // Add new AWS commands here
     AWSCommands:{
         status: require('./ec2.js').getStatus(),
-        ami: require('./ec2.js').getAMIStatus()
+        ami: require('./ec2.js').getAMIStatus(),
+        cpu: require('./cloudwatch').getEc2Cpu()
     }
 };
