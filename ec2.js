@@ -1,6 +1,10 @@
+/*
+    AWS EC2
+ */
+
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
-const msg = require('./message');
+const msg = require('./message.js');
 
 // AWS EC2
 const aws = require('aws-sdk');
@@ -30,7 +34,7 @@ module.exports = {
 
             ec2Data.describeInstances(params, function (err, data) {
                 if (err) {
-                    reject(errorMessage(err.message));
+                    reject(msg.errorMessage(err.message));
                 } else {
                     var res = data.Reservations;
 

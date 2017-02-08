@@ -1,3 +1,7 @@
+/*
+    Artificial Intelligence module
+ */
+
 var http_request = require('sync-request'); // DEMO ONLY
 var http = require('http');
 const qs = require('querystring');
