@@ -13,6 +13,7 @@
     "co": "^4.6.0",
     "co-request": "^1.0.0",
     "cookie-parser": "^1.4.3",
+    "cs": "^1.0.3",
     "ejs": "^2.5.2",
     "express": "^4.14.0",
     "express-session": "^1.14.1",

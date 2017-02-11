@@ -1,15 +1,36 @@
+//Slack Authorization
 /*
-    Slack Authorization
- */
+OAuth Steps:
+1. Add to Slack Button (authorization request)
+    https://slack.com/oauth/authorize?scope=commands,bot&client_id=81979454913.97303513202&redirect_uri=LAMBDA_URL/auth?
+    Will redirect to LAMBDA_URL/auth? with 'code' variable
+        Cortana Lambda: https://s9jvrvpau5.execute-api.us-west-2.amazonaws.com/latest/auth
+2. Obtain Access Token
+Write api code for LAMBDA_URL/auth?
+    Handle req.query.code and POST to /api/oauth.access
+        if possible, redirect to team's slack page.
+    https://slack.com/api/oauth.access?client_id=81979454913.97303513202&client_secret=(SECRET_INFO)&code=(provided after 'oauth/authorize'; req.query.code)&redirect_uri (option)
 
-const SLACK_AUTH = "https://slack.com/api_gateway/oauth.access";
-const CLIENT_ID = "81979454913.97303513202";
-const CLIENT_SECRET = "ab85e84c73978ce51d8e28103de895d9";
-const SCOPES = "bot";  // Space separated
-const TOKEN = "5aPJyd1E0IrszzWpRCBl0LnS";
+Output from /api/oauth.access?:
+    {
+    "access_token": "(given)",
+    "scope": "something"
+    }
+    Use token, if possible, to obtain team's info to re-direct back to team page.
 
-/* Needed after demo, make into different lambda function??
-// Authorization
+a. Using API
+    oauth never expire. Use auth.revoke
+    now can use /api/method?token=(given)
+
+*/
+
+require('./setEnvironments.js');
+var api = require('claudia-api-builder');
+//const = SCOPES = "";
+console.log(process.env.SLACK_CLIENT_ID);
+
+
+
 api_gateway.get('/auth', function(req){
         var code = req.queryString.code;
         var state = req.queryString.state;

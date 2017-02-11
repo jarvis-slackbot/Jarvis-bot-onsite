@@ -2,6 +2,8 @@
 claudia.json
 .ignore.save
 trash
+*.env
+env/
 
 package.json
 *.swp

@@ -33,6 +33,10 @@ generate-serverless-express-proxy --
            defaults to: aws-serverless-express
 POSSIBLE SCRIPTS
 claudia create --region us-west-2 --name staticName --config seperateStaticConfig.json --role staticRolePerhapsShared --description infoNotFromPackageJson --api-module botFile
+USED TO RE-CREATE MY BOT
+    claudia create --region us-west-2 --name jarvis-bot-saul --role jarvis-bot-executor --description "Claudia bot for Jarvis (Saul)." --configure-slack-slash-app --api-module bot
+    If IAM already exists error occurs, just put nothing
+        can use to create a script for branching dev
 
 
 
@@ -224,22 +228,109 @@ https://github.com/claudiajs/claudia-bot-builder/blob/master/docs/SLACK_DELAYED_
 
 
 
+//need to cover Promises a bit. most is strait forward.
+
+//should note how set-up bot
+(ref links below and bring notes from js files here).
+ I read and went through slack and claudia steps
+here is a link I think is similar to what I did:
+    http://www.marcusoft.net/2016/06/claudia-bot-builder.html
+Here are my links:
+    https://api.slack.com/slack-apps#what-it-does
+    https://api.slack.com/bot-users
+    https://api.slack.com/slash-commands#what_are_commands //*at bootom
+    Did the links I have to get token, client id, client key, verif token. 
+    Note: client id, key, and token obtained after making app. App setup after connecting slash command. 
 
 
 
+SUMMARY, SELF NOTES, LEARNED OVERALL
+Claudia creates role and lambda function using package.name
+roles are generic so after creation, could just place all lambdas into one role.
+When creating claudia bot with slash config, it asks for client id, client secret, and verification token wich can all be found in slack app settings. 
+Not Yet tested enough, but slack app verification not work since it is looking for slash command token. (this can be due to slash command being made separately instead of through the app).
+slash commands have their own slashes and tokens. 
+    ex: /jarvis is one, /practice is another
+Because each slash have their own tokens, every lambda may require their own. Unless token is passed when certain function called in lambda function.
+*Point is.... need correct token with each slash command.
+
+Need collab permisions to app.
+to:
+    finish oauth, know 
+lastly, everytime re-create claudia bot url changes, can avoid url changing by using update. (not sure, but I think in some cases, the url changes)
+
+*should list common claudia changes into scripts
+
+====== SCRATCH CODE ==============
+
+dry: https://slack.com/oauth/pick?scope=incoming-webhook,commands,bot,reactions:read,&client_id=81979454913.97303513202
+
+With html codes: https://slack.com/oauth/pick?scope=incoming-webhook%2Ccommands%2Cbot%2Creactions:read%2C&client_id=81979454913.97303513202
 
 
+Note: incoming-webhook scope 
+    allow to request permission to post into Slack team. 
+    no read privileges, for send posts/notifications 
+    *cannot be added alongside: read, post, and client scopes.
 
 
+--- NOTES FROM OATH and WEB API ---------------------
+SCOPE
+3 categories
+1. 3 classes of action 
+	1. read
+	2. write
+	3. history
+2. Slack App
+	1. incoming-webhook
+	2. commands
+	3. bot
+3. Special scopes
+	1. identify
+	2. client
+	3. admin
+Working with Scopes
+	request scope using space/comma sepatated list
+	https://slack.com/oauth/authorize?
+		client_id=...&
+		scope=team%3Aread+users%3Aread
+
+	
+	
+	WEB / SLACK API 
+https://slack.com/api/channels.history?token=xoxp-19211852100-19217624273-19947439431-1c998f89c6&channel=C0K6DTNJW&pretty=1
+Can check HTTP headers to see what OAuth scopes you have, and what API methods accepts
+	curl https://slack.com/api/<SCOPE>?token=<> -I
+		X-OAuth-Scopes: files:read, chat:write:bot //scopes your token has authorized
+		X-Accepted-OAuth-Scopes: files:read //lists scopes that the action checks for
+	*certain scopes cannot be combined
 
 
+How to OAuth
+1. authorization request
+https://slack.com/oauth/authorize?
+    -client_id=(use app's id)
+    -scope=(what app will use, command, bot, incomming-hook, admin, etc.)
+    -redirect_uri=(if given; valid if sub of url provided in app auth settings)
+Once Authorized, redirects...
+    with ?code=(SomeCodeValue)
+        valid for 10min
+2. Obtain Access Token
+    Use the Method
+https://slack.com/api/oauth.access?
+    client_id=81979454913.97303513202 (app id)
+    client_secret=(secretInfo)
+    code=(provided after 'oauth/authorize')
+    redirect_uri (option)
+Output:
+    {
+    "access_token": "(given)",
+    "scope": "something"
+    }
+3. Use API
+    oauth never expire. Use auth.revoke
+    now can use /api/method?token=(given)
+z.
+    when redirecting, can use javascript at url to get request info from the above url's (auth and token)
 
-
-
-
-
-
-
-
-
-
+---- /END --Oath and Web API --------------------
