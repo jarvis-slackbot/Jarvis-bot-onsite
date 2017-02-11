@@ -21,15 +21,23 @@ var json = JSON.parse(string);
     process.env.AWS_ACCESS_KEY_ID = json.AWS.AWS_ACCESS_KEY_ID;
     process.env.AWS_SECRET_ACCESS_KEY = json.AWS.AWS_SECRET_ACCESS_KEY;
     process.env.AWS_REGION = json.AWS.AWS_REGION;
+
+
+
+
+
+
 /**/
-//EXAMPLES
+//EXAMPLES (replace ex's with links if possible)
 //setting configuration via AWS methods
 AWS.config.update({
     region: 'us-west-2', 
     credentials: {YOUR_CREDENTIALS}
 });
 AWS.config.loadFromPath('./config.json');
-
+AWS.config.credentials = new AWS.SharedIniFileCredentials({
+    profile: 'my_profile_name' 
+});
 //locking API version + creating and calling srevice obj's
 AWS.config.apiVersions = {
     dynamodb: '2011-12-05',
@@ -49,6 +57,6 @@ var s3bucket = new AWS.S3({
     params: {Bucket: 'myBucket'}, 
     apiVersion: '2006-03-01' 
 });
-
+//.aws/credentials [profile] var=val
 /**/
 

@@ -334,3 +334,107 @@ z.
     when redirecting, can use javascript at url to get request info from the above url's (auth and token)
 
 ---- /END --Oath and Web API --------------------
+========== From Claudia Practices ==============
+----START HERE
+REPLY IN A SPECIFIC FORMAT (PROXY LAMBDA FUNC)
+exports.handler = function (event, context) {
+	'use strict';
+	context.succeed({
+		statusCode: 200,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(event)
+	});
+};
+claudia create --region us-east-1 --deploy-proxy-api --handler main.handler
+
+UPDATING EXISTING LAMBDA
+lambda.json:
+exports.handler = function (event, context) {
+	console.log(event);
+	context.succeed('hello ' + event.name);
+};
+claudia create --region us-east-1 --handler lambda.handler
+claudia update
+Event.json:
+{
+  "name": "Tom"
+}
+claudia test-lambda --event event.json
+Checking out logs
+aws logs filter-log-events --log-group-name /aws/lambda/claudia-test
+
+WEB ENDPOINT
+var ApiBuilder = require('claudia-api-builder'),
+  api = new ApiBuilder();
+
+module.exports = api;
+
+api.get('/hello', function () {
+  return 'hello world';
+});
+claudia create --region us-east-1 --api-module app
+curl url/hello
+USING REQUEST PARAMETER
+api.get('/greet', function (request) {
+  var superb = require('superb');
+  return request.queryString.name + ' is ' + superb();
+});
+claudia update
+curl url/greet?name=Mike
+
+----BASIC DEVELOPMENT
+EXTERNAL SERVICES (return a Promise)
+api.post('/user', function (request) {
+	return dynamoDb.put({
+		TableName: request.env.tableName,
+		Item: {	userid: request.body.userId }
+	}).promise();
+}); 
+
+----ADVANCED TASKS
+RUNNING EXPRESS APPS IN AWS LAMBDA
+everything like express, but...
+    //app.listen(3000); <- delete this line
+    module.exports = app; //<-add this line
+create lambda proxy wrapper
+    claudia generate-serverless-express-proxy --express-module app
+deploy to aws
+    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1
+See for limitations: https://claudiajs.com/tutorials/serverless-express.html
+BINARY CONTENT
+see: https://claudiajs.com/tutorials/binary-content.html
+SLACK DEPAYED RESPONSE
+see: https://claudiajs.com/tutorials/slack-delayed-responses.html
+intercepting: https://github.com/claudiajs/claudia-api-builder/blob/master/docs/api.md#intercepting-requests
+3rd-arg ApiResponse: https://github.com/claudiajs/claudia-api-builder/blob/master/docs/api.md#customising-response-codes-and-content-types
+PANDOC (idk)
+see: https://claudiajs.com/tutorials/pandoc-lambda.html
+IMAGE SERVER:
+see: https://claudiajs.com/tutorials/image-server.html
+----EXAMPLE PROJECTS
+see: https://github.com/claudiajs/example-projects
+
+
+
+========== /From Claudia Practices ==============
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
