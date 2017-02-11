@@ -32,42 +32,35 @@ module.exports = {
                 DryRun: false
             };
 
-            ec2Data.describeInstances(params, function (err, data) {
-                if (err) {
-                    reject(msg.errorMessage(err.message));
-                } else {
-                    var res = data.Reservations;
+            module.exports.instList().then((instancesList) => {
 
-                    res.forEach(function (reservation) {
-                        var instance = reservation.Instances;
-                        instance.forEach(function (inst) {
-                            var response = "";
-                            var state = inst.State.Name.toString();
-                            var name = getEC2Name(inst);
-                            var id = inst.InstanceId;
+                instancesList.forEach(function (inst) {
+                    var response = "";
+                    var state = inst.State.Name.toString();
+                    var name = module.exports.getEC2Name(inst);
+                    var id = inst.InstanceId;
 
-                            slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addAttachment(msg.getAttachNum());
 
-                            response += name + " (" + id + ")" + " is " + state;
-                            if (state === EC2_ONLINE) {
-                                response += " since " + inst.LaunchTime;
-                                slackMsg.addColor(msg.SLACK_GREEN);
-                            }
-                            else if (state === EC2_OFFLINE || state === EC2_TERM) {
-                                slackMsg.addColor(msg.SLACK_RED);
-                            }
-                            else {
-                                slackMsg.addColor(msg.SLACK_YELLOW);
-                            }
-                            response += ".\n\n";
-                            slackMsg.addText(response);
-                        });
-                    });
-                    resolve(slackMsg);
-                }
+                    response += name + " (" + id + ")" + " is " + state;
+                    if (state === EC2_ONLINE) {
+                        response += " since " + inst.LaunchTime;
+                        slackMsg.addColor(msg.SLACK_GREEN);
+                    }
+                    else if (state === EC2_OFFLINE || state === EC2_TERM) {
+                        slackMsg.addColor(msg.SLACK_RED);
+                    }
+                    else {
+                        slackMsg.addColor(msg.SLACK_YELLOW);
+                    }
+                    response += ".\n\n";
+                    slackMsg.addText(response);
+                });
+            // Pass error message on to bot.
+            }).catch((err) => {
+                reject(err);
             });
-
-
+            resolve(slackMsg);
         });
     },
 
@@ -77,25 +70,14 @@ module.exports = {
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
+            var imageList = [];
 
-            var paramsInst = {
-                DryRun: false
-            };
+            module.exports.instList().then((instancesList) => {
 
-            ec2Data.describeInstances(paramsInst, function (err, data) {
-
-                var imageList = [];
-
-                var res = data.Reservations;
-
-                // Extract images from JSON instance info
-                res.forEach(function (reservation) {
-                    var instances = reservation.Instances;
-                    instances.forEach(function (inst) {
-                        var name = inst.ImageId;
-                        if (imageList.indexOf(name) <= -1)
-                            imageList.push(name);
-                    });
+                instancesList.forEach(function (inst) {
+                    var name = inst.ImageId;
+                    if (imageList.indexOf(name) <= -1)
+                        imageList.push(name);
                 });
 
                 if (imageList.length <= 0) {
@@ -103,8 +85,7 @@ module.exports = {
                     slackMsg.addAttachment(msg.getAttachNum());
                     slackMsg.addText(errMsg);
                     resolve(slackMsg);
-                }
-                else {
+                } else {
                     var paramsImg = {
                         DryRun: false,
                         ImageIds: imageList
@@ -147,21 +128,66 @@ module.exports = {
                         }
                     });
                 }
-
+            // Pass error message on to bot.
+            }).catch((err) => {
+                reject(err);
             });
         });
+    },
+
+    // Get list of instances with all of instance information
+    instList: function() {
+        return new Promise(function (resolve, reject) {
+
+            var instanceList = [];
+
+            var params = {
+                DryRun: false
+            };
+
+            ec2Data.describeInstances(params, function (err, data) {
+                if (err) {
+                    reject(msg.errorMessage(err.message));
+                } else {
+                    var res = data.Reservations;
+
+                    res.forEach(function (reservation) {
+                        var instances = reservation.Instances;
+                        instances.forEach(function (inst) {
+                            instanceList.push(inst);
+                        });
+                    });
+
+                    // Sort instances alphabetically
+                    instanceList.sort(function(a, b){
+                        var nameA = module.exports.getEC2Name(a).toUpperCase();
+                        var nameB = module.exports.getEC2Name(b).toUpperCase();
+                        var val = 0;
+                        if(nameA < nameB) val = -1;
+                        if(nameA > nameB) val = 1;
+                        return val;
+                    });
+
+                    resolve(instanceList);
+                }
+
+            });
+
+        });
+    },
+
+    // Get the name of an EC2 instance
+    getEC2Name: function (instance) {
+        var tags = instance.Tags;
+        var name = "Unknown";
+        tags.forEach(function (tag) {
+            if (tag.Key === "Name") {
+                name = tag.Value;
+            }
+        });
+
+        return name;
     }
 };
 
-// Get the name of an EC2 instance
-function getEC2Name(instance) {
-    var tags = instance.Tags;
-    var name = "Unknown";
-    tags.forEach(function (tag) {
-        if (tag.Key === "Name") {
-            name = tag.Value;
-        }
-    });
 
-    return name;
-}
