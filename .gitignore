@@ -5,6 +5,7 @@ trash
 *.env
 env/
 
+
 package.json
 *.swp
 

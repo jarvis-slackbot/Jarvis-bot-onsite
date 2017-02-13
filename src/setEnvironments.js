@@ -27,7 +27,7 @@ var json = JSON.parse(string);
 
 
 
-/**/
+/*
 //EXAMPLES (replace ex's with links if possible)
 //setting configuration via AWS methods
 AWS.config.update({

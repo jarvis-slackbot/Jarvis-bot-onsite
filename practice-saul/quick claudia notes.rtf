@@ -35,6 +35,7 @@ POSSIBLE SCRIPTS
 claudia create --region us-west-2 --name staticName --config seperateStaticConfig.json --role staticRolePerhapsShared --description infoNotFromPackageJson --api-module botFile
 USED TO RE-CREATE MY BOT
     claudia create --region us-west-2 --name jarvis-bot-saul --role jarvis-bot-executor --description "Claudia bot for Jarvis (Saul)." --configure-slack-slash-app --api-module bot
+    claudia create --region us-west-2 --name jarvis-bot-saul --role jarvis-bot-executor --description "Claudia bot for Jarvis (Saul)." --configure-slack-slash-app --version dev --api-module bot
     If IAM already exists error occurs, just put nothing
         can use to create a script for branching dev
 
@@ -315,7 +316,7 @@ https://slack.com/oauth/authorize?
 Once Authorized, redirects...
     with ?code=(SomeCodeValue)
         valid for 10min
-2. Obtain Access Token
+2. Obtain Access Token (POST (safer than GET))
     Use the Method
 https://slack.com/api/oauth.access?
     client_id=81979454913.97303513202 (app id)
@@ -327,13 +328,20 @@ Output:
     "access_token": "(given)",
     "scope": "something"
     }
-3. Use API
+3. Re-Direct back to slack team (GET)(unless senesitive info)
+    
+4. Use API
     oauth never expire. Use auth.revoke
     now can use /api/method?token=(given)
 z.
     when redirecting, can use javascript at url to get request info from the above url's (auth and token)
 
 ---- /END --Oath and Web API --------------------
+
+
+
+
+
 ========== From Claudia Practices ==============
 ----START HERE
 REPLY IN A SPECIFIC FORMAT (PROXY LAMBDA FUNC)
