@@ -1,5 +1,4 @@
 /*Slack Authorization
-ToDo: make this asynchronous by promises returns.
 */
 require('./setEnvironments.js');
 const Request = require('request'); 
@@ -8,7 +7,7 @@ const Qs = require('querystring');
         //const Slacktemplate = require('claudia-bot-builder').slackTemplate;
 
 //lambda function
-const LAMBDA_URL = "https://s9jvrvpau5.execute-api.us-west-2.amazonaws.com/latest";
+const LAMBDA_URL = "https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev";
 //slack app info
 const CLIENT_ID = process.env.SLACK_CLIENT_ID;
 const CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
@@ -42,12 +41,51 @@ cannot redirect back to team page until post to api/team.info? with a token (obt
 var bod;
 var apiBuilder = new Apibuilder();
 apiBuilder.get('/hello', function (request) {
-	return "Name is: " + request.queryString.name;
+	return "gName is: " + request.queryString.name;
 });//hello get;
 apiBuilder.post('/hellop', function (request) {
-	return "Name is: " + request.queryString.name;
+	return "pName is: " + request.queryString.name;
 });//hello post;
-apiBuilder.post('/auth', function(req){
+
+
+//test request inside and outside a function
+apiBuilder.get('/request', function (request) {
+    var e;
+    var r;
+    var b;
+//    return JSON.stringify(
+    Request.get('https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev/hello', { name: 'JIMBO' }, function (error, response, body) {
+        var loop = undefined;
+        if (!error && response.statusCode == 200) {
+            loop = "TOP1";
+        }
+        if (error){
+            loop = "TOP2";
+        }
+        e = error;
+        r = response;
+        b = body;
+        return " ERROR:: " + error + " RESPONSE:: " + response + " BODY:: " + body + " LOOP:: " + loop;
+    });
+        //) + " QUERYSTRING::" + JSON.stringify(request.queryString);
+      return " ERROR:: " + e + " RESPONSE:: " + r + " BODY:: " + b;
+});
+console.log("MAKING A REQUEST \n");
+//query within url worked, but not json
+Request.get('https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev/hello', { Form: { 'name': 'JIMBO' } }, function (error, response, body) {
+    var loop = undefined;
+    if (!error && response.statusCode == 200) {
+        loop = "BOTTOM1";
+    }
+    if (error){
+        loop = "BOTTOM2";
+    }
+    return " ERROR:: " + error + " RESPONSE:: " + response + " BODY:: " + body + " LOOP:: " + loop;
+
+});
+
+
+apiBuilder.get('/auth', function(req){
     var queryString = req.queryString; //ex: {code: 12}
     var code = req.queryString.code; //ex: 12
     var state = req.queryString.state;
@@ -82,13 +120,13 @@ apiBuilder.post('/auth', function(req){
         }); //team.info
     }); //oauth.access
     */ //---
-        apiBuilder.post('https://slack.com/api/team.info?code=123456', function (req){
+        apiBuilder.get('https://slack.com/api/team.info?code=123456', function (req){
             bod = req.queryString.code;
             
         });/**/
     
     //var teamSite = 'http://' + team + '.slack.com';
-    return "TestReturn:: \nQuery: " + JSON.stringify(query) + " \n" + "body:: " + bod + " response::" + team + " decoy: " + JSON.stringify(decoy) + " queryString: " + JSON.stringify(queryString);
+    return "TestReturn:: " + " Body:: " + bod + " Response::" + team + " Decoy: " + JSON.stringify(decoy);
     
     
     
