@@ -120,6 +120,7 @@ var helpList = {
     jobs: "Number of jobs run today between all servers.",
     health: "Overall percentage of uptime vs downtime of the server",
     ami: "Amazon Machine Image (AMI) status information.",
+    network: "Network information.",
     ec2info: "Generic EC2 instance information."
 };
 
@@ -133,6 +134,7 @@ var commandList = {
         ram: "There is 2.67GB of memory available. 29.33GB is currently occupied.",
         disk: "The storage bucket has 189GB of data.",
         jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
+        network: "No network found.",
         health: "Server health is currently very good, at 98%. " +
         "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
     },
@@ -143,6 +145,7 @@ var commandList = {
         ami: require('./ec2.js').getAMIStatus(),
         cpu: require('./cloudwatch').getEc2Cpu(),
         disk: require('./cloudwatch').getEc2Disk(),
+        network: require('./cloudwatch').getEc2Network(),
         ec2info: require('./ec2.js').getHardwareInfo()
     }
 };

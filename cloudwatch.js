@@ -92,6 +92,117 @@ module.exports = {
         });
     },
     
+// NETWORK
+    getEc2Network: function() {
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+
+            //Date + Time of request
+            var date = new Date(Date.now());
+            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+
+            ec2.instList().then((instanceList) => {
+
+                if (instanceList.length <= 0) {
+                    var errMsg = "No instances found.";
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addText(errMsg);
+                    resolve(slackMsg);
+
+                } else {
+
+                    instanceList.forEach(function (inst) {
+
+                        var id = inst.InstanceId;
+                        var name = ec2.getEC2Name(inst);
+
+                        var instParams = {
+                            EndTime: date,
+                            MetricName: 'NetworkIn',
+                            Namespace: 'AWS/EC2',
+                            Period: CPU_INTERVAL * 60,
+                            StartTime: date2,
+                            Dimensions: [{
+                                Name: 'InstanceId',
+                                Value: id
+                            },
+
+                            ],
+                            Statistics: [
+                                'Average'
+                            ]
+                        };
+
+                        cw.getMetricStatistics(instParams, function (err, data) {
+
+                            if (err) {
+                                reject(msg.errorMessage(JSON.stringify(err)));
+                            } else {
+                                var dataPoint = data.Datapoints[0];
+                                var text;
+                                slackMsg.addAttachment(msg.getAttachNum());
+
+                                instParams.MetricName = 'NetworkOut';
+
+                                cw.getMetricStatistics(instParams, function (err, data) {
+                                    if (err) {
+                                        reject(msg.errorMessage(JSON.stringify(err)));
+                                    } else {
+                                        var dataPointOut = data.Datapoints[0];
+                                        var text;
+                                        slackMsg.addAttachment(msg.getAttachNum());
+                                        if (!dataPoint) {
+                                            text = name + "(" + id + "):" +
+                                                " No Network data available.";
+                                            slackMsg.addColor(msg.SLACK_RED);
+                                        } else {
+                                            var networkIn = dataPoint.Average;
+                                            var networkOut = dataPointOut.Average;
+                                            var networkInType;
+                                            var networkOutType;
+                                            if(networkIn > 1000000) {
+                                                networkInType = ' mb.';
+                                                dataPoint = dataPoint/1000000;
+                                            }
+                                            else if(networkIn < 1000000 ){
+                                                networkInType = ' kb.';
+                                                dataPoint = dataPoint/1000;
+                                            }
+                                            else{
+                                                networkInType = ' bytes.';
+                                            }
+
+                                            if(networkOut > 1000000) {
+                                                networkOutType = ' mb.';
+                                                dataPointOut = dataPointOut/1000000;
+                                            }
+                                            else if(networkOut < 1000000 ){
+                                                networkOutType = ' kb.';
+                                                dataPointOut = dataPointOut/1000;
+                                            }
+                                            else{
+                                                networkOutType = ' bytes.';
+                                            }
+                                                text = name + "(" + id + "): " +
+                                                    "\nNetwork usage In: " + networkIn + networkInType +
+                                                    "\nNetwork usage Out: " + networkOut + networkOutType;
+
+                                            slackMsg.addColor(msg.SLACK_GREEN);
+                                        }
+
+                                        slackMsg.addText(text);
+                                        resolve(slackMsg);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
+        });
+    });
+    },
+
+
     //Disk
     getEc2Disk: function() {
         return new Promise(function (resolve, reject) {
