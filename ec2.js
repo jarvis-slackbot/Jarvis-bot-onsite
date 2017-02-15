@@ -56,11 +56,11 @@ module.exports = {
                     response += ".\n\n";
                     slackMsg.addText(response);
                 });
-            // Pass error message on to bot.
+                resolve(slackMsg);
+                // Pass error message on to bot.
             }).catch((err) => {
-                reject(err);
+                reject(msg.errorMessage(err));
             });
-            resolve(slackMsg);
         });
     },
 
@@ -130,8 +130,67 @@ module.exports = {
                 }
             // Pass error message on to bot.
             }).catch((err) => {
-                reject(err);
+                reject(msg.errorMessage(err));
             });
+        });
+    },
+
+    // Get available hardware information about each instance.
+    getHardwareInfo: function(){
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+            var colorCounter = 0;
+
+            module.exports.instList().then((instancesList) => {
+                instancesList.forEach(function (inst) {
+
+                    var text = "";
+                    var name = module.exports.getEC2Name(inst);
+                    var instanceId = inst.InstanceId;
+                    var imageId = inst.ImageId;
+                    var instanceType = inst.InstanceType;
+                    var zone = inst.Placement.AvailabilityZone;
+                    var monitor = msg.capitalizeFirstLetter(inst.Monitoring.State);
+                    var windows = inst.Platform === 'Windows' ? 'Yes' : 'No';
+                    var arch = inst.Architecture;
+                    var root = inst.RootDeviceName;
+                    var rootType = inst.RootDeviceType;
+                    var virt = inst.VirtualizationType;
+                    var hyper = inst.Hypervisor;
+                    var kernel = inst.KernelId ? inst.KernelId : "Not Available";
+                    var ramdisk = inst.RamdiskId ? inst.RamdiskId : "Not Available";
+                    var ebsOpt = inst.EbsOptimized ? "Enabled" : "Disabled";
+                    var ena = inst.EnaSupport ? "Enabled" : "Disabled";
+
+                    text +=
+                        'Instance ID: ' + instanceId + '\n' +
+                        'AMI ID: ' + imageId + '\n' +
+                        'Instance Type: ' + instanceType + '\n' +
+                        'Region: ' + zone + '\n' +
+                        'Detailed Monitoring: ' + monitor + '\n' +
+                        'Windows Platform: ' + windows + '\n' +
+                        'Architecture: ' + arch +'\n' +
+                        'Root Device Name: ' + root + '\n' +
+                        'Root Device Type: ' + rootType + '\n' +
+                        'Virtualization: ' + virt + '\n' +
+                        'Hypervisor: ' + hyper + '\n' +
+                        'Kernel ID: ' + kernel + '\n' +
+                        'RAMdisk ID: ' + ramdisk + '\n' +
+                        'EBS Optimization: ' + ebsOpt + '\n' +
+                        'ENA Support: ' + ena + '\n';
+
+                    // Give every other instance a different color
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addTitle(name);
+                    slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                    slackMsg.addText(text);
+                    colorCounter++;
+                });
+                resolve(slackMsg);
+            }).catch((err) => {
+                reject(msg.errorMessage(err));
+            });
+
         });
     },
 
