@@ -1,0 +1,29 @@
+{
+	"uri": {
+		"protocol": "https:",
+		"slashes": true,
+		"auth": null,
+		"host": "hk26t3ags3.execute-api.us-west-2.amazonaws.com",
+		"port": 443,
+		"hostname": "hk26t3ags3.execute-api.us-west-2.amazonaws.com",
+		"hash": null,
+		"search": null,
+		"query": null,
+		"pathname": "/dev/hello&name=jimmmy",
+		"path": "/dev/hello&name=jimmmy",
+		"href": "https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev/hello&name=jimmmy"
+	},
+	"method": "GET",
+	"headers": {
+		"host": "hk26t3ags3.execute-api.us-west-2.amazonaws.com",
+		"content-type": "application/x-www-form-urlencoded",
+		"content-length": 10
+	}
+}
+QUERYSTRING::{
+	"name": "jimmmy"
+}
+/*
+inner uri and outside can be part of node's options json
+can create a wrapper for request to automate an options object.
+*/

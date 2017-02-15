@@ -4,8 +4,6 @@ require('./setEnvironments.js');
 const Apibuilder = require('claudia-api-builder');
 const Qs = require('querystring');
 const Http = require('http');
-const Request = require('request');
-
 
 const LAMBDA_URL = "https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev";
 
@@ -47,68 +45,118 @@ apiBuilder.post('/hellop', function (request) {
 	return "pName is: " + request.queryString.name;
 });//hello post;
 
-//test passing data through promises
-apiBuilder.get('/hellogp', function (request) {
-    var passThru = request.queryString;    
-	return new Promise((resolve, reject) => {
-        if(1){
-            resolve("passed again!: " + passThru.name);
-        }
-        else{
-            reject(" ::Rejected:: ");
-        }
-    }).then((resolve, reject) => {
-        if(1){
-            resolve("GOT INTO THEN: " + passThru.lname);
-        }
-        else {
-            reject(" ::Rejected2:: ");
-        }
-    });
+
+
+var http = require('http');
+
+var yupper = function(){
+    /**/
+    var options = {
+      host: 'www.google.com',
+      path: 'index.html'
+    };
+    
+    var result = "--";
+    var callback = function (response) {
+        console.log(`Got response: ${response.statusCode}`);
+        // consume response body
+        response.resume();
+        response.on('error', (e) => {
+            console.log(`Got error: ${e.message}`)
+        })
+
+
+
+        var str = '';
+        //another chunk of data has been recieved, so append it to `str`
+        response.on('data', function (chunk) {
+            str += chunk;
+        });
+
+        //the whole response has been recieved, so we just print it out here
+        response.on('end', function () {
+            console.log(str + "SUP!");
+            result = str; //Trying to catch for outter scope!
+        });
+        //console.log(response);
+        //return str + "\n\n\n" + result;
+        
+    }
+    http.request(options, callback).end();
+    return " RES:: " + result;
+}
+
+apiBuilder.get('/request2', function(request){
+    
+    return yupper();
 });
 
 
 
+//test apiBuilder request inside and outside a function
+apiBuilder.get('/request', function (request) {
+
+    /**/
+
+
+    /**/
+    //Convenience method; same as http.request() except method is GET and auto Calls req.end().
+    http.get('http://www.google.com/index.html', (res) => {
+      console.log(`Got response: ${res.statusCode}`);
+      // consume response body
+      res.resume();
+    }).on('error', (e) => {
+      console.log(`Got error: ${e.message}`);
+    });
+    /**/
+    return "dam";
+
+
+    
+    
+    
+    //'https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/dev/hello'
+
+});
+console.log("PASSING BY. \n");
 
 
 apiBuilder.get('/auth', function(req){
     var queryString = req.queryString; //ex: {code: 12}
     var code = req.queryString.code; //ex: 12
     var state = req.queryString.state;
-    var query = {
+    var query = {form: {
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
         code: code
         //redirect_uri: slack-team.slack.com
         //state: state
-        //callback: /auth
-    };/**/
-//    query = JSON.stringify(query);
-    query = Qs.stringify(query);
-    
-    
-    
+    }};/**/
+    //query = Qs.stringify(query); //delete
+    var decoy = "CHUM";
+    var team = undefined;
     //SLACK_API_OAUTH_ACCESS, query; get token JSON.parse(body).access_token
     //https://slack.com/api/team.info'; token: token; team = JSON.parse(body).team.domain; -->http://' +team+ '.slack.com 
+/*
+apiBuilder.get('https://slack.com/api/team.info?code=123456', function (req){
+            bod = req.queryString.code;
+            
+        });/**/
+    
     //var teamSite = 'http://' + team + '.slack.com';
-
+    return "TestReturn:: " + " Body:: " + bod + " Response::" + team + " Decoy: " + JSON.stringify(decoy);
     
-
-    Request.post({url: SLACK_OAUTH_AUTHORIZE, oauth: query}, function(e, r, body){
-        var data = Qs.parse(body);
-        
-        
-        
-    });
-//    request.post({url:'http://service.com/upload', form: {key:'value'}}, function(err,httpResponse,body){ /* ... */ })
     
-    return 
+    
+//    return ;
+    
 }, 
     {
         success: {code: 200}, 
         error: {code: 500}
     }
 );
+
 
 
 
