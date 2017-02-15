@@ -148,47 +148,48 @@ module.exports = {
                                         "Read Operations: " + diskVal + " ops/s.\n";
                                 }
                                 
-                            }
-                        });
-                        
-                         var writeParams = {
-                            EndTime: date,
-                            MetricName: 'DiskWriteOps',
-                            Namespace: 'AWS/EC2',
-                            Period: CPU_INTERVAL * 60,
-                            StartTime: date2,
-                            Dimensions: [{
-                                    Name: 'InstanceId',
-                                    Value: id
-                                },
+                                var writeParams = {
+                                    EndTime: date,
+                                    MetricName: 'DiskWriteOps',
+                                    Namespace: 'AWS/EC2',
+                                    Period: CPU_INTERVAL * 60,
+                                    StartTime: date2,
+                                    Dimensions: [{
+                                        Name: 'InstanceId',
+                                        Value: id
+                                    },
 
-                            ],
-                            Statistics: [
-                                'Average'
-                            ],
-                        };
+                                    ],
+                                    Statistics: [
+                                        'Average'
+                                    ],
+                                };
                         
-                        cw.getMetricStatistics(writeParams, function(err, data) {
+                                cw.getMetricStatistics(writeParams, function(err, data) {
                             
-                            if (err) {
-                                reject(msg.errorMessage(JSON.stringify(err)));
-                            } else {
-                                var dataPoint = data.Datapoints[0];
-                                slackMsg.addAttachment(msg.getAttachNum());
-
-                                if (!dataPoint) {
-                                    text = name + "(" + id + "):" +
-                                        " No Disk data found.";
-                                    slackMsg.addColor(msg.SLACK_RED);
+                                if (err) {
+                                    reject(msg.errorMessage(JSON.stringify(err)));
                                 } else {
-                                    var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
-                                    text = text + "Write Operations: " + diskVal + " ops/s.\n";
-                                    slackMsg.addColor(msg.SLACK_GREEN);
-                                }    
+                                    var dataPoint = data.Datapoints[0];
+                                    slackMsg.addAttachment(msg.getAttachNum());
+
+                                    if (!dataPoint) {
+                                        text = name + "(" + id + "):" +
+                                            " No Disk data found.";
+                                        slackMsg.addColor(msg.SLACK_RED);
+                                    } else {
+                                        var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
+                                        text = text + "Write Operations: " + diskVal + " ops/s.\n";
+                                        slackMsg.addColor(msg.SLACK_GREEN);
+                                    }    
                                 
-                                slackMsg.addText(text);
+                                    slackMsg.addText(text);
+                                    }
+                                });
+                                
                             }
                         });
+                        
                     });
                     
                     resolve(slackMsg);
