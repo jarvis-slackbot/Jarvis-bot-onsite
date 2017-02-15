@@ -90,5 +90,77 @@ module.exports = {
             });
 
         });
+    },
+    
+    //Disk
+    getEc2Disk: function() {
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+
+            //Date + Time of request
+            var date = new Date(Date.now());
+            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+
+            ec2.instList().then((instanceList) => {
+    
+                if (instanceList.length <= 0) {
+                    var errMsg = "No instances found.";
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addText(errMsg);
+                    resolve(slackMsg);
+    
+                } else {
+                    
+                    instanceList.forEach(function (inst) {
+                        
+                        var id = inst.InstanceId;
+                        var name = ec2.getEC2Name(inst);
+
+                        var instParams = {
+                            EndTime: date,
+                            MetricName: 'DiskReadBytes',
+                            Namespace: 'AWS/EC2',
+                            Period: CPU_INTERVAL * 60,
+                            StartTime: date2,
+                            Dimensions: [{
+                                    Name: 'InstanceId',
+                                    Value: id
+                                },
+
+                            ],
+                            Statistics: [
+                                'Maximum'
+                            ]
+                        };
+
+                        cw.getMetricStatistics(instParams, function(err, data) {
+
+                            if (err) {
+                                reject(msg.errorMessage(JSON.stringify(err)));
+                            } else {
+                                var dataPoint = data.Datapoints[0];
+                                var text;
+                                slackMsg.addAttachment(msg.getAttachNum());
+
+                                if (!dataPoint) {
+                                    text = name + "(" + id + "):" +
+                                        " No Disk Read data available.";
+                                    slackMsg.addColor(msg.SLACK_RED);
+                                } else {
+                                    var diskVal = dataPoint.Maximum / 1000000000;
+                                    text = name + "(" + id + "): " +
+                                        " this storage bucket has " + diskVal + "GB of data in the last" +
+                                        CPU_INTERVAL + " minutes.";
+                                    slackMsg.addColor(msg.SLACK_GREEN);
+                                }
+
+                                slackMsg.addText(text);
+                            }
+                        });
+                    });
+                    resolve(slackMsg);
+                }
+            });
+        });
     }
 };

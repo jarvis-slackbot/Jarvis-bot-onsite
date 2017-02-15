@@ -14,6 +14,8 @@ module.exports = {
     SLACK_GREEN: 'good',
     SLACK_YELLOW: 'warning',
     SLACK_RED: 'danger',
+    SLACK_LOGO_BLUE: '#70CADB',
+    SLACK_LOGO_PURPLE: '#443642',
 
     // Decide what kind of question the user asked
     // Or if it's a statement/command
@@ -49,6 +51,11 @@ module.exports = {
     errorMessage: function(text) {
         var str = 'Error: \n' + text.toString();
         return new SlackTemplate().addAttachment("err").addColor(this.SLACK_RED).addText(str);
+    },
+
+    //Capitalize first letter
+    capitalizeFirstLetter: function(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
  };
@@ -112,7 +119,8 @@ var helpList = {
     disk: "Amount of data stored on server bucket.",
     jobs: "Number of jobs run today between all servers.",
     health: "Overall percentage of uptime vs downtime of the server",
-    ami: "Amazon Machine Image (AMI) status information."
+    ami: "Amazon Machine Image (AMI) status information.",
+    ec2info: "Generic EC2 instance information."
 };
 
 // Response commandList
@@ -133,6 +141,8 @@ var commandList = {
     AWSCommands:{
         status: require('./ec2.js').getStatus(),
         ami: require('./ec2.js').getAMIStatus(),
-        cpu: require('./cloudwatch').getEc2Cpu()
+        cpu: require('./cloudwatch').getEc2Cpu(),
+        disk: require('./cloudwatch').getEc2Disk(),
+        ec2info: require('./ec2.js').getHardwareInfo()
     }
 };
