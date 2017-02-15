@@ -4,7 +4,7 @@ claudia.json
 trash
 *.env
 env/
-
+practice-saul/
 
 package.json
 *.swp
