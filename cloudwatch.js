@@ -162,11 +162,11 @@ module.exports = {
                                             var networkOutType;
                                             if(networkIn > 1000000) {
                                                 networkInType = ' mb.';
-                                                dataPoint = dataPoint/1000000;
+                                                networkIn = networkIn/1000000;
                                             }
-                                            else if(networkIn < 1000000 ){
+                                            else if(networkIn > 1000 ){
                                                 networkInType = ' kb.';
-                                                dataPoint = dataPoint/1000;
+                                                networkIn = networkIn/1000;
                                             }
                                             else{
                                                 networkInType = ' bytes.';
@@ -174,11 +174,11 @@ module.exports = {
 
                                             if(networkOut > 1000000) {
                                                 networkOutType = ' mb.';
-                                                dataPointOut = dataPointOut/1000000;
+                                                networkOut = networkOut/1000000;
                                             }
-                                            else if(networkOut < 1000000 ){
+                                            else if(networkOut > 1000 ){
                                                 networkOutType = ' kb.';
-                                                dataPointOut = dataPointOut/1000;
+                                                networkOut = networkOut/1000;
                                             }
                                             else{
                                                 networkOutType = ' bytes.';
@@ -191,12 +191,12 @@ module.exports = {
                                         }
 
                                         slackMsg.addText(text);
-                                        resolve(slackMsg);
                                     }
                                 });
                             }
                         });
                     });
+                    resolve(slackMsg);
                 }
         });
     });
