@@ -111,14 +111,16 @@ module.exports = {
     
                 } else {
                     
+                
                     instanceList.forEach(function (inst) {
                         
                         var id = inst.InstanceId;
                         var name = ec2.getEC2Name(inst);
+                        var text = "";
 
-                        var instParams = {
+                        var readParams = {
                             EndTime: date,
-                            MetricName: 'DiskReadBytes',
+                            MetricName: 'DiskReadOps',
                             Namespace: 'AWS/EC2',
                             Period: CPU_INTERVAL * 60,
                             StartTime: date2,
@@ -129,35 +131,66 @@ module.exports = {
 
                             ],
                             Statistics: [
-                                'Maximum'
-                            ]
+                                'Average'
+                            ],
                         };
 
-                        cw.getMetricStatistics(instParams, function(err, data) {
+                        cw.getMetricStatistics(readParams, function(err, data) {
 
                             if (err) {
                                 reject(msg.errorMessage(JSON.stringify(err)));
                             } else {
                                 var dataPoint = data.Datapoints[0];
-                                var text;
+                                if (dataPoint) {
+                                    var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
+                                    text = name + "(" + id + "):\n" +
+                                        "Operation Count in last 5 minutes:\n"+ 
+                                        "Read Operations: " + diskVal + " ops/s.\n";
+                                }
+                                
+                            }
+                        });
+                        
+                         var writeParams = {
+                            EndTime: date,
+                            MetricName: 'DiskWriteOps',
+                            Namespace: 'AWS/EC2',
+                            Period: CPU_INTERVAL * 60,
+                            StartTime: date2,
+                            Dimensions: [{
+                                    Name: 'InstanceId',
+                                    Value: id
+                                },
+
+                            ],
+                            Statistics: [
+                                'Average'
+                            ],
+                        };
+                        
+                        cw.getMetricStatistics(writeParams, function(err, data) {
+                            
+                            if (err) {
+                                reject(msg.errorMessage(JSON.stringify(err)));
+                            } else {
+                                var dataPoint = data.Datapoints[0];
                                 slackMsg.addAttachment(msg.getAttachNum());
 
                                 if (!dataPoint) {
                                     text = name + "(" + id + "):" +
-                                        " No Disk Read data available.";
+                                        " No Disk data found.";
                                     slackMsg.addColor(msg.SLACK_RED);
                                 } else {
-                                    var diskVal = dataPoint.Maximum / 1000000000;
-                                    text = name + "(" + id + "): " +
-                                        " this storage bucket has " + diskVal + "GB of data in the last" +
-                                        CPU_INTERVAL + " minutes.";
+                                    var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
+                                    text = text + "Write Operations: " + diskVal + " ops/s.\n";
                                     slackMsg.addColor(msg.SLACK_GREEN);
-                                }
-
+                                }    
+                                
                                 slackMsg.addText(text);
                             }
                         });
                     });
+                    
                     resolve(slackMsg);
                 }
             });
