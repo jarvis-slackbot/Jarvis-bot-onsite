@@ -1,5 +1,5 @@
 'use strict';
-require('./auth.js');
+require('./setEnvironments.js');
 const aws = require('aws-sdk');
 const promiseDelay = require('promise-delay');
 var botBuilder = require('claudia-bot-builder');
