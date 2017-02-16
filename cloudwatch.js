@@ -92,6 +92,117 @@ module.exports = {
         });
     },
     
+// NETWORK
+    getEc2Network: function() {
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+
+            //Date + Time of request
+            var date = new Date(Date.now());
+            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+
+            ec2.instList().then((instanceList) => {
+
+                if (instanceList.length <= 0) {
+                    var errMsg = "No instances found.";
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addText(errMsg);
+                    resolve(slackMsg);
+
+                } else {
+
+                    instanceList.forEach(function (inst) {
+
+                        var id = inst.InstanceId;
+                        var name = ec2.getEC2Name(inst);
+
+                        var instParams = {
+                            EndTime: date,
+                            MetricName: 'NetworkIn',
+                            Namespace: 'AWS/EC2',
+                            Period: CPU_INTERVAL * 60,
+                            StartTime: date2,
+                            Dimensions: [{
+                                Name: 'InstanceId',
+                                Value: id
+                            },
+
+                            ],
+                            Statistics: [
+                                'Average'
+                            ]
+                        };
+
+                        cw.getMetricStatistics(instParams, function (err, data) {
+
+                            if (err) {
+                                reject(msg.errorMessage(JSON.stringify(err)));
+                            } else {
+                                var dataPoint = data.Datapoints[0];
+                                var text;
+                                slackMsg.addAttachment(msg.getAttachNum());
+
+                                instParams.MetricName = 'NetworkOut';
+
+                                cw.getMetricStatistics(instParams, function (err, data) {
+                                    if (err) {
+                                        reject(msg.errorMessage(JSON.stringify(err)));
+                                    } else {
+                                        var dataPointOut = data.Datapoints[0];
+                                        var text;
+                                        slackMsg.addAttachment(msg.getAttachNum());
+                                        if (!dataPoint) {
+                                            text = name + "(" + id + "):" +
+                                                " No Network data available.";
+                                            slackMsg.addColor(msg.SLACK_RED);
+                                        } else {
+                                            var networkIn = dataPoint.Average;
+                                            var networkOut = dataPointOut.Average;
+                                            var networkInType;
+                                            var networkOutType;
+                                            if(networkIn > 1000000) {
+                                                networkInType = ' mb.';
+                                                networkIn = networkIn/1000000;
+                                            }
+                                            else if(networkIn > 1000 ){
+                                                networkInType = ' kb.';
+                                                networkIn = networkIn/1000;
+                                            }
+                                            else{
+                                                networkInType = ' bytes.';
+                                            }
+
+                                            if(networkOut > 1000000) {
+                                                networkOutType = ' mb.';
+                                                networkOut = networkOut/1000000;
+                                            }
+                                            else if(networkOut > 1000 ){
+                                                networkOutType = ' kb.';
+                                                networkOut = networkOut/1000;
+                                            }
+                                            else{
+                                                networkOutType = ' bytes.';
+                                            }
+                                                text = name + "(" + id + "): " +
+                                                    "\nNetwork usage In: " + networkIn + networkInType +
+                                                    "\nNetwork usage Out: " + networkOut + networkOutType;
+
+                                            slackMsg.addColor(msg.SLACK_GREEN);
+                                        }
+
+                                        slackMsg.addText(text);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                    resolve(slackMsg);
+                }
+        });
+    });
+    },
+
+
     //Disk
     getEc2Disk: function() {
         return new Promise(function (resolve, reject) {
@@ -111,14 +222,16 @@ module.exports = {
     
                 } else {
                     
+                
                     instanceList.forEach(function (inst) {
                         
                         var id = inst.InstanceId;
                         var name = ec2.getEC2Name(inst);
+                        var text = "";
 
-                        var instParams = {
+                        var readParams = {
                             EndTime: date,
-                            MetricName: 'DiskReadBytes',
+                            MetricName: 'DiskReadOps',
                             Namespace: 'AWS/EC2',
                             Period: CPU_INTERVAL * 60,
                             StartTime: date2,
@@ -129,35 +242,67 @@ module.exports = {
 
                             ],
                             Statistics: [
-                                'Maximum'
-                            ]
+                                'Average'
+                            ],
                         };
 
-                        cw.getMetricStatistics(instParams, function(err, data) {
+                        cw.getMetricStatistics(readParams, function(err, data) {
 
                             if (err) {
                                 reject(msg.errorMessage(JSON.stringify(err)));
                             } else {
                                 var dataPoint = data.Datapoints[0];
-                                var text;
-                                slackMsg.addAttachment(msg.getAttachNum());
-
-                                if (!dataPoint) {
-                                    text = name + "(" + id + "):" +
-                                        " No Disk Read data available.";
-                                    slackMsg.addColor(msg.SLACK_RED);
-                                } else {
-                                    var diskVal = dataPoint.Maximum / 1000000000;
-                                    text = name + "(" + id + "): " +
-                                        " this storage bucket has " + diskVal + "GB of data in the last" +
-                                        CPU_INTERVAL + " minutes.";
-                                    slackMsg.addColor(msg.SLACK_GREEN);
+                                if (dataPoint) {
+                                    var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
+                                    text = name + "(" + id + "):\n" +
+                                        "Operation Count in last 5 minutes:\n"+ 
+                                        "Read Operations: " + diskVal + " ops/s.\n";
                                 }
+                                
+                                var writeParams = {
+                                    EndTime: date,
+                                    MetricName: 'DiskWriteOps',
+                                    Namespace: 'AWS/EC2',
+                                    Period: CPU_INTERVAL * 60,
+                                    StartTime: date2,
+                                    Dimensions: [{
+                                        Name: 'InstanceId',
+                                        Value: id
+                                    },
 
-                                slackMsg.addText(text);
+                                    ],
+                                    Statistics: [
+                                        'Average'
+                                    ],
+                                };
+                        
+                                cw.getMetricStatistics(writeParams, function(err, data) {
+                            
+                                if (err) {
+                                    reject(msg.errorMessage(JSON.stringify(err)));
+                                } else {
+                                    var dataPoint = data.Datapoints[0];
+                                    slackMsg.addAttachment(msg.getAttachNum());
+
+                                    if (!dataPoint) {
+                                        text = name + "(" + id + "):" +
+                                            " No Disk data found.";
+                                        slackMsg.addColor(msg.SLACK_RED);
+                                    } else {
+                                        var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
+                                        text = text + "Write Operations: " + diskVal + " ops/s.\n";
+                                        slackMsg.addColor(msg.SLACK_GREEN);
+                                    }    
+                                
+                                    slackMsg.addText(text);
+                                    }
+                                });
+                                
                             }
                         });
+                        
                     });
+                    
                     resolve(slackMsg);
                 }
             });
