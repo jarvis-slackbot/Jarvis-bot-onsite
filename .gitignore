@@ -2,6 +2,9 @@
 claudia.json
 .ignore.save
 trash
+*.env
+env/
+practice-saul/
 
 package.json
 *.swp

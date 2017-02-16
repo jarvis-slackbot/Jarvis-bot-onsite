@@ -1,0 +1,52 @@
+{
+  "name": "practice-bot-saul",
+  "version": "1.0.0",
+  "description": "Practice bot for saul.",
+  "main": "api-builder.js",
+  "dependencies": {
+    "aws-sdk": "^2.7.10",
+    "bluebird": "^3.4.7",
+    "body-parser": "^1.15.2",
+    "claudia": "^2.2.0",
+    "claudia-api-builder": "^2.2.0",
+    "claudia-bot-builder": "^2.2.0",
+    "co": "^4.6.0",
+    "co-request": "^1.0.0",
+    "cookie-parser": "^1.4.3",
+    "ejs": "^2.5.2",
+    "express": "^4.14.0",
+    "express-session": "^1.14.1",
+    "huh": "^1.1.4",
+    "jade": "^1.11.0",
+    "jslint": "^0.10.3",
+    "node-dev": "^3.1.3",
+    "promise-delay": "^2.1.0",
+    "pug": "^2.0.0-beta6",
+    "superb": "^1.3.0",
+    "sync-request": "^3.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "claudia:create": "claudia create --region us-west-2 --api-module bot --configure-slack-slash-command", 
+    "cc": "claudia create --region us-west-2 --api-module",
+    "ccsa": "claudia create --region us-west-2 --configure-slack-slash-app --api-module",
+    "ccss": "claudia create --region us-west-2 --configure-slack-slash-command --api-module",
+    "sa": "--configure-slack-slash-app",
+    "ss": "--configure-slack-slash-command"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jarvis-slackbot/Jarvis-bot_onsite.git"
+  },
+  "keywords": [
+    "jarvis",
+    "slack",
+    "bot"
+  ],
+  "author": "Jarvis Slack Onsite Team",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/jarvis-slackbot/Jarvis-bot_onsite/issues"
+  },
+  "homepage": "https://github.com/jarvis-slackbot/Jarvis-bot_onsite#readme"
+}

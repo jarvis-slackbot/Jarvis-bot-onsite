@@ -1,4 +1,5 @@
 'use strict';
+require('./setEnvironments.js');
 const aws = require('aws-sdk');
 const promiseDelay = require('promise-delay');
 var botBuilder = require('claudia-bot-builder');
@@ -68,3 +69,7 @@ api.intercept((event) => {
 
 
 module.exports = api;
+
+
+//module.exports = auth.api;
+

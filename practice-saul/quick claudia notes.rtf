@@ -1,0 +1,448 @@
+{\rtf1}
+
+claudia is strait forward in purpose.
+General cmds
+claudia
+    create
+    update
+    test-lambda
+    destroy
+    *generate-serverless-express-proxy (this one is unique)
+options
+    --help
+    --version
+    -v & -quiet
+    --profile (sets aws credentials profile)
+IN-Depth
+create --
+    region, handler (main.router), api-module, name (lambda name), *version (version alias), **source(default: '.'), **config (default: claudia.json), policies (ex: policies/*.xml), role, description, etc.
+update are noted by '*' above.
+destroy noted by '**' above. (all are also updated)
+test-lambda --
+    event (filePath with JSON test event), version, source, config
+generate-serverless-express-proxy --
+    source, 
+    express-module: main module that exports express app
+        ex: if app defined/exported in express-server.js, enter express-server
+    proxy-module-name: 
+        [OPTIONAL] new proxy module/file to be made. 
+        To make file called web-lambda.js, enter web-lambda
+            defaults to: lambda
+    aws-serverless-express-module: 
+        [OPTIONAL] NPM module name/path of serverless-express module you want to install
+           defaults to: aws-serverless-express
+POSSIBLE SCRIPTS
+claudia create --region us-west-2 --name staticName --config seperateStaticConfig.json --role staticRolePerhapsShared --description infoNotFromPackageJson --api-module botFile
+USED TO RE-CREATE MY BOT
+    claudia create --region us-west-2 --name jarvis-bot-saul --role jarvis-bot-executor --description "Claudia bot for Jarvis (Saul)." --configure-slack-slash-app --api-module bot
+    claudia create --region us-west-2 --name jarvis-bot-saul --role jarvis-bot-executor --description "Claudia bot for Jarvis (Saul)." --configure-slack-slash-app --version dev --api-module bot
+    If IAM already exists error occurs, just put nothing
+        can use to create a script for branching dev
+
+
+
+
+
+
+
+
+
+
+AFTER CREATING BOT BUILDER
+    *no full access until token provided (given in config steps)
+    If no configuration,
+        need to configure for something (FB, slack, etc.)
+        then you will have access token
+
+
+
+most scripts already written in package.json.
+    claudia create + other custom options
+        npm run cc File
+
+From General Claudia.json
+    name is lambda name
+        taken from package.name
+    role is a a role with set of permisions lambda takes
+        taken from package.name + "-executer"
+    module
+        file that is pushed to lambda
+        
+        
+        
+From Claudia.json, After API-builder 
+{
+  "lambda": {
+    "role": "practice-bot-executor",
+    "name": "practice-bot-saul",
+    "region": "us-west-2"
+  },
+  "api": {
+    "id": "a85tgnnahh",
+    "module": "api-builder"
+  }
+}
+
+
+
+From Claudia.json, After bot-builder
+{
+  "lambda": {
+    "role": "practice-bot-saul-executor",
+    "name": "practice-bot-saul",
+    "region": "us-west-2"
+  },
+  "api": {
+    "id": "7koyfxnimd",
+    "module": "bot-builder",
+    "url": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest",
+    "deploy": {
+      "facebook": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/facebook",
+      "slackSlashCommand": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/slack/slash-command",
+      "telegram": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/telegram",
+      "skype": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/skype",
+      "twilio": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/twilio",
+      "kik": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/kik",
+      "groupme": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/groupme",
+      "line": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/line",
+      "viber": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/viber",
+      "alexa": "https://7koyfxnimd.execute-api.us-west-2.amazonaws.com/latest/alexa"
+    }
+  }
+}
+
+
+
+
+====DOCUMENTATION
+
+----------- API-BBUILDER -----------
+
+https://claudiajs.com/documentation.html
+Covered already:
+    cmd line args covered (important ones at least), 
+    packing with create, version packing not covered,
+new ApiBuilder('AWS_PROXY'); 
+api docs covered...
+    api.get('/', function (request) {}, {});
+        0.setup; .get, .post etc.
+        a. request object; ..., req.context, etc.
+        1. response codes/contentType
+            {
+            success: { contentType: 'text/plain' }, 
+            error: {code: 403}, 
+            headers: {hardcoded},
+            apiKeyRequired: true
+            authorizationType: 'AWS_IAM'
+            invokeWithCredentials: //true, arn:aws:iam... //override exec-ing creds
+            }
+            contentType covered more in site
+Dynamic responses
+    return new ApiResponse(body, headers, httpCode)
+Cross Origin resource sharing headers
+    api.corsOrigin(false)
+    api.corsOrigin('https://www.claudiajs.com')
+    api.corsHeaders();
+    api.corsMaxAge();
+Not sure about these:
+    Configuring stage variables using post-deployment steps
+    Adding generic post-deploy steps
+custom authorizors (see docs)
+    api.registerAuthorizer(name, options);
+Intercept requests
+    api.intercept(function (event) { ... });
+        notice the format, look up javascript event topic
+
+
+REQUEST OBJECT
+https://tinyurl.com/claudiaDocs-api-md-the-request
+    request object is the parameter passed in a get, post, etc. of an api. builder.
+      ex: new ApiBuilder().get('/', function(request){})
+queryString (usually coded with dir:id)
+env (usefull for access keys)<<
+body (format to output)
+...there's more, and usefull ones, but I don't know too much.
+
+----------- BOT-BUILDER -----------
+unlike apibuilder where you pass 0-arg object
+    ex: export api (ApiBuilder()); api.get;
+you pass 1to2-arg object
+
+```module.exports = 
+botBuilder(function (message, originalApiRequest) {
+  return `I got ${message.text}`;
+}, { platforms: ['facebook', 'twilio'] });```
+
+1st-arg (function)
+    1. message
+        text: string
+            text of message
+        type: string
+            endpoint receiving `a platform`
+        originalRequest: object
+            original message in bot format
+        sender: string
+            sender's id
+        postback: boolean
+            undefined for new messages, true for replies
+    2. originalApiRequest =is= apiBuilder's request object
+2nd-arg (object)
+    Include, to not slow down from many platforms.
+    ex: 
+    { platforms: ['facebook', 'twilio'] }
+    platform list: 
+        facebook, slackSlashCommand, telegram, skype, twilio, kik, groupme, viber, alexa, line
+
+Reply Formats
+
+can complex reply (buttons, attachments etc.) with objects
+request.type: bot engine used to send request
+    https://github.com/claudiajs/claudia-bot-builder/blob/master/docs/SLACK_MESSAGE_MESSAGE_BUILDER.md
+    https://github.com/claudiajs/claudia-bot-builder/blob/master/docs/SLACK_DELAYED_REPLY_BUILDER.md
+
+Synchronous vs A-Synchronous
+    Synchronous
+        just return
+    A-Synchronous
+        -return a 'Promise' from callback and resolve later with string/object
+        -make sure you configure lambda function to not end early (default: lambda runs 3 secs)
+            http://docs.aws.amazon.com/cli/latest/reference/lambda/update-function-configuration.html
+Bot Configuration (platform configuration)
+    stores access keys/tokens into API Gateway stage vars
+    can confuure in `claudia create``claudia update`
+    *Suggest to add 2nd-arg platform to speed up
+
+
+====SLACK MESSAGE BUILDER
+https://github.com/claudiajs/claudia-bot-builder/blob/master/docs/SLACK_MESSAGE_MESSAGE_BUILDER.md
+    Make complex replies with buttons, attachments, etc.
+const slackTemplate = 
+    require('claudia-bot-builder').slackTemplate;
+More info on slack (limits and guidelines included)
+    https://api.slack.com/docs/message-attachments
+
+--- delay/multiple reply ---
+https://github.com/claudiajs/claudia-bot-builder/blob/master/docs/SLACK_DELAYED_REPLY_BUILDER.md
+
+
+
+
+
+
+//need to cover Promises a bit. most is strait forward.
+
+//should note how set-up bot
+(ref links below and bring notes from js files here).
+ I read and went through slack and claudia steps
+here is a link I think is similar to what I did:
+    http://www.marcusoft.net/2016/06/claudia-bot-builder.html
+Here are my links:
+    https://api.slack.com/slack-apps#what-it-does
+    https://api.slack.com/bot-users
+    https://api.slack.com/slash-commands#what_are_commands //*at bootom
+    Did the links I have to get token, client id, client key, verif token. 
+    Note: client id, key, and token obtained after making app. App setup after connecting slash command. 
+
+
+
+SUMMARY, SELF NOTES, LEARNED OVERALL
+Claudia creates role and lambda function using package.name
+roles are generic so after creation, could just place all lambdas into one role.
+When creating claudia bot with slash config, it asks for client id, client secret, and verification token wich can all be found in slack app settings. 
+Not Yet tested enough, but slack app verification not work since it is looking for slash command token. (this can be due to slash command being made separately instead of through the app).
+slash commands have their own slashes and tokens. 
+    ex: /jarvis is one, /practice is another
+Because each slash have their own tokens, every lambda may require their own. Unless token is passed when certain function called in lambda function.
+*Point is.... need correct token with each slash command.
+
+Need collab permisions to app.
+to:
+    finish oauth, know 
+lastly, everytime re-create claudia bot url changes, can avoid url changing by using update. (not sure, but I think in some cases, the url changes)
+
+*should list common claudia changes into scripts
+
+====== SCRATCH CODE ==============
+
+dry: https://slack.com/oauth/pick?scope=incoming-webhook,commands,bot,reactions:read,&client_id=81979454913.97303513202
+
+With html codes: https://slack.com/oauth/pick?scope=incoming-webhook%2Ccommands%2Cbot%2Creactions:read%2C&client_id=81979454913.97303513202
+
+
+Note: incoming-webhook scope 
+    allow to request permission to post into Slack team. 
+    no read privileges, for send posts/notifications 
+    *cannot be added alongside: read, post, and client scopes.
+
+
+--- NOTES FROM OATH and WEB API ---------------------
+SCOPE
+3 categories
+1. 3 classes of action 
+	1. read
+	2. write
+	3. history
+2. Slack App
+	1. incoming-webhook
+	2. commands
+	3. bot
+3. Special scopes
+	1. identify
+	2. client
+	3. admin
+Working with Scopes
+	request scope using space/comma sepatated list
+	https://slack.com/oauth/authorize?
+		client_id=...&
+		scope=team%3Aread+users%3Aread
+
+	
+	
+	WEB / SLACK API 
+https://slack.com/api/channels.history?token=xoxp-19211852100-19217624273-19947439431-1c998f89c6&channel=C0K6DTNJW&pretty=1
+Can check HTTP headers to see what OAuth scopes you have, and what API methods accepts
+	curl https://slack.com/api/<SCOPE>?token=<> -I
+		X-OAuth-Scopes: files:read, chat:write:bot //scopes your token has authorized
+		X-Accepted-OAuth-Scopes: files:read //lists scopes that the action checks for
+	*certain scopes cannot be combined
+
+
+How to OAuth
+1. authorization request
+https://slack.com/oauth/authorize?
+    -client_id=(use app's id)
+    -scope=(what app will use, command, bot, incomming-hook, admin, etc.)
+    -redirect_uri=(if given; valid if sub of url provided in app auth settings)
+Once Authorized, redirects...
+    with ?code=(SomeCodeValue)
+        valid for 10min
+2. Obtain Access Token (POST (safer than GET))
+    Use the Method
+https://slack.com/api/oauth.access?
+    client_id=81979454913.97303513202 (app id)
+    client_secret=(secretInfo)
+    code=(provided after 'oauth/authorize')
+    redirect_uri (option)
+Output:
+    {
+    "access_token": "(given)",
+    "scope": "something"
+    }
+3. Re-Direct back to slack team (GET)(unless senesitive info)
+    
+4. Use API
+    oauth never expire. Use auth.revoke
+    now can use /api/method?token=(given)
+z.
+    when redirecting, can use javascript at url to get request info from the above url's (auth and token)
+
+---- /END --Oath and Web API --------------------
+
+
+
+
+
+========== From Claudia Practices ==============
+----START HERE
+REPLY IN A SPECIFIC FORMAT (PROXY LAMBDA FUNC)
+exports.handler = function (event, context) {
+	'use strict';
+	context.succeed({
+		statusCode: 200,
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(event)
+	});
+};
+claudia create --region us-east-1 --deploy-proxy-api --handler main.handler
+
+UPDATING EXISTING LAMBDA
+lambda.json:
+exports.handler = function (event, context) {
+	console.log(event);
+	context.succeed('hello ' + event.name);
+};
+claudia create --region us-east-1 --handler lambda.handler
+claudia update
+Event.json:
+{
+  "name": "Tom"
+}
+claudia test-lambda --event event.json
+Checking out logs
+aws logs filter-log-events --log-group-name /aws/lambda/claudia-test
+
+WEB ENDPOINT
+var ApiBuilder = require('claudia-api-builder'),
+  api = new ApiBuilder();
+
+module.exports = api;
+
+api.get('/hello', function () {
+  return 'hello world';
+});
+claudia create --region us-east-1 --api-module app
+curl url/hello
+USING REQUEST PARAMETER
+api.get('/greet', function (request) {
+  var superb = require('superb');
+  return request.queryString.name + ' is ' + superb();
+});
+claudia update
+curl url/greet?name=Mike
+
+----BASIC DEVELOPMENT
+EXTERNAL SERVICES (return a Promise)
+api.post('/user', function (request) {
+	return dynamoDb.put({
+		TableName: request.env.tableName,
+		Item: {	userid: request.body.userId }
+	}).promise();
+}); 
+
+----ADVANCED TASKS
+RUNNING EXPRESS APPS IN AWS LAMBDA
+everything like express, but...
+    //app.listen(3000); <- delete this line
+    module.exports = app; //<-add this line
+create lambda proxy wrapper
+    claudia generate-serverless-express-proxy --express-module app
+deploy to aws
+    claudia create --handler lambda.handler --deploy-proxy-api --region us-east-1
+See for limitations: https://claudiajs.com/tutorials/serverless-express.html
+BINARY CONTENT
+see: https://claudiajs.com/tutorials/binary-content.html
+SLACK DEPAYED RESPONSE
+see: https://claudiajs.com/tutorials/slack-delayed-responses.html
+intercepting: https://github.com/claudiajs/claudia-api-builder/blob/master/docs/api.md#intercepting-requests
+3rd-arg ApiResponse: https://github.com/claudiajs/claudia-api-builder/blob/master/docs/api.md#customising-response-codes-and-content-types
+PANDOC (idk)
+see: https://claudiajs.com/tutorials/pandoc-lambda.html
+IMAGE SERVER:
+see: https://claudiajs.com/tutorials/image-server.html
+----EXAMPLE PROJECTS
+see: https://github.com/claudiajs/example-projects
+
+
+
+========== /From Claudia Practices ==============
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
