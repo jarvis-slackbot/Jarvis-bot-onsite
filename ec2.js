@@ -179,9 +179,9 @@ module.exports = {
                         'EBS Optimization: ' + ebsOpt + '\n' +
                         'ENA Support: ' + ena + '\n';
 
-                    // Give every other instance a different color
                     slackMsg.addAttachment(msg.getAttachNum());
                     slackMsg.addTitle(name);
+                    // Give every other instance a different color
                     slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                     slackMsg.addText(text);
                     colorCounter++;
@@ -191,6 +191,62 @@ module.exports = {
                 reject(msg.errorMessage(err));
             });
 
+        });
+    },
+    // Get network information of an instance
+    getNetworkInfo: function(){
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+            var colorCounter = 0;
+
+            module.exports.instList().then((instancesList) => {
+                instancesList.forEach(function (inst) {
+                    var text = "";
+                    var name = module.exports.getEC2Name(inst);
+                    var instanceId = inst.InstanceId;
+                    var netInt = inst.NetworkInterfaces[0]; //Network interface values
+                    var status = netInt.Status;
+                    var pubIp = inst.PublicIpAddress ? inst.PublicIpAddress : 'Not set';
+                    var pubDns = inst.PublicDnsName ? inst.PublicDnsName : 'Not set'  ;
+                    var privIp = inst.PrivateIpAddress;
+                    var privDns = inst.PrivateDnsName;
+                    var netInterId = netInt.NetworkInterfaceId;
+                    var macAddr = netInt.MacAddress;
+                    var subnetId = netInt.SubnetId;
+                    var vpcId = netInt.VpcId;
+
+                    text +=
+                        'Instance ID: ' + instanceId + '\n' +
+                        'Network Status: ' + status + '\n' +
+                        'Public IP: ' + pubIp + '\n' +
+                        'Public DNS: ' + pubDns + '\n' +
+                        'Private IP: ' + privIp + '\n' +
+                        'Private DNS: ' + privDns + '\n' +
+                        'Network Interface ID: ' + netInterId + '\n' +
+                        'Mac Address: ' + macAddr + '\n' +
+                        'Subnet : ' + subnetId + '\n' +
+                        'VPC ID: ' + vpcId + '\n';
+                    // If there are IPV6 addresses attached to the instance
+                    var ipv6 = inst.Ipv6Address;
+                    if(ipv6 != null){
+                        text += 'Ipv6 Addresses: ';
+                        ipv6.forEach(function (addr) {
+                            text += addr + ' ';
+                        });
+                        text += '\n';
+                    }
+
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addTitle(name);
+                    // Give every other instance a different color
+                    slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                    slackMsg.addText(text);
+                    colorCounter++;
+                });
+                resolve(slackMsg);
+            }).catch((err) => {
+                reject(msg.errorMessage(err));
+            });
         });
     },
 

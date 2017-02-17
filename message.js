@@ -114,14 +114,14 @@ var helpList = {
     help: "Lists available commands.",
     man: "Display user manual.",
     cpu: "Current server CPU usage.",
-    ram: "Current server memory allocation.",
     status: "Server Online/Offline status.",
     disk: "Amount of data stored on server bucket.",
     jobs: "Number of jobs run today between all servers.",
     health: "Overall percentage of uptime vs downtime of the server",
     ami: "Amazon Machine Image (AMI) status information.",
     network: "Network information.",
-    ec2info: "Generic EC2 instance information."
+    ec2info: "Generic EC2 instance information.",
+    ec2net: "EC2 instance network related information"
 };
 
 // Response commandList
@@ -130,11 +130,7 @@ var commandList = {
     commands:{
         help: listCommands(),
         man: "Sorry, I have not been given a user manual yet.",
-        cpu: "CPU usage is currently at 62%.",
-        ram: "There is 2.67GB of memory available. 29.33GB is currently occupied.",
-        disk: "The storage bucket has 189GB of data.",
         jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
-        network: "No network found.",
         health: "Server health is currently very good, at 98%. " +
         "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
     },
@@ -146,6 +142,7 @@ var commandList = {
         cpu: require('./cloudwatch').getEc2Cpu(),
         disk: require('./cloudwatch').getEc2Disk(),
         network: require('./cloudwatch').getEc2Network(),
-        ec2info: require('./ec2.js').getHardwareInfo()
+        ec2info: require('./ec2.js').getHardwareInfo(),
+        ec2net: require('./ec2.js').getNetworkInfo()
     }
 };

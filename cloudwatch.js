@@ -160,7 +160,7 @@ module.exports = {
                                             var networkOut = dataPointOut.Average;
                                             var networkInType;
                                             var networkOutType;
-                                            if(networkIn > 1000000) {
+                                            if(networkIn >= 1000000) {
                                                 networkInType = ' mb.';
                                                 networkIn = networkIn/1000000;
                                             }
@@ -172,7 +172,7 @@ module.exports = {
                                                 networkInType = ' bytes.';
                                             }
 
-                                            if(networkOut > 1000000) {
+                                            if(networkOut >= 1000000) {
                                                 networkOutType = ' mb.';
                                                 networkOut = networkOut/1000000;
                                             }
