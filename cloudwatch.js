@@ -1,5 +1,6 @@
 /*
     AWS CloudWatch
+    API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/CloudWatch.html
  */
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;

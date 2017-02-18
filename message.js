@@ -121,7 +121,8 @@ var helpList = {
     ami: "Amazon Machine Image (AMI) status information.",
     network: "Network information.",
     ec2info: "Generic EC2 instance information.",
-    ec2net: "EC2 instance network related information"
+    ec2net: "EC2 instance network related information.",
+    ec2ebs: "EC2 attached EBS volume information."
 };
 
 // Response commandList
@@ -129,10 +130,7 @@ var commandList = {
     // Add commands here that do not gather data from AWS
     commands:{
         help: listCommands(),
-        man: "Sorry, I have not been given a user manual yet.",
-        jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
-        health: "Server health is currently very good, at 98%. " +
-        "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
+        man: "Sorry, I have not been given a user manual yet."
     },
 
     // Add new AWS commands here
@@ -145,5 +143,6 @@ var commandList = {
         ec2info: require('./ec2.js').getHardwareInfo(),
         ec2net: require('./ec2.js').getNetworkInfo(),
         health: require('./health.js').getAWSHealth(),
+        ec2ebs: require('./ec2.js').getEBSInfo(),
     }
 };

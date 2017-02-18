@@ -2,6 +2,7 @@
     AWS Health checks
     Service wide health checks - Must narrow to users region
     API MAY NOT BE AVAILABLE YET OR NOT AVAILABLE IN US-WEST-2
+    API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/Health.html
  */
 const ec2 = require('./ec2.js');
 var botBuilder = require('claudia-bot-builder');

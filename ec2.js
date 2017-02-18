@@ -1,5 +1,6 @@
 /*
     AWS EC2
+    API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/EC2.html
  */
 
 var botBuilder = require('claudia-bot-builder');
@@ -247,6 +248,62 @@ module.exports = {
             }).catch((err) => {
                 reject(msg.errorMessage(err));
             });
+        });
+    },
+
+    // Get attached EBS information
+    getEBSInfo: function(){
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+            var colorCounter = 0;
+
+            module.exports.instList().then((instancesList) => {
+                instancesList.forEach(function (inst) {
+
+                    var text = '';
+                    var name = module.exports.getEC2Name(inst);
+                    var attachedDevs = inst.BlockDeviceMappings;
+
+                    if(attachedDevs != null){
+                        attachedDevs.forEach(function(dev){
+
+                            var devName = dev.DeviceName;
+                            var ebs = dev.Ebs;
+                            if(ebs != null) {
+                                var volumeId = ebs.VolumeId;
+                                var attached = ebs.Status;
+                                var timeAttached = ebs.AttachTime ? ebs.AttachTime : 'Not Available';
+                                // If ebs will be deleted when instance terminated
+                                var delOnTerm = ebs.DeleteOnTermination ? "Yes" : "No";
+
+                                text +=
+                                    'Device Name: ' + devName + '\n' +
+                                    'Volume ID: ' + volumeId + '\n' +
+                                    'Status: ' + attached + '\n' +
+                                    'Time Attached: ' + timeAttached + '\n' +
+                                    'Delete On Termination: ' + delOnTerm + '\n';
+                            }
+                            else{
+                                text += 'No EBS volume found for ' + devName + '.\n';
+                            }
+                            text += '\n\n';
+                        });
+                    }
+                    else{
+                        text = "No attached devices found.";
+                    }
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    slackMsg.addTitle(name);
+                    // Give every other instance a different color
+                    slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                    slackMsg.addText(text);
+                    colorCounter++;
+                });
+                resolve(slackMsg);
+            }).catch((err) => {
+                reject(msg.errorMessage(err));
+            });
+
         });
     },
 
