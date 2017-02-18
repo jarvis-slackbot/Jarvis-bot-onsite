@@ -1,6 +1,6 @@
 //Developed to set environment variables at runtime for security reasons
 var fs = require('fs');
-var AWS = require('aws-sdk');
+//var AWS = require('aws-sdk');
 var pathToFile = "./.env"; //env.json
 var bufferObj = fs.readFileSync(pathToFile);
 var string = bufferObj.toString();
