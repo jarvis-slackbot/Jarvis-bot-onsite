@@ -143,6 +143,7 @@ var commandList = {
         disk: require('./cloudwatch').getEc2Disk(),
         network: require('./cloudwatch').getEc2Network(),
         ec2info: require('./ec2.js').getHardwareInfo(),
-        ec2net: require('./ec2.js').getNetworkInfo()
+        ec2net: require('./ec2.js').getNetworkInfo(),
+        health: require('./health.js').getAWSHealth(),
     }
 };
