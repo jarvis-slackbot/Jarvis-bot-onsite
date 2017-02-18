@@ -4,6 +4,7 @@ claudia.json
 trash
 *.env
 env/
+env.js
 practice-saul/
 
 package.json
