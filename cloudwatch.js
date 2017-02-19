@@ -78,7 +78,9 @@ module.exports = {
                                     var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
                                     text = name + "(" + id + "):" +
                                         " CPU averaged " + average + "% in the last " +
-                                        CPU_INTERVAL + " minutes.";
+                                        CPU_INTERVAL + " minutes.\n";
+                                    text += date2.toDateString() + " " + date2.getHours() + " " +date2.getMinutes() + '\n';
+                                    text += date.toDateString() + " " + date.getHours() + " " +date.getMinutes() + "\n";
                                     slackMsg.addColor(color);
                                 }
 
@@ -204,7 +206,7 @@ module.exports = {
     },
 
 
-    //Disk
+    // Disk EBS usage
     getEc2Disk: function() {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
@@ -222,84 +224,81 @@ module.exports = {
                     resolve(slackMsg);
     
                 } else {
-                    
-                
                     instanceList.forEach(function (inst) {
-                        
-                        var id = inst.InstanceId;
                         var name = ec2.getEC2Name(inst);
+                        var instId = inst.InstanceId;
                         var text = "";
-
-                        var readParams = {
-                            EndTime: date,
-                            MetricName: 'DiskReadOps',
-                            Namespace: 'AWS/EC2',
-                            Period: CPU_INTERVAL * 60,
-                            StartTime: date2,
-                            Dimensions: [{
-                                    Name: 'InstanceId',
+                        var ebsList = ec2.getEBSVolumes(inst);
+                        ebsList.forEach(function(devID){
+                            var id = devID;
+                            var readParams = {
+                                EndTime: date,
+                                MetricName: 'VolumeReadOps',
+                                Namespace: 'AWS/EBS',
+                                Period: CPU_INTERVAL * 60,
+                                StartTime: date2,
+                                Dimensions: [{
+                                    Name: 'VolumeId',
                                     Value: id
                                 },
 
-                            ],
-                            Statistics: [
-                                'Average'
-                            ],
-                        };
+                                ],
+                                Statistics: [
+                                    'Sum'
+                                ],
+                            };
 
-                        cw.getMetricStatistics(readParams, function(err, data) {
+                            cw.getMetricStatistics(readParams, function(err, writeData) {
 
-                            if (err) {
-                                reject(msg.errorMessage(JSON.stringify(err)));
-                            } else {
-                                var dataPoint = data.Datapoints[0];
-                                if (dataPoint) {
-                                    var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
-                                    text = name + "(" + id + "):\n" +
-                                        "Operation Count in last 5 minutes:\n"+ 
-                                        "Read Operations: " + diskVal + " ops/s.\n";
-                                }
-                                
-                                var writeParams = {
-                                    EndTime: date,
-                                    MetricName: 'DiskWriteOps',
-                                    Namespace: 'AWS/EC2',
-                                    Period: CPU_INTERVAL * 60,
-                                    StartTime: date2,
-                                    Dimensions: [{
-                                        Name: 'InstanceId',
-                                        Value: id
-                                    },
-
-                                    ],
-                                    Statistics: [
-                                        'Average'
-                                    ],
-                                };
-                        
-                                cw.getMetricStatistics(writeParams, function(err, data) {
-                            
                                 if (err) {
                                     reject(msg.errorMessage(JSON.stringify(err)));
                                 } else {
-                                    var dataPoint = data.Datapoints[0];
-                                    slackMsg.addAttachment(msg.getAttachNum());
 
-                                    if (!dataPoint) {
-                                        text = name + "(" + id + "):" +
-                                            " No Disk data found.";
-                                        slackMsg.addColor(msg.SLACK_RED);
-                                    } else {
-                                        var diskVal = dataPoint.Average / (CPU_INTERVAL * 60);
-                                        text = text + "Write Operations: " + diskVal + " ops/s.\n";
-                                        slackMsg.addColor(msg.SLACK_GREEN);
-                                    }    
-                                
-                                    slackMsg.addText(text);
-                                    }
-                                });
-                                
-                            }
+                                    var writeParams = {
+                                        EndTime: date,
+                                        MetricName: 'VolumeWriteOps',
+                                        Namespace: 'AWS/EBS',
+                                        Period: CPU_INTERVAL * 60,
+                                        StartTime: date2,
+                                        Dimensions: [{
+                                            Name: 'VolumeId',
+                                            Value: id
+                                        },
+
+                                        ],
+                                        Statistics: [
+                                            'Sum'
+                                        ],
+                                    };
+
+                                    cw.getMetricStatistics(writeParams, function(err, readData) {
+
+                                        if (err) {
+                                            reject(msg.errorMessage(JSON.stringify(err)));
+                                        } else {
+                                            slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
+                                            slackMsg.addTitle(name + ' (' + instId + ')');
+                                            text += 'VolumeID: ' + id + '\n';
+                                            var writeOps = writeData.Datapoints[0] ? writeData.Datapoints[0] : "Not found";
+                                            var readOps = readData.Datapoints[0] ? readData.Datapoints[0] : "Not found.";
+
+                                            if(writeOps && readOps){
+                                                slackMsg.addColor(msg.SLACK_RED);
+                                                text += "No data found.\n"
+                                            }
+                                            else {
+                                                writeOps = writeOps / (CPU_INTERVAL * 60);
+                                                readOps = readOps / (CPU_INTERVAL * 60);
+                                                text += 'Disk Read: ' + readOps + '/IOPS' +
+                                                        'Disk Write: ' + writeOps + '/IOPS' + '\n';
+                                                slackMsg.addColor(msg.SLACK_GREEN);
+                                            }
+                                            slackMsg.addText(text);
+                                        }
+                                    });
+
+                                }
+                            });
                         });
                         
                     });

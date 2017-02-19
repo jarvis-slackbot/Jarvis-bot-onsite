@@ -122,7 +122,7 @@ var helpList = {
     network: "Network information.",
     ec2info: "Generic EC2 instance information.",
     ec2net: "EC2 instance network related information.",
-    ec2ebs: "EC2 attached EBS volume information."
+    ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information."
 };
 
 // Response commandList

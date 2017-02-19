@@ -348,6 +348,20 @@ module.exports = {
         });
     },
 
+    // Get instance EBS volume ID's per instance
+    getEBSVolumes: function(inst){
+        var attachedEbsVols = [];
+        var attachedDevs = inst.BlockDeviceMappings;
+            if(attachedDevs != null){
+                attachedDevs.forEach(function(dev){
+                    var ebs = dev.Ebs;
+                    var ebsID = ebs.VolumeId;
+                    attachedEbsVols.push(ebsID);
+                });
+            }
+        return attachedEbsVols;
+    },
+
     // Get the name of an EC2 instance
     getEC2Name: function (instance) {
         var tags = instance.Tags;
