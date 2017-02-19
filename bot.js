@@ -10,9 +10,9 @@ const msg = require('./message.js');
 
 const api = botBuilder((message, apiRequest) => {
     
-    if(1/*apiRequest.queryString != ""*/){
+    /*if(1){ //apiRequest.queryString != ""
         return "Hello! Here is fn. botBuilder: " + botBuilder.toString() + "\nmessage: " + JSON.stringify(message) + "\napiRequest: " + JSON.stringify(apiRequest) + "request";
-    }
+    }*/
     /*Need to get into anonymous function / method call
     [api.get('/', () => 'OK')] 
     in bot-builder.js OR /lib/slack/setup.js.
