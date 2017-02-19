@@ -8,9 +8,8 @@ const slackDelayedReply = botBuilder.slackDelayedReply;
 const lambda = new aws.Lambda();
 const msg = require('./message.js');
 
-
 const api = botBuilder((message, apiRequest) => {
-
+    
     return new Promise((resolve, reject) => {
         lambda.invoke({
             FunctionName: apiRequest.lambdaContext.functionName,
