@@ -288,7 +288,7 @@ module.exports = {
                                                         'Disk Write: ' + writeOps + ' IOPS' + '\n';
                                                 slackMsg.addColor(msg.SLACK_GREEN);
                                             }
-                                            slackMsg.addTitle(msg.toTitle(name, id));
+                                            slackMsg.addTitle(msg.toTitle(name, instId));
                                             slackMsg.addText(text);
                                         }
                                     });
