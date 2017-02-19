@@ -10,64 +10,6 @@ const msg = require('./message.js');
 
 const api = botBuilder((message, apiRequest) => {
     
-    /*if(1){ //apiRequest.queryString != ""
-        return "Hello! Here is fn. botBuilder: " + botBuilder.toString() + "\nmessage: " + JSON.stringify(message) + "\napiRequest: " + JSON.stringify(apiRequest) + "request";
-    }*/
-    /*Need to get into anonymous function / method call
-    [api.get('/', () => 'OK')] 
-    in bot-builder.js OR /lib/slack/setup.js.
-    
-    fn botBuilder's, apiBuilder's method call (bot-builder.js)
-    OR
-    fn botBuilder's, fn slackSetup's var api method call () (/lib/slack/setup.js)
-    (slackSetup(api, messageHandlerPromise, logError);) 
-    
-    >>Regardless they are same apiBuilder.<<
-    
-    -OR-
-    
-    noticed apiBuilder returned api <<(apiBuilder)
-    DANGER:: if you return your own apiBuilder, slack/slash command won't exist and much of other code is meaningless
-    
-    ---BEST---
-    Find a way to pass through apiRequest to .get('/slack/landing' through lambda
-    
-    IN AWS CONSOLE, 
-        most of this is already configured for you by claudia, all you should need to do is paste slackRedirectUrl for slack button. I think...
-    
-    here: https://github.com/claudiajs/claudia-bot-builder/blob/master/lib/slack/setup.js
-        FIND: api.get('/slack/landing
-        
-    ---LAST OPTION---
-    const rp = require('minimal-request-promise');
-    const qs = require('querystring');
-    api.get('/slack/auth', request => {
-      return rp.post('https://slack.com/api/oauth.access', {
-              headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              body: qs.encode({
-                  client_id: request.env.slackClientId,
-                  client_secret: request.env.slackClientSecret,
-                  code: request.queryString.code,
-                  redirect_uri: request.env.slackRedirectUrl
-              })
-          })
-          .then(() => request.env.slackHomePageUrl); //could change to redirect to slack team or relay a results message (like a git blob, page, etc.)
-    }, {
-      success: 302
-    });
-        
-        
-    
-    bot(parser(request.post), request)
-    TESTING VIA:
-    post to /slack/slash-command with 
-    should have worked, but POST, reads -command as flag
-    curl -sk -H "Content-Type: application/json" "https://hk26t3ags3.execute-api.us-west-2.amazonaws.com/latest/slack/slash-command" -X POST -d '{"env":{"slackVerificationToken":"key"}}'
-    */
-    
-    
     return new Promise((resolve, reject) => {
         lambda.invoke({
             FunctionName: apiRequest.lambdaContext.functionName,
