@@ -56,6 +56,11 @@ module.exports = {
     //Capitalize first letter
     capitalizeFirstLetter: function(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
+    },
+
+    // Put name and id in consistent title format
+    toTitle: function(name, id){
+        return name + ' (' + id + ')';
     }
 
  };
@@ -113,15 +118,15 @@ function toCodeBlock(str){
 var helpList = {
     help: "Lists available commands.",
     man: "Display user manual.",
-    cpu: "Current server CPU usage.",
-    ram: "Current server memory allocation.",
-    status: "Server Online/Offline status.",
-    disk: "Amount of data stored on server bucket.",
-    jobs: "Number of jobs run today between all servers.",
+    ec2cpu: "Current server CPU usage.",
+    ec2status: "Server Online/Offline status.",
+    ec2disk: "Amount of data stored on server bucket.",
     health: "Overall percentage of uptime vs downtime of the server",
     ami: "Amazon Machine Image (AMI) status information.",
-    network: "Network information.",
-    ec2info: "Generic EC2 instance information."
+    ec2network: "Network information.",
+    ec2info: "Generic EC2 instance information.",
+    ec2net: "EC2 instance network related information.",
+    ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information."
 };
 
 // Response commandList
@@ -129,23 +134,19 @@ var commandList = {
     // Add commands here that do not gather data from AWS
     commands:{
         help: listCommands(),
-        man: "Sorry, I have not been given a user manual yet.",
-        cpu: "CPU usage is currently at 62%.",
-        ram: "There is 2.67GB of memory available. 29.33GB is currently occupied.",
-        disk: "The storage bucket has 189GB of data.",
-        jobs: "A total of 34 jobs were run today on the Test, Development and Production servers.",
-        network: "No network found.",
-        health: "Server health is currently very good, at 98%. " +
-        "\nThe server was down last on Oct 29, 2016 - 9:47am for 2 hours and 11 minutes."
+        man: "Sorry, I have not been given a user manual yet."
     },
 
     // Add new AWS commands here
     AWSCommands:{
-        status: require('./ec2.js').getStatus(),
+        ec2status: require('./ec2.js').getStatus(),
         ami: require('./ec2.js').getAMIStatus(),
-        cpu: require('./cloudwatch').getEc2Cpu(),
-        disk: require('./cloudwatch').getEc2Disk(),
-        network: require('./cloudwatch').getEc2Network(),
-        ec2info: require('./ec2.js').getHardwareInfo()
+        ec2cpu: require('./cloudwatch').getEc2Cpu(),
+        ec2disk: require('./cloudwatch').getEc2Disk(),
+        ec2network: require('./cloudwatch').getEc2Network(),
+        ec2info: require('./ec2.js').getHardwareInfo(),
+        ec2net: require('./ec2.js').getNetworkInfo(),
+        health: require('./health.js').getAWSHealth(),
+        ec2ebs: require('./ec2.js').getEBSInfo(),
     }
 };
