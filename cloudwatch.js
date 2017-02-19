@@ -279,18 +279,18 @@ module.exports = {
                                             slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
                                             slackMsg.addTitle(name + ' (' + instId + ')');
                                             text += 'VolumeID: ' + id + '\n';
-                                            var writeOps = writeData.Datapoints[0] ? writeData.Datapoints[0] : "Not found";
-                                            var readOps = readData.Datapoints[0] ? readData.Datapoints[0] : "Not found.";
+                                            var writeOps = writeData.Datapoints[0] ?
+                                                writeData.Datapoints[0] / (CPU_INTERVAL * 60) : "Not found";
+                                            var readOps = readData.Datapoints[0] ?
+                                                readData.Datapoints[0] / (CPU_INTERVAL * 60) : "Not found";
 
-                                            if(writeOps && readOps){
+                                            if(writeOps === "Not found" && readOps === "Not found"){
                                                 slackMsg.addColor(msg.SLACK_RED);
                                                 text += "No data found.\n"
                                             }
                                             else {
-                                                writeOps = writeOps / (CPU_INTERVAL * 60);
-                                                readOps = readOps / (CPU_INTERVAL * 60);
-                                                text += 'Disk Read: ' + readOps + '/IOPS' +
-                                                        'Disk Write: ' + writeOps + '/IOPS' + '\n';
+                                                text += 'Disk Read: ' + readOps + ' IOPS' + '\n' +
+                                                        'Disk Write: ' + writeOps + ' IOPS' + '\n';
                                                 slackMsg.addColor(msg.SLACK_GREEN);
                                             }
                                             slackMsg.addText(text);
