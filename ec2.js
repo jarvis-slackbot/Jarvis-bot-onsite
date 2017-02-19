@@ -278,52 +278,64 @@ module.exports = {
             var slackMsg = new SlackTemplate();
             var colorCounter = 0;
 
-            module.exports.instList().then((instancesList) => {
-                instancesList.forEach(function (inst) {
+            var params = {
+                DryRun: false,
+            };
 
+            ec2Data.describeVolumes(params, function(err, data){
+                if(err){
+                    reject(msg.errorMessage(err.message));
+                }
+                var volumes = data.Volumes;
+
+                volumes.forEach((vol)=>{
                     var text = '';
-                    var name = module.exports.getEC2Name(inst);
-                    var attachedDevs = inst.BlockDeviceMappings;
-
-                    if(attachedDevs != null){
-                        attachedDevs.forEach(function(dev){
-
-                            var devName = dev.DeviceName;
-                            var ebs = dev.Ebs;
-                            if(ebs != null) {
-                                var volumeId = ebs.VolumeId;
-                                var attached = ebs.Status;
-                                var timeAttached = ebs.AttachTime ? ebs.AttachTime : 'Not Available';
-                                // If ebs will be deleted when instance terminated
-                                var delOnTerm = ebs.DeleteOnTermination ? "Yes" : "No";
-
-                                text +=
-                                    'Device Name: ' + devName + '\n' +
-                                    'Volume ID: ' + volumeId + '\n' +
-                                    'Status: ' + attached + '\n' +
-                                    'Time Attached: ' + timeAttached + '\n' +
-                                    'Delete On Termination: ' + delOnTerm + '\n';
-                            }
-                            else{
-                                text += 'No EBS volume found for ' + devName + '.\n';
-                            }
-                            text += '\n\n';
-                        });
-                    }
-                    else{
-                        text = "No attached devices found.";
-                    }
                     slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addTitle(name);
-                    // Give every other instance a different color
+                    var name = module.exports.getEC2Name(vol); // Will get volume name as well
+                    var id = vol.VolumeId;
+                    var size = vol.Size + ' GB';
+                    var snap = vol.SnapshotId;
+                    var zone = vol.AvailabilityZone;
+                    var state = vol.State;
+                    var time = vol.CreateTime;
+                    var attachments = vol.Attachments;
+                    var tags = vol.Tags;
+                    var type = vol.VolumeType;
+                    var maxIops = vol.Iops + ' IOPS';
+                    var encrypted = vol.Encrypted ? 'Yes': 'No';
+
+
+                    text +=
+                        'Size: ' + size + '\n' +
+                        'Snapshot ID: ' + snap + '\n' +
+                        'Region: ' + zone + '\n' +
+                        'Status: ' + state + '\n' +
+                        'Time Created: ' +  time + '\n' +
+                        'Volume Type: ' + type + '\n' +
+                        'Max I/O Per Sec: ' + maxIops + '\n' +
+                        'Encrypted: ' + encrypted + '\n';
+                    // Attached instances
+
+                    text += 'Attached Instances: \n';
+                    attachments.forEach((attach)=>{
+                       text += '\t ' + attach.InstanceId + '\n';
+                    });
+
+                    // Tags
+                    text += 'Tags: ' + '\n';
+                    tags.forEach((tag)=>{
+                       text += '\t Key: ' + tag.Key + ',  Value: ' + tag.Value + '\n';
+                    });
+
+                    slackMsg.addTitle(name + ' (' + id + ')');
                     slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                     slackMsg.addText(text);
                     colorCounter++;
                 });
+
                 resolve(slackMsg);
-            }).catch((err) => {
-                reject(msg.errorMessage(err));
             });
+
 
         });
     },
