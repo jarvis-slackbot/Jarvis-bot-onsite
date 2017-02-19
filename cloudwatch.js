@@ -244,7 +244,7 @@ module.exports = {
 
                                 ],
                                 Statistics: [
-                                    'Sum'
+                                    'Average'
                                 ],
                             };
 
@@ -267,7 +267,7 @@ module.exports = {
 
                                         ],
                                         Statistics: [
-                                            'Sum'
+                                            'Average'
                                         ],
                                     };
 

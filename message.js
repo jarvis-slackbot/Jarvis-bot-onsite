@@ -114,7 +114,7 @@ var helpList = {
     help: "Lists available commands.",
     man: "Display user manual.",
     cpu: "Current server CPU usage.",
-    status: "Server Online/Offline status.",
+    ec2status: "Server Online/Offline status.",
     disk: "Amount of data stored on server bucket.",
     jobs: "Number of jobs run today between all servers.",
     health: "Overall percentage of uptime vs downtime of the server",
@@ -135,7 +135,7 @@ var commandList = {
 
     // Add new AWS commands here
     AWSCommands:{
-        status: require('./ec2.js').getStatus(),
+        ec2status: require('./ec2.js').getStatus(),
         ami: require('./ec2.js').getAMIStatus(),
         cpu: require('./cloudwatch').getEc2Cpu(),
         disk: require('./cloudwatch').getEc2Disk(),

@@ -16,6 +16,7 @@ const ec2Data = new aws.EC2({region: 'us-west-2', maxRetries: 15, apiVersion: '2
 const EC2_ONLINE = 'running';
 const EC2_OFFLINE = 'stopped';
 const EC2_TERM = 'terminated';
+const EC2_NA = 'not-applicable';
 
 // AMI states
 const AMI_AVBL = 'available';
@@ -29,36 +30,56 @@ module.exports = {
 
             var slackMsg = new SlackTemplate();
 
-            var params = {
-                DryRun: false
-            };
+            getInstNameIdList().then((instancesList) => {
+                var idList = getIdsFromList(instancesList);
+                var statusParams = {
+                    DryRun: false,
+                    IncludeAllInstances: true, // Include status for instances even when NOT running.
+                    InstanceIds:idList
+                };
 
-            module.exports.instList().then((instancesList) => {
-
-                instancesList.forEach(function (inst) {
-                    var response = "";
-                    var state = inst.State.Name.toString();
-                    var name = module.exports.getEC2Name(inst);
-                    var id = inst.InstanceId;
-
-                    slackMsg.addAttachment(msg.getAttachNum());
-
-                    response += name + " (" + id + ")" + " is " + state;
-                    if (state === EC2_ONLINE) {
-                        response += " since " + inst.LaunchTime;
-                        slackMsg.addColor(msg.SLACK_GREEN);
+                ec2Data.describeInstanceStatus(statusParams, function(err, data){
+                    if(err){
+                        reject(msg.errorMessage(err.message));
                     }
-                    else if (state === EC2_OFFLINE || state === EC2_TERM) {
-                        slackMsg.addColor(msg.SLACK_RED);
-                    }
-                    else {
-                        slackMsg.addColor(msg.SLACK_YELLOW);
-                    }
-                    response += ".\n\n";
-                    slackMsg.addText(response);
+                    var instances = data.InstanceStatuses;
+                    instances.forEach(function(inst){
+                        slackMsg.addAttachment(msg.getAttachNum());
+                        var text = '';
+                        var instId = inst.InstanceId;
+                        var name = getNamebyId(instId, instancesList);
+                        var status = inst.InstanceState.Name;
+                        var sysStatus = inst.SystemStatus.Status;
+                        var sysDetails = inst.SystemStatus.Details;
+                        var instStatus = inst.InstanceStatus.Status;
+                        var instDetails = inst.InstanceStatus.Details;
+
+                        text +=
+                            'Instance State: ' + status + '\n' +
+                            'System Status: ' + sysStatus + '\n';
+
+                        // If there are system details, add to information
+                        (listEmpty(sysDetails)) ? text += '' : sysDetails.forEach((detail)=>{
+                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                                        msg.capitalizeFirstLetter(detail.Status) + '\n';
+                        });
+                        text += 'Instance Status: ' + instStatus + '\n';
+                        // If there are instance details, add to information
+                        (listEmpty(instDetails)) ? text += '' : instDetails.forEach((detail)=>{
+                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                                    msg.capitalizeFirstLetter(detail.Status) + '\n';
+                        });
+
+                        slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
+
+
+                        slackMsg.addTitle(name + ' (' + instId + ')');
+                        slackMsg.addText(text);
+                    });
+
+
+                    resolve(slackMsg);
                 });
-                resolve(slackMsg);
-                // Pass error message on to bot.
             }).catch((err) => {
                 reject(msg.errorMessage(err));
             });
@@ -373,7 +394,49 @@ module.exports = {
         });
 
         return name;
-    }
+    },
 };
 
+// Return all instance Name/ID's as : [{name, id},...]
+function getInstNameIdList() {
+    return new Promise(function(resolve, reject){
+        var idList = [];
+        module.exports.instList().then((instancesList) => {
+            instancesList.forEach(function(inst){
+                var name = module.exports.getEC2Name(inst);
+                var instanceId = inst.InstanceId;
+                idList.push({
+                    name: name,
+                    id: instanceId
+                });
+            });
+            resolve(idList)
+        });
+    });
 
+}
+
+// Get inst id list - helps avoid another API call
+function getIdsFromList(nameIdList){
+    var idList = [];
+    nameIdList.forEach((inst)=>{
+        idList.push(inst.id);
+    });
+    return idList;
+}
+
+// get inst name by id in id/name list - helps avoid another API call
+function getNamebyId(id, nameIdList){
+    var name = 'Unknown';
+    nameIdList.forEach((inst)=>{
+        if(inst.id === id){
+            name = inst.name;
+        }
+    });
+    return name;
+}
+
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
