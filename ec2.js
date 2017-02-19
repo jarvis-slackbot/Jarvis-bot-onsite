@@ -73,7 +73,7 @@ module.exports = {
                         slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
 
 
-                        slackMsg.addTitle(name + ' (' + instId + ')');
+                        slackMsg.addTitle(msg.toTitle(name, instId));
                         slackMsg.addText(text);
                     });
 
@@ -121,13 +121,17 @@ module.exports = {
                             var images = data.Images;
 
                             images.forEach(function (image) {
-                                var name = image.Name;
+                                var amiName = image.Name;
+                                var id = image.ImageId;
+                                var name = module.exports.getEC2Name(image);
                                 var state = image.State;
-                                var response = "";
+                                var text = "";
 
                                 slackMsg.addAttachment(msg.getAttachNum());
 
-                                response += name + " is " + state + ".";
+                                text +=
+                                    'AMI Name: ' + amiName + '\n' +
+                                    'Status: ' + state + '\n';
 
                                 if (state === AMI_AVBL) {
                                     slackMsg.addColor(msg.SLACK_GREEN);
@@ -137,14 +141,15 @@ module.exports = {
                                     var code = image.StateReason.Code;
                                     var reason = image.StateReason.Message;
                                     var color = (state === AMI_PEND) ? msg.SLACK_YELLOW : msg.SLACK_RED;
-                                    response += "\n" +
+                                    text += "\n" +
                                         "Reason: " +
                                         reason +
                                         "(Code: " + code + ")";
                                     slackMsg.addColor(color);
                                 }
-                                response += "\n\n";
-                                slackMsg.addText(response);
+                                text += "\n\n";
+                                slackMsg.addTitle(msg.toTitle(name, id));
+                                slackMsg.addText(text);
                             });
                             resolve(slackMsg);
                         }
@@ -202,7 +207,7 @@ module.exports = {
                         'ENA Support: ' + ena + '\n';
 
                     slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addTitle(name);
+                    slackMsg.addTitle(msg.toTitle(name, instanceId));
                     // Give every other instance a different color
                     slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                     slackMsg.addText(text);
@@ -259,7 +264,7 @@ module.exports = {
                     }
 
                     slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addTitle(name);
+                    slackMsg.addTitle(msg.toTitle(name, instanceId));
                     // Give every other instance a different color
                     slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                     slackMsg.addText(text);
@@ -314,8 +319,8 @@ module.exports = {
                         'Volume Type: ' + type + '\n' +
                         'Max I/O Per Sec: ' + maxIops + '\n' +
                         'Encrypted: ' + encrypted + '\n';
-                    // Attached instances
 
+                    // Attached instances
                     text += 'Attached Instances: \n';
                     attachments.forEach((attach)=>{
                        text += '\t ' + attach.InstanceId + '\n';
@@ -327,7 +332,7 @@ module.exports = {
                        text += '\t Key: ' + tag.Key + ',  Value: ' + tag.Value + '\n';
                     });
 
-                    slackMsg.addTitle(name + ' (' + id + ')');
+                    slackMsg.addTitle(msg.toTitle(name, id));
                     slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                     slackMsg.addText(text);
                     colorCounter++;

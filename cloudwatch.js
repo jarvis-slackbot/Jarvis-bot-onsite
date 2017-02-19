@@ -64,26 +64,24 @@ module.exports = {
                                 reject(msg.errorMessage(JSON.stringify(err)));
                             } else {
                                 var dataPoint = data.Datapoints[0];
-                                var text;
+                                var text = '';
                                 slackMsg.addAttachment(msg.getAttachNum());
 
                                 // Server is offline or terminated
                                 if(!dataPoint){
-                                    text = name + "(" + id + "):" +
-                                        " No CPU data found.";
+                                    text +=
+                                        "No CPU data found.";
                                     slackMsg.addColor(msg.SLACK_RED);
                                 // Server online
                                 } else {
                                     var average = dataPoint.Average;
                                     var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
-                                    text = name + "(" + id + "):" +
-                                        " CPU averaged " + average + "% in the last " +
+                                    text +=
+                                        "CPU averaged " + average + "% in the last " +
                                         CPU_INTERVAL + " minutes.\n";
-                                    text += date2.toDateString() + " " + date2.getHours() + " " +date2.getMinutes() + '\n';
-                                    text += date.toDateString() + " " + date.getHours() + " " +date.getMinutes() + "\n";
                                     slackMsg.addColor(color);
                                 }
-
+                                slackMsg.addTitle(msg.toTitle(name, id));
                                 slackMsg.addText(text);
                             }
                         });
@@ -142,7 +140,6 @@ module.exports = {
                                 reject(msg.errorMessage(JSON.stringify(err)));
                             } else {
                                 var dataPoint = data.Datapoints[0];
-                                var text;
                                 slackMsg.addAttachment(msg.getAttachNum());
 
                                 instParams.MetricName = 'NetworkOut';
@@ -152,11 +149,11 @@ module.exports = {
                                         reject(msg.errorMessage(JSON.stringify(err)));
                                     } else {
                                         var dataPointOut = data.Datapoints[0];
-                                        var text;
+                                        var text = '';
                                         slackMsg.addAttachment(msg.getAttachNum());
                                         if (!dataPoint) {
-                                            text = name + "(" + id + "):" +
-                                                " No Network data available.";
+                                            text +=
+                                                "No Network data available.";
                                             slackMsg.addColor(msg.SLACK_RED);
                                         } else {
                                             var networkIn = dataPoint.Average;
@@ -186,13 +183,13 @@ module.exports = {
                                             else{
                                                 networkOutType = ' bytes.';
                                             }
-                                                text = name + "(" + id + "): " +
+                                                text +=
                                                     "\nNetwork usage In: " + networkIn + networkInType +
                                                     "\nNetwork usage Out: " + networkOut + networkOutType;
 
                                             slackMsg.addColor(msg.SLACK_GREEN);
                                         }
-
+                                        slackMsg.addTitle(msg.toTitle(name, id));
                                         slackMsg.addText(text);
                                     }
                                 });
@@ -277,8 +274,6 @@ module.exports = {
                                             reject(msg.errorMessage(JSON.stringify(err)));
                                         } else {
                                             slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
-                                            slackMsg.addTitle(name + ' (' + instId + ')');
-                                            text += 'VolumeID: ' + id + '\n';
                                             var writeOps = writeData.Datapoints[0] ?
                                                 writeData.Datapoints[0] / (CPU_INTERVAL * 60) : "Not found";
                                             var readOps = readData.Datapoints[0] ?
@@ -293,6 +288,7 @@ module.exports = {
                                                         'Disk Write: ' + writeOps + ' IOPS' + '\n';
                                                 slackMsg.addColor(msg.SLACK_GREEN);
                                             }
+                                            slackMsg.addTitle(msg.toTitle(name, id));
                                             slackMsg.addText(text);
                                         }
                                     });
