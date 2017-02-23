@@ -126,7 +126,8 @@ var helpList = {
     ec2network: "Network information.",
     ec2info: "Generic EC2 instance information.",
     ec2net: "EC2 instance network related information.",
-    ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information."
+    ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
+    ec2security: "EC2 instance security information."
 };
 
 // Response commandList
@@ -148,5 +149,6 @@ var commandList = {
         ec2net: require('./ec2.js').getNetworkInfo(),
         health: require('./health.js').getAWSHealth(),
         ec2ebs: require('./ec2.js').getEBSInfo(),
+        ec2security: require('./ec2.js').getEC2SecurityInfo(),
     }
 };
