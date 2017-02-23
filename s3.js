@@ -5,19 +5,123 @@
 
 //Library
 var botBuilder = require('claudia-bot-builder');
-//const SlackTemplate = botBuilder.slackTemplate;
-//const msg = require('./message.js');
+const SlackTemplate = botBuilder.slackTemplate;
+const msg = require('./message.js');
 
 // AWS S3
 const aws = require('aws-sdk');
-const s3Data = new AWS.S3({
-    region: 'us-west-2',
-    maxRetries: 15,
-    apiVersion: '2016-11-15'
-});
+const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2016-11-15'});
 
 module.exports = {
-    
+    /*model
+    { buckets: 
+        {name:b1, region: r1}, 
+        {name:b2, region: r2}
+    }
+    */
+//    model : {}, 
+    //list avaiable buckets
+    getBuckets : function (){
+        
+        
+        return new Promise(function (resolve, reject) {
+            
+            var slackMsg = new SlackTemplate();
+            
+            /*
+            --DELETE-- Temp list. possible methods.
+            (AWS.Request) getBucketAcl(params = {}, callback)
+                Gets the access control policy for the bucket.
+            (AWS.Request) getBucketLocation(params = {}, callback)
+                Returns the region the bucket resides in.
+            (AWS.Request) headBucket(params = {}, callback)
+                This operation is useful to determine if a bucket exists and you have permission to access it.
+            (AWS.Request) headObject(params = {}, callback)
+                The HEAD operation retrieves metadata from an object without returning the object itself.
+            (AWS.Request) listBuckets(params = {}, callback)
+                Returns a list of all buckets owned by the authenticated sender of the request.
+            */
+            
+//            var results; //holder; to return via resolve
+            
+            if (1){
+                var params_listBuckets = {
+                };
+                /*
+                var params_headBucket = {
+                    Bucket: 'STRING_VALUE' //REQUIRED
+                };
+                */
+                //var info = []; //created in case response is data only
+                var bucketList = s3Data.listBuckets(params_listBuckets, function callback (err, data){
+                    if(err){
+                        console.log(err, err.stack);
+                        reject("rejected!"/*msg.errorMessage(err.message)*/);
+                    }
+                    //code
+                    //info.push(data);
+                });
+                /*
+                var bucketHead = s3Data.headBucket(params_headBucket, function callback (err, data){
+                        if(err){
+                            console.log(err, err.stack);
+                            reject(msg.errorMessage(err.message));
+                        }
+                        //code
+                    //info.push(data);
+                });
+                */
+                
+                //+ "info0:: " + info[0]
+                //+ "info1:: " + info[1]
+
+                
+                
+                
+                
+                slackMsg.addAttachment(msg.getAttachNum());
+                var text = '';
+                text = "\n\nlist all buckets owned by the authenticated sender of the request:: "/*
+                    + " \nJSON.stringify:: "
+                    + JSON.stringify(bucketList)*//*
+                    + " \ntoString():: "
+                    + bucketList.toString();*//*
+                    + " \ndry:: "
+                    + bucketList*/
+                    + " \ncheck if bucket exists and you have permission to access it:: " 
+                    //+ bucketHead
+                ;
+                slackMsg.addText(text);
+                resolve(slackMsg);
+            }
+            else{
+                reject("rejected!"/*msg.errorMessage("something went wrong! in s3.js")*/);
+            }
+            
+            
+            /*method().then(()=>{
+                resolve({});
+            }).catch((err)=>{
+                reject(msg.errorMessage(err));
+            });*/
+            
+        });
+    }/*,
+    getBucketNames : function (){
+        
+        return new Promise(function (resolve, reject){
+            
+        });
+    },
+    getBucketRegions : function (){
+        
+        return new Promise(function (resolve, reject){
+            
+        });
+    },*/
+    /*considerations
+    sort, repeats, un/used, in/active    
+    */
     
 };
 
