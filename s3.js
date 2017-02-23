@@ -1,5 +1,5 @@
 /*
-    AWS EC2
+    AWS S3
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
  */
 
