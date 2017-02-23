@@ -1,5 +1,5 @@
 /*
-    AWS S3
+    AWS EC2
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
  */
 
@@ -20,14 +20,11 @@ module.exports = {
     }
     */
 //    model : {}, 
-    //list avaiable buckets
-    getBuckets : function (){
-        
+    //Get bucket info for other functions to use (bucketNames)
+    bucketNamesList: function(){
         return new Promise(function (resolve, reject) {    
 
-            var slackMsg = new SlackTemplate();
-            
-            var info = []; //collect data.Buckets.Name
+            var bucketNamesList = [];
             s3Data.listBuckets({}, function callback (err, data){
                 if(err){
                     //console.log(err, err.stack);
@@ -38,126 +35,42 @@ module.exports = {
                     var buckets = data.Buckets;
                     buckets.forEach(function (bucket) {
                         var name = bucket.Name;
-                        info.push(name);
+                        bucketNamesList.push(name);
                     });
-
-
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
-
-                    if (info.length > 0){
-                        info.forEach(function(name){
-                            text += "S3 bucket: " + name + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no S3 buckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
+                    resolve(bucketNamesList);
                 }
             });
-
-
-
-
-            /*
-            //use bucket names from other function then use that to for each below code by changing params_headBucket.Bucket and calling method
-            var params_headBucket = {
-                Bucket: 'STRING_VALUE' //REQUIRED
-            };
-            var allHeadBuckets = [];
-            s3Data.headBucket(params_headBucket, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
-                }
-                else {//code
-                
-//                    var extracts = data.SOMETHING;
-                    extracts.forEach(function (extract) {
-                        var something = extract.something;
-                        allHeadBuckets.push(something);
-                    });
-
-
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
-
-                    if (allHeadBuckets.length > 0){
-                        allHeadBuckets.forEach(function(extract){
-                            text += "headbucket: " + something + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no headbuckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                }
-            });
-            */
-
-            
-        }).catch((err)=>{
-                reject(msg.errorMessage(err));
         });
     },
-    //access control policy (aka acl) of buckets.
-    getAcl : function (){
-        
-        return new Promise(function (resolve, reject) {    
-
-            var slackMsg = new SlackTemplate();
+    //list avaiable buckets
+    getBuckets : function (){
+        return new Promise(function (resolve, reject) {
             
-            var info = []; //collects data; (object-acl for buckets)
-            //params to be changed for multiple buckets through a seperate function
-            s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
-                }
-                else {//code
-                    info.push(data);
-                    
+            var slackMsg = new SlackTemplate();
 
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
+            module.exports.bucketNamesList().then((bucketNames) => {
+                //slack message formatting
+                slackMsg.addAttachment(msg.getAttachNum());
+                var text = '';
 
-                    if (info.length > 0){
-                        info.forEach(function(acl){
-                            text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no acl for present S3 buckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
+                if (bucketNames.length > 0){
+                    bucketNames.forEach(function(name){
+                        text += "S3 bucket: " + name + "\n";
+                    });
+                    slackMsg.addText(text);
+                    resolve(slackMsg);
                 }
+                else {
+                    text = "There are no S3 buckets.";
+                    slackMsg.addText(text);
+                    resolve(slackMsg);
+                }
+
+            }).catch((err)=>{
+                    reject(msg.errorMessage(err));
             });
-
-        }).catch((err)=>{
-                reject(msg.errorMessage(err));
         });
-    }/*,
-    
-    
-    
-    
-    
-    
-    
-    
+    }/*
     
     
     
@@ -180,7 +93,6 @@ module.exports = {
     */
     
 };
-
 
 
 
