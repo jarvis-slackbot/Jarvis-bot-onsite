@@ -45,21 +45,27 @@ module.exports = {
 //            var results; //holder; to return via resolve
             
             if (1){
-                var params_listBuckets = {
-                };
                 /*
                 var params_headBucket = {
                     Bucket: 'STRING_VALUE' //REQUIRED
                 };
                 */
-                //var info = []; //created in case response is data only
-                var bucketList = s3Data.listBuckets(params_listBuckets, function callback (err, data){
+                var info = []; //collect data.Buckets .Name?
+                s3Data.listBuckets({}, function callback (err, data){
                     if(err){
                         console.log(err, err.stack);
                         reject("rejected!"/*msg.errorMessage(err.message)*/);
                     }
-                    //code
-                    //info.push(data);
+                    else {//code
+                        var buckets = data.Buckets //.Buckets, array<map>, name-creationDate; .Owner, map, DisplayName-ID
+                        
+                        buckets.forEach(function (bucket) {
+                            var name = bucket.Name;
+                            info.push(name);
+                        });
+                        
+                        resolve(info);
+                    }
                 });
                 /*
                 var bucketHead = s3Data.headBucket(params_headBucket, function callback (err, data){
@@ -78,21 +84,22 @@ module.exports = {
                 
                 
                 
-                
+                /*
+                //slack message formatting
                 slackMsg.addAttachment(msg.getAttachNum());
                 var text = '';
-                text = "\n\nlist all buckets owned by the authenticated sender of the request:: "/*
+                text = "\n\nlist all buckets owned by the authenticated sender of the request:: "
                     + " \nJSON.stringify:: "
-                    + JSON.stringify(bucketList)*//*
+                    + JSON.stringify(bucketList)
                     + " \ntoString():: "
-                    + bucketList.toString();*//*
+                    + bucketList.toString();
                     + " \ndry:: "
-                    + bucketList*/
+                    + bucketList
                     + " \ncheck if bucket exists and you have permission to access it:: " 
                     //+ bucketHead
                 ;
                 slackMsg.addText(text);
-                resolve(slackMsg);
+                resolve(slackMsg);*/
             }
             else{
                 reject("rejected!"/*msg.errorMessage("something went wrong! in s3.js")*/);
