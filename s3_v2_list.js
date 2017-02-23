@@ -63,99 +63,10 @@ module.exports = {
                 resolve(slackMsg);
             }
 
-
-
-
-            /*
-            //use bucket names from other function then use that to for each below code by changing params_headBucket.Bucket and calling method
-            var params_headBucket = {
-                Bucket: 'STRING_VALUE' //REQUIRED
-            };
-            var allHeadBuckets = [];
-            s3Data.headBucket(params_headBucket, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
-                }
-                else {//code
-                
-//                    var extracts = data.SOMETHING;
-                    extracts.forEach(function (extract) {
-                        var something = extract.something;
-                        allHeadBuckets.push(something);
-                    });
-
-
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
-
-                    if (allHeadBuckets.length > 0){
-                        allHeadBuckets.forEach(function(extract){
-                            text += "headbucket: " + something + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no headbuckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                }
-            });
-            */
-            
         })/*.catch((err)=>{
                 reject(msg.errorMessage(err));
         })*/;
-    }/*,
-    //access control policy of buckets.
-    getBuckets : function (){
-        
-        return new Promise(function (resolve, reject) {    
-
-            var slackMsg = new SlackTemplate();
-            
-            var info = []; //collect data.Buckets.Name
-            s3Data.listBuckets({}, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
-                }
-                else {//code
-                    //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
-                    var buckets = data.Buckets;
-                    buckets.forEach(function (bucket) {
-                        var name = bucket.Name;
-                        info.push(name);
-                    });
-
-
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
-
-                    if (info.length > 0){
-                        info.forEach(function(name){
-                            text += "S3 bucket: " + name + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no S3 buckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                }
-            });
-
-        }).catch((err)=>{
-                reject(msg.errorMessage(err));
-        });
-    }*//*,
-    
+    }/*
     
     
     

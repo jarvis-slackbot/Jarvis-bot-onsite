@@ -127,7 +127,8 @@ var helpList = {
     ec2info: "Generic EC2 instance information.",
     ec2net: "EC2 instance network related information.",
     ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
-    s3list: "list s3 buckets (Command in Progress)"
+    s3list: "list s3 buckets (Command in Progress)",
+    getAcl: "gets acl objects from buckets (Command in Progress)"
 };
 
 // Response commandList
@@ -150,5 +151,6 @@ var commandList = {
         health: require('./health.js').getAWSHealth(),
         ec2ebs: require('./ec2.js').getEBSInfo(),
         s3list: require('./s3.js').getBuckets(),
+        s3acl:  require('./s3.js').getAcl(),
     }
 };

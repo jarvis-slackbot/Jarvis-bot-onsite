@@ -108,7 +108,55 @@ module.exports = {
         }).catch((err)=>{
                 reject(msg.errorMessage(err));
         });
+    },
+    //access control policy (aka acl) of buckets.
+    getAcl : function (){
+        
+        return new Promise(function (resolve, reject) {    
+
+            var slackMsg = new SlackTemplate();
+            
+            var info = []; //collects data; (object-acl for buckets)
+            //params to be changed for multiple buckets through a seperate function
+            s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
+                if(err){
+                    //console.log(err, err.stack);
+                    reject(msg.errorMessage(err.message));
+                }
+                else {//code
+                    info.push(data);
+                    
+
+                    //slack message formatting
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    var text = '';
+
+                    if (info.length > 0){
+                        info.forEach(function(acl){
+                            text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
+                        });
+                        slackMsg.addText(text);
+                        resolve(slackMsg);
+                    }
+                    else {
+                        text = "There are no acl for present S3 buckets.";
+                        slackMsg.addText(text);
+                        resolve(slackMsg);
+                    }
+                }
+            });
+
+        }).catch((err)=>{
+                reject(msg.errorMessage(err));
+        });
     }/*,
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -132,6 +180,28 @@ module.exports = {
     */
     
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
