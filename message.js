@@ -56,6 +56,11 @@ exports.capitalizeFirstLetter = function(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
+// Put name and id in consistent title format
+exports.toTitle = function(name, id){
+    return name + ' (' + id + ')';
+}
+
         //s3tags: require('./s3.js').getS3Tags(),
         //s3bucketobject: require('./s3.js').getS3BucketObject(),
 
