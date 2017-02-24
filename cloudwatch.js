@@ -11,20 +11,29 @@ const ec2 = require('./ec2.js');
 
 const DEFAULT_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
 const CPU_WARN = 80.0;  // CPU percent value >= to issue warning color
+const MINUTES = "Minutes";
+const HOURS = "Hours";
+const DAYS = "Days";
+const DEFAULT_TIME_TYPE = MINUTES;
+// The following is for the period setting of getMetricStatistics param
+const MIN_PERIOD = 60; // In seconds
 
 module.exports = {
 
     // EC2 --------------------------------------------------
 
     // CPU
-    getEc2Cpu: function(options){
+    getEc2Cpu: function(args){
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
+            var time = getTime(args);
+            var timems = getTimeMs(args);
+            var timeLabel = getTimeType(args);
 
             // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
-            var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
+            var date2 = new Date(Date.now() - timems);
 
             ec2.instList().then((instanceList) => {
 
@@ -45,7 +54,7 @@ module.exports = {
                             EndTime: date,
                             MetricName: 'CPUUtilization',
                             Namespace: 'AWS/EC2',
-                            Period: DEFAULT_TIME * 60,    // Seconds
+                            Period: getPeriod(timems),    // Seconds
                             StartTime: date2,
                             Dimensions: [
                                 {
@@ -74,11 +83,11 @@ module.exports = {
                                     slackMsg.addColor(msg.SLACK_RED);
                                 // Server online
                                 } else {
-                                    var average = dataPoint.Average;
+                                    var average = round(dataPoint.Average);
                                     var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
                                     text +=
                                         "CPU averaged " + average + "% in the last " +
-                                        DEFAULT_TIME + " minutes.\n";
+                                        time + " " + timeLabel + ".\n";
                                     slackMsg.addColor(color);
                                 }
                                 slackMsg.addTitle(msg.toTitle(name, id));
@@ -307,26 +316,79 @@ module.exports = {
     }
 };
 
+// Get user input for time
+function getTime(args){
+    var res = 0;
+    if(args.hasOwnProperty('time')){
+        res = args.time;
+    }
+    else{
+        res = DEFAULT_TIME;
+    }
+    return res;
+}
 // Pass in entire argument object from user
 // Returns start time in ms
-function getTime(args){
-    var value = args.time;
+function getTimeMs(args){
+    var value = getTime(args);
+    var type = getTimeType(args);
     var ms;
 
     // TODO - error checking
-    if(args.minutes){
-        ms = (value * 60) * 1000;
-    }
-    else if(args.hours){
-        ms = (value * 60 * 60) * 1000;
-    }
-    else if(args.days){
-        ms = (value * 3600 * 24) * 1000
-    }
-    // Use default time
-    else{
-       ms = (DEFAULT_TIME * 60) * 1000;  // Minutes
+    // TODO restrict time based on AWS req
+    switch(type){
+        case MINUTES:
+            ms = (value * 60) * 1000;
+            break;
+        case HOURS:
+            ms = (value * 3600) * 1000;
+            break;
+        case DAYS:
+            ms = (value * 3600 * 24) * 1000;
+            break;
+        default:
+            ms = 0; // Something bad happened
+
     }
 
     return ms;
+}
+
+// Return type of time
+function getTimeType(args){
+    var type = DEFAULT_TIME_TYPE;
+
+    if(args.hasOwnProperty('minutes')){
+        type = MINUTES;
+    }
+    else if(args.hasOwnProperty('hours')){
+        type = HOURS;
+    }
+    else if(args.hasOwnProperty('days')){
+        type = DAYS;
+    }
+
+    return type;
+}
+
+// Period must be a multiple of MIN_PERIOD
+function getPeriod(timems){
+    var period;
+    if(timems < MIN_PERIOD) {
+        period = MIN_PERIOD;
+    }
+    // Round period to 60 second interval
+    // More or less extra safety, these values should ALWAYS be in 60 second intervals from user
+    else{
+        period = Math.floor(timems / 1000); // put it into seconds
+        period = period - (period % MIN_PERIOD);
+    }
+
+    return period;
+
+}
+
+// Round to two decimal places
+function round(avg){
+    return +avg.toFixed(2);
 }
