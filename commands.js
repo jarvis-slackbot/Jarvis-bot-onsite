@@ -167,9 +167,10 @@ const commandList = {
             Function: require('./cloudwatch').getEc2Cpu,
             Description: "Current server CPU usage.",
             Arguments: [
-                { name: 'verbose', alias: 'v', type: Boolean },
-                { name: 'src', type: String, multiple: true, defaultOption: true },
-                { name: 'timeout', alias: 't', type: Number }
+                {name: 'time', alias: 't', type: Number},
+                {name: 'minutes', alias: 'm', type: Boolean},
+                {name: 'hours', alias: 'h', type: Boolean},
+                {name: 'days', alias: 'd', type: Boolean}
             ]
         },
         {
