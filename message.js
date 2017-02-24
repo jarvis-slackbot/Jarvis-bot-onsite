@@ -61,9 +61,6 @@ exports.toTitle = function(name, id){
     return name + ' (' + id + ')';
 }
 
-        //s3tags: require('./s3.js').getS3Tags(),
-        //s3bucketobject: require('./s3.js').getS3BucketObject(),
-
 // Clean and splice input.
 function cleanInput(message){
     // Any clean input code here, otherwise just split
