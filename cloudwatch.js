@@ -184,7 +184,7 @@ module.exports = {
                                                 networkOutType = ' bytes.';
                                             }
                                                 text +=
-                                                    '\nAverage Network Usage in the last ' + CPU_INTERVAL + ' minutes:' +
+                                                    '\nAverage Network Usage in the last ' + DEFAULT_TIME + ' minutes:' +
                                                     "\nNetwork usage In: " + networkIn + networkInType +
                                                     "\nNetwork usage Out: " + networkOut + networkOutType;
 

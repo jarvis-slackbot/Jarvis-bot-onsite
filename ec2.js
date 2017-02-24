@@ -412,6 +412,51 @@ module.exports = {
 
         return name;
     },
+    
+    getEC2SecurityInfo: function(){
+        return new Promise(function(resolve, reject){
+            var slackMsg = new SlackTemplate();
+            
+            module.exports.instList().then((instanceList) => {
+                instanceList.forEach(function (inst){
+                   var text = '';
+                   var name = module.exports.getEC2Name(inst);
+                   var instanceId = inst.InstanceId;
+                   var secGroups = inst.SecurityGroups ? inst.SecurityGroups : 'No security groups found.';
+                   var iamRole = inst.Role ? inst.Role : 'No role found.';
+                    
+                   text += 'Security Groups: \n';
+                   slackMsg.addAttachment(msg.getAttachNum());
+                   if (secGroups === 'No security groups found.'){
+                        text += '' + secGroups;
+                        slackMsg.addColor(msg.SLACK_YELLOW);
+                   } else {
+                       secGroups.forEach(function (group){
+                           text += '\tName: '+ group.GroupName + '\tId: '+ group.GroupId;
+                       });
+                       slackMsg.addColor(msg.SLACK_GREEN);
+                   }
+                    
+                   text += '\n\nIAM Role: '
+                   if (iamRole === 'No role found.'){
+                       text += '' + iamRole;
+                       slackMsg.addColor(msg.SLACK_YELLOW);
+                   } else {
+                       text += '' + iamRole.RoleName;
+                       slackMsg.addColor(msg.SLACK_GREEN);
+                   }
+                   slackMsg.addTitle(msg.toTitle(name, instanceId));
+                   slackMsg.addText(text);
+                    
+                });
+                resolve(slackMsg);
+            }).catch((err) =>{
+                reject(msg.errorMessage(err));
+            });   
+        });
+    }
+            
+            
 };
 
 // Return all instance Name/ID's as : [{name, id},...]
