@@ -202,6 +202,21 @@ const commandList = {
             Name: "ec2ebs",
             Function: require('./ec2.js').getEBSInfo(),
             Description: "EC2 attached EBS (Elastic Bloc Storage) volume information."
-        }
+        },
+        {
+            Name: "s3tags",
+            Function: require('./s3.js').getS3Tags(),
+            Description: "Get S3 Tags from bucket."
+        },
+        {
+            Name: "s3bucketobject",
+            Function: require('./s3.js').getS3BucketObject(),
+            Description: "Return a list of objects in the bucket."
+        },
+        {
+            Name: "s3acl",
+            Function: require('./s3.js').getAcl(),
+            Description: "Gets acl objects from buckets (Command in Progress)."
+        },
     ]
 };
