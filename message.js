@@ -127,7 +127,9 @@ var helpList = {
     ec2info: "Generic EC2 instance information.",
     ec2net: "EC2 instance network related information.",
     ec2ebs: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
-//    getAcl: "gets acl objects from buckets (Command in Progress)",
+    s3tags: "Get S3 Tags from bucket.",
+    s3bucketobject: "Return a list of objects in the bucket.",
+//    s3acl: "gets acl objects from buckets (Command in Progress)",
 };
 
 // Response commandList
@@ -149,6 +151,8 @@ var commandList = {
         ec2net: require('./ec2.js').getNetworkInfo(),
         health: require('./health.js').getAWSHealth(),
         ec2ebs: require('./ec2.js').getEBSInfo(),
+        s3tags: require('./s3.js').getS3Tags(),
+        s3bucketobject: require('./s3.js').getS3BucketObject(),
 //        s3acl:  require('./s3.js').getAcl(),
     }
 };
