@@ -4,15 +4,36 @@
 
 const commandLineArgs = require('command-line-args');
 
-
 // Parse command and get select appropriate function
 // Param message is array of command line args (message[0] being command itself)
 exports.parseCommand = function(message){
     var first = message[0].toString();
     var func;
+    var cmd;
+    message.splice(0,1); // remove command to get arguments
 
     if(isAWSCommand(first)){
-        func = getAWSCommand(first).Function;
+        cmd = getAWSCommand(first);
+        // If there are arguments, pass them along to function
+        if(hasArguments(cmd)){
+            try {
+                var options = listEmpty(message) ? null
+                    : commandLineArgs(cmd.Arguments, {argv: message});
+                func = cmd.Function(options);
+            } catch(err){
+                // Must return a promise for proper message handling
+                func = new Promise(function(resolve, reject){
+                    var msg = require('./message.js').errorMessage(
+                        "Argument error: " + err.name
+                    );
+                    resolve(msg);
+                });
+            }
+
+        }
+        else{
+            func = cmd.Function;
+        }
     }
     // If it's a non aws command
     else if(isCommand(first)){
@@ -28,6 +49,12 @@ exports.parseCommand = function(message){
 exports.isCommand = function(message){
   return (isCommand(message) || isAWSCommand(message));
 };
+
+// Does this command has arguments?
+function hasArguments(command){
+    return !!(command.Arguments);
+}
+
 
 // If the command is the help command - Special case here
 function isHelp(first){
@@ -100,6 +127,11 @@ function toCodeBlock(str){
     return backticks + str + backticks;
 }
 
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
+
 // ------------------COMMANDS---------------------------
 
 // Response commandList
@@ -132,8 +164,13 @@ const commandList = {
         },
         {
             Name: "ec2cpu",
-            Function: require('./cloudwatch').getEc2Cpu(),
-            Description: "Current server CPU usage."
+            Function: require('./cloudwatch').getEc2Cpu,
+            Description: "Current server CPU usage.",
+            Arguments: [
+                { name: 'verbose', alias: 'v', type: Boolean },
+                { name: 'src', type: String, multiple: true, defaultOption: true },
+                { name: 'timeout', alias: 't', type: Number }
+            ]
         },
         {
             Name: "ec2disk",

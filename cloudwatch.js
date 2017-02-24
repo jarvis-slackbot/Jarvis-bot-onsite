@@ -17,7 +17,7 @@ module.exports = {
     // EC2 --------------------------------------------------
 
     // CPU
-    getEc2Cpu: function(){
+    getEc2Cpu: function(options){
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
