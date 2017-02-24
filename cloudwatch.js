@@ -9,7 +9,7 @@ const aws = require('aws-sdk');
 const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 const ec2 = require('./ec2.js');
 
-const CPU_INTERVAL = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
+const DEFAULT_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
 const CPU_WARN = 80.0;  // CPU percent value >= to issue warning color
 
 module.exports = {
@@ -17,14 +17,14 @@ module.exports = {
     // EC2 --------------------------------------------------
 
     // CPU
-    getEc2Cpu: function(){
+    getEc2Cpu: function(options){
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
 
             // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
-            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+            var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
 
             ec2.instList().then((instanceList) => {
 
@@ -45,7 +45,7 @@ module.exports = {
                             EndTime: date,
                             MetricName: 'CPUUtilization',
                             Namespace: 'AWS/EC2',
-                            Period: CPU_INTERVAL * 60,    // Seconds
+                            Period: DEFAULT_TIME * 60,    // Seconds
                             StartTime: date2,
                             Dimensions: [
                                 {
@@ -78,7 +78,7 @@ module.exports = {
                                     var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
                                     text +=
                                         "CPU averaged " + average + "% in the last " +
-                                        CPU_INTERVAL + " minutes.\n";
+                                        DEFAULT_TIME + " minutes.\n";
                                     slackMsg.addColor(color);
                                 }
                                 slackMsg.addTitle(msg.toTitle(name, id));
@@ -100,7 +100,7 @@ module.exports = {
 
             //Date + Time of request
             var date = new Date(Date.now());
-            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+            var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
 
             ec2.instList().then((instanceList) => {
 
@@ -121,7 +121,7 @@ module.exports = {
                             EndTime: date,
                             MetricName: 'NetworkIn',
                             Namespace: 'AWS/EC2',
-                            Period: CPU_INTERVAL * 60,
+                            Period: DEFAULT_TIME * 60,
                             StartTime: date2,
                             Dimensions: [{
                                 Name: 'InstanceId',
@@ -210,7 +210,7 @@ module.exports = {
 
             //Date + Time of request
             var date = new Date(Date.now());
-            var date2 = new Date(Date.now() - ((CPU_INTERVAL * 60) * 1000));
+            var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
 
             ec2.instList().then((instanceList) => {
     
@@ -232,7 +232,7 @@ module.exports = {
                                 EndTime: date,
                                 MetricName: 'VolumeReadOps',
                                 Namespace: 'AWS/EBS',
-                                Period: CPU_INTERVAL * 60,
+                                Period: DEFAULT_TIME * 60,
                                 StartTime: date2,
                                 Dimensions: [{
                                     Name: 'VolumeId',
@@ -255,7 +255,7 @@ module.exports = {
                                         EndTime: date,
                                         MetricName: 'VolumeWriteOps',
                                         Namespace: 'AWS/EBS',
-                                        Period: CPU_INTERVAL * 60,
+                                        Period: DEFAULT_TIME * 60,
                                         StartTime: date2,
                                         Dimensions: [{
                                             Name: 'VolumeId',
@@ -275,9 +275,9 @@ module.exports = {
                                         } else {
                                             slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
                                             var writeOps = writeData.Datapoints[0] ?
-                                                writeData.Datapoints[0] / (CPU_INTERVAL * 60) : "Not found";
+                                                writeData.Datapoints[0] / (DEFAULT_TIME * 60) : "Not found";
                                             var readOps = readData.Datapoints[0] ?
-                                                readData.Datapoints[0] / (CPU_INTERVAL * 60) : "Not found";
+                                                readData.Datapoints[0] / (DEFAULT_TIME * 60) : "Not found";
 
                                             if(writeOps === "Not found" && readOps === "Not found"){
                                                 slackMsg.addColor(msg.SLACK_RED);
@@ -305,3 +305,27 @@ module.exports = {
         });
     }
 };
+
+// Pass in entire argument object from user
+// Returns start time in ms
+function getTime(args){
+    var value = args.time;
+    var ms;
+
+    // TODO - error checking
+    if(args.minutes){
+        ms = (value * 60) * 1000;
+    }
+    else if(args.hours){
+        ms = (value * 60 * 60) * 1000;
+    }
+    else if(args.days){
+        ms = (value * 3600 * 24) * 1000
+    }
+    // Use default time
+    else{
+       ms = (DEFAULT_TIME * 60) * 1000;  // Minutes
+    }
+
+    return ms;
+}
