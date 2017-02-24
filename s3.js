@@ -13,13 +13,7 @@ const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2016-11-15'});
 
 module.exports = {
-    /*model
-    { buckets: 
-        {name:b1, region: r1}, 
-        {name:b2, region: r2}
-    }
-    */
-//    model : {}, 
+
     //Get bucket info for other functions to use (bucketNames)
     bucketNamesList: function(){
         return new Promise(function (resolve, reject) {    
@@ -41,40 +35,51 @@ module.exports = {
                 }
             });
         });
-    },
-    //list avaiable buckets
-    getBuckets : function (){
-        return new Promise(function (resolve, reject) {
-            
+    }/*,
+    
+    
+    
+    //access control policy (aka acl) of buckets.
+    getAcl : function (){
+        
+        return new Promise(function (resolve, reject) {    
+
             var slackMsg = new SlackTemplate();
-
-            module.exports.bucketNamesList().then((bucketNames) => {
-                //slack message formatting
-                slackMsg.addAttachment(msg.getAttachNum());
-                var text = '';
-
-                if (bucketNames.length > 0){
-                    bucketNames.forEach(function(name){
-                        text += "S3 bucket: " + name + "\n";
-                    });
-                    slackMsg.addText(text);
-                    resolve(slackMsg);
+            
+            var info = []; //collects data; (object-acl for buckets)
+            //params to be changed for multiple buckets through a seperate function
+            s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
+                if(err){
+                    //console.log(err, err.stack);
+                    reject(msg.errorMessage(err.message));
                 }
-                else {
-                    text = "There are no S3 buckets.";
-                    slackMsg.addText(text);
-                    resolve(slackMsg);
-                }
+                else {//code
+                    info.push(data);
+                    
 
-            }).catch((err)=>{
-                    reject(msg.errorMessage(err));
+                    //slack message formatting
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    var text = '';
+
+                    if (info.length > 0){
+                        info.forEach(function(acl){
+                            text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
+                        });
+                        slackMsg.addText(text);
+                        resolve(slackMsg);
+                    }
+                    else {
+                        text = "There are no acl for present S3 buckets.";
+                        slackMsg.addText(text);
+                        resolve(slackMsg);
+                    }
+                }
             });
+
+        }).catch((err)=>{
+                reject(msg.errorMessage(err));
         });
-    }/*
-    
-    
-    
-    
+    }/*,
     
     getBucketNames : function (){
         
