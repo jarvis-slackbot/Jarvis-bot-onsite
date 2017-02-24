@@ -1,4 +1,5 @@
 'use strict';
+//require('./setEnvironments.js');
 const aws = require('aws-sdk');
 const promiseDelay = require('promise-delay');
 var botBuilder = require('claudia-bot-builder');
@@ -7,9 +8,8 @@ const slackDelayedReply = botBuilder.slackDelayedReply;
 const lambda = new aws.Lambda();
 const msg = require('./message.js');
 
-
 const api = botBuilder((message, apiRequest) => {
-
+    
     return new Promise((resolve, reject) => {
         lambda.invoke({
             FunctionName: apiRequest.lambdaContext.functionName,
@@ -68,3 +68,7 @@ api.intercept((event) => {
 
 
 module.exports = api;
+
+
+//module.exports = auth.api;
+
