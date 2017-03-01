@@ -9,7 +9,8 @@ const aws = require('aws-sdk');
 const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 const ec2 = require('./ec2.js');
 
-const DEFAULT_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
+const DEFAULT_TIME = 5; // In minutes.
+const MIN_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
 const CPU_WARN = 80.0;  // CPU percent value >= to issue warning color
 const MINUTES = "Minutes";
 const HOURS = "Hours";
@@ -17,6 +18,10 @@ const DAYS = "Days";
 const DEFAULT_TIME_TYPE = MINUTES;
 // The following is for the period setting of getMetricStatistics param
 const MIN_PERIOD = 60; // In seconds
+const PERIOD_15 = 15 * (3600 * 24); // In seconds, 15 days - the AWS period for first increase (to 5min)
+const PERIOD_15_TIME = 5 * 60; // In seconds, 5 minutes
+const PERIOD_63 = 63 * (3600 * 24); // In seconds, 15 days - the AWS period for last increase (to 1 hour)
+const PERIOD_63_TIME = 60 * 60; // In seconds, 1 hour
 
 module.exports = {
 
@@ -318,14 +323,14 @@ module.exports = {
 
 // Get user input for time
 function getTime(args){
-    var res = 0;
-    if(args.hasOwnProperty('time')){
-        res = args.time;
+    var value = 0;
+    if(args && args.hasOwnProperty('time')){
+        value = args.time;
     }
     else{
-        res = DEFAULT_TIME;
+        value = DEFAULT_TIME;
     }
-    return res;
+    return value;
 }
 // Pass in entire argument object from user
 // Returns start time in ms
@@ -334,10 +339,9 @@ function getTimeMs(args){
     var type = getTimeType(args);
     var ms;
 
-    // TODO - error checking
-    // TODO restrict time based on AWS req
-    switch(type){
+    switch (type) {
         case MINUTES:
+            value = value < MIN_TIME ? MIN_TIME : value;
             ms = (value * 60) * 1000;
             break;
         case HOURS:
@@ -347,7 +351,7 @@ function getTimeMs(args){
             ms = (value * 3600 * 24) * 1000;
             break;
         default:
-            ms = 0; // Something bad happened
+            ms = DEFAULT_TIME * 60 * 1000;
 
     }
 
@@ -358,14 +362,16 @@ function getTimeMs(args){
 function getTimeType(args){
     var type = DEFAULT_TIME_TYPE;
 
-    if(args.hasOwnProperty('minutes')){
-        type = MINUTES;
-    }
-    else if(args.hasOwnProperty('hours')){
-        type = HOURS;
-    }
-    else if(args.hasOwnProperty('days')){
-        type = DAYS;
+    if(args) {
+        if (args.hasOwnProperty('minutes')) {
+            type = MINUTES;
+        }
+        else if (args.hasOwnProperty('hours')) {
+            type = HOURS;
+        }
+        else if (args.hasOwnProperty('days')) {
+            type = DAYS;
+        }
     }
 
     return type;
@@ -373,15 +379,22 @@ function getTimeType(args){
 
 // Period must be a multiple of MIN_PERIOD
 function getPeriod(timems){
-    var period;
+    var period = Math.floor(timems / 1000); // put it into seconds
     if(timems < MIN_PERIOD) {
         period = MIN_PERIOD;
     }
     // Round period to 60 second interval
     // More or less extra safety, these values should ALWAYS be in 60 second intervals from user
-    else{
-        period = Math.floor(timems / 1000); // put it into seconds
+    else if(period < PERIOD_15){
         period = period - (period % MIN_PERIOD);
+    }
+    // 15 day period
+    else if(period < PERIOD_63){
+        period = period - (period % PERIOD_15_TIME);
+    }
+    // 63 day period
+    else{
+        period = period - (period % PERIOD_63_TIME);
     }
 
     return period;
