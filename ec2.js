@@ -25,61 +25,73 @@ const AMI_PEND = 'pending';
 module.exports = {
 
 // Server up or down (EC2 Only)
-    getStatus: function () {
+    getStatus: function (args) {
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
 
-            getInstNameIdList().then((instancesList) => {
-                var idList = getIdsFromList(instancesList);
-                var statusParams = {
-                    DryRun: false,
-                    IncludeAllInstances: true, // Include status for instances even when NOT running.
-                    InstanceIds:idList
-                };
+            module.exports.instList().then((instancesList) => {
+                // Argument processing here
+                if(hasArgs(args)){
+                    instancesList = filterInstListByTagValues(instancesList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(instancesList)){
+                    reject(msg.errorMessage("No instances found."));
+                }
+                else {
+                    // Get name/id pair only
+                    instancesList = getInstNameIdFromList(instancesList);
+                    var idList = getIdsFromList(instancesList);
+                    var statusParams = {
+                        DryRun: false,
+                        IncludeAllInstances: true, // Include status for instances even when NOT running.
+                        InstanceIds: idList
+                    };
 
-                ec2Data.describeInstanceStatus(statusParams, function(err, data){
-                    if(err){
-                        reject(msg.errorMessage(err.message));
-                    }
-                    var instances = data.InstanceStatuses;
-                    instances.forEach(function(inst){
-                        slackMsg.addAttachment(msg.getAttachNum());
-                        var text = '';
-                        var instId = inst.InstanceId;
-                        var name = getNamebyId(instId, instancesList);
-                        var status = inst.InstanceState.Name;
-                        var sysStatus = inst.SystemStatus.Status;
-                        var sysDetails = inst.SystemStatus.Details;
-                        var instStatus = inst.InstanceStatus.Status;
-                        var instDetails = inst.InstanceStatus.Details;
+                    ec2Data.describeInstanceStatus(statusParams, function (err, data) {
+                        if (err) {
+                            reject(msg.errorMessage(err.message));
+                        }
+                        var instances = data.InstanceStatuses;
+                        instances.forEach(function (inst) {
+                            slackMsg.addAttachment(msg.getAttachNum());
+                            var text = '';
+                            var instId = inst.InstanceId;
+                            var name = getNamebyId(instId, instancesList);
+                            var status = inst.InstanceState.Name;
+                            var sysStatus = inst.SystemStatus.Status;
+                            var sysDetails = inst.SystemStatus.Details;
+                            var instStatus = inst.InstanceStatus.Status;
+                            var instDetails = inst.InstanceStatus.Details;
 
-                        text +=
-                            'Instance State: ' + status + '\n' +
-                            'System Status: ' + sysStatus + '\n';
+                            text +=
+                                'Instance State: ' + status + '\n' +
+                                'System Status: ' + sysStatus + '\n';
 
-                        // If there are system details, add to information
-                        (listEmpty(sysDetails)) ? text += '' : sysDetails.forEach((detail)=>{
-                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                            // If there are system details, add to information
+                            (listEmpty(sysDetails)) ? text += '' : sysDetails.forEach((detail) => {
+                                    text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
                                         msg.capitalizeFirstLetter(detail.Status) + '\n';
+                                });
+                            text += 'Instance Status: ' + instStatus + '\n';
+                            // If there are instance details, add to information
+                            (listEmpty(instDetails)) ? text += '' : instDetails.forEach((detail) => {
+                                    text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                                        msg.capitalizeFirstLetter(detail.Status) + '\n';
+                                });
+
+                            slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
+
+
+                            slackMsg.addTitle(msg.toTitle(name, instId));
+                            slackMsg.addText(text);
                         });
-                        text += 'Instance Status: ' + instStatus + '\n';
-                        // If there are instance details, add to information
-                        (listEmpty(instDetails)) ? text += '' : instDetails.forEach((detail)=>{
-                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
-                                    msg.capitalizeFirstLetter(detail.Status) + '\n';
-                        });
-
-                        slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
 
 
-                        slackMsg.addTitle(msg.toTitle(name, instId));
-                        slackMsg.addText(text);
+                        resolve(slackMsg);
                     });
-
-
-                    resolve(slackMsg);
-                });
+                }
             }).catch((err) => {
                 reject(msg.errorMessage(err));
             });
@@ -437,7 +449,7 @@ module.exports = {
                        slackMsg.addColor(msg.SLACK_GREEN);
                    }
                     
-                   text += '\n\nIAM Role: '
+                   text += '\n\nIAM Role: ';
                    if (iamRole === 'No role found.'){
                        text += '' + iamRole;
                        slackMsg.addColor(msg.SLACK_YELLOW);
@@ -459,23 +471,56 @@ module.exports = {
             
 };
 
-// Return all instance Name/ID's as : [{name, id},...]
-function getInstNameIdList() {
-    return new Promise(function(resolve, reject){
-        var idList = [];
-        module.exports.instList().then((instancesList) => {
-            instancesList.forEach(function(inst){
-                var name = module.exports.getEC2Name(inst);
-                var instanceId = inst.InstanceId;
-                idList.push({
-                    name: name,
-                    id: instanceId
+function getTagList(args){
+    var tags = [];
+
+    if(args && args.hasOwnProperty('tags')){
+        tags = args.tags;
+    }
+
+    return tags;
+}
+
+function hasArgs(args){
+    return !!args;
+}
+
+// Filter instances by tag values
+function filterInstListByTagValues(instList,args){
+    var newInstList = [];
+    var tagValues = getTagList(args);
+    if(tagValues) {
+        instList.forEach((inst) => {
+            var tags = inst.Tags;
+            tags.forEach((tag) => {
+                tag = tag.Value;
+                tagValues.forEach((tagVal) => {
+                    if (tag === tagVal && !inList(inst, newInstList)) {
+                        newInstList.push(inst);
+                    }
                 });
             });
-            resolve(idList)
+        });
+    }
+    else{
+        newInstList = instList;
+    }
+
+    return newInstList;
+}
+
+// Similar to getInstNameIdList without making API call
+function getInstNameIdFromList(instancesList){
+    var idList = [];
+    instancesList.forEach(function(inst){
+        var name = module.exports.getEC2Name(inst);
+        var instanceId = inst.InstanceId;
+        idList.push({
+            name: name,
+            id: instanceId
         });
     });
-
+    return idList;
 }
 
 // Get inst id list - helps avoid another API call
@@ -496,6 +541,10 @@ function getNamebyId(id, nameIdList){
         }
     });
     return name;
+}
+
+function inList(value, list){
+    return list.indexOf(value) > -1;
 }
 
 // Return true for empty list

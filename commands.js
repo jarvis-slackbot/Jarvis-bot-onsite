@@ -154,8 +154,11 @@ const commandList = {
     AWSCommands:[
         {
             Name: "ec2status",
-            Function: require('./ec2.js').getStatus(),
-            Description: "Server Online/Offline status."
+            Function: require('./ec2.js').getStatus,
+            Description: "Server Online/Offline status.",
+            Arguments: [
+                {name: 'tags', alias: 't', type: String, multiple:true}
+            ]
         },
         {
             Name: "ami",
