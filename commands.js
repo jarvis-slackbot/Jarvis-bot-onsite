@@ -174,8 +174,13 @@ const commandList = {
         },
         {
             Name: "ec2disk",
-            Function: require('./cloudwatch').getEc2Disk(),
-            Description: "Amount of data stored on server bucket."
+            Function: require('./cloudwatch').getEc2Disk,
+            Description: "Amount of data stored on server bucket.",
+            Arguments: [
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
+            ]
         },
         {
             Name: "ec2network",

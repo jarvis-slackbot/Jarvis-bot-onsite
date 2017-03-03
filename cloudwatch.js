@@ -223,9 +223,13 @@ module.exports = {
 
 
     // Disk EBS usage
-    getEc2Disk: function() {
+    getEc2Disk: function(args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
+
+            var timems = getTimeMs(args);
+            var timeLabel = getTimeType(args);
+            var time = getTimeByType(args, timeLabel);
 
             //Date + Time of request
             var date = new Date(Date.now());
@@ -251,7 +255,7 @@ module.exports = {
                                 EndTime: date,
                                 MetricName: 'VolumeReadOps',
                                 Namespace: 'AWS/EBS',
-                                Period: DEFAULT_TIME * 60,
+                                Period: getPeriod(timems),
                                 StartTime: date2,
                                 Dimensions: [{
                                     Name: 'VolumeId',
@@ -274,7 +278,7 @@ module.exports = {
                                         EndTime: date,
                                         MetricName: 'VolumeWriteOps',
                                         Namespace: 'AWS/EBS',
-                                        Period: DEFAULT_TIME * 60,
+                                        Period: getPeriod(timems),
                                         StartTime: date2,
                                         Dimensions: [{
                                             Name: 'VolumeId',
@@ -294,15 +298,17 @@ module.exports = {
                                         } else {
                                             slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
                                             var writeOps = writeData.Datapoints[0] ?
-                                                writeData.Datapoints[0] / (DEFAULT_TIME * 60) : "Not found";
+                                                writeData.Datapoints[0] / getPeriod(timems) : "Not found";
                                             var readOps = readData.Datapoints[0] ?
-                                                readData.Datapoints[0] / (DEFAULT_TIME * 60) : "Not found";
+                                                readData.Datapoints[0] / getPeriod(timems) : "Not found";
 
                                             if(writeOps === "Not found" && readOps === "Not found"){
                                                 slackMsg.addColor(msg.SLACK_RED);
                                                 text += "No data found.\n"
                                             }
                                             else {
+                                                text += 'Average Disk I/O operations in last ' + time +
+                                                    ' ' + timeLabel + ':\n';
                                                 text += 'Disk Read: ' + readOps + ' IOPS' + '\n' +
                                                         'Disk Write: ' + writeOps + ' IOPS' + '\n';
                                                 slackMsg.addColor(msg.SLACK_GREEN);
@@ -410,6 +416,7 @@ function getTimeType(args){
 }
 
 // Period must be a multiple of MIN_PERIOD
+// returns seconds
 function getPeriod(timems){
     var period = Math.floor(timems / 1000); // put it into seconds
     if(timems < MIN_PERIOD) {
