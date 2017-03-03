@@ -167,10 +167,9 @@ const commandList = {
             Function: require('./cloudwatch').getEc2Cpu,
             Description: "Current server CPU usage.",
             Arguments: [
-                {name: 'time', alias: 't', type: Number},
-                {name: 'minutes', alias: 'm', type: Boolean},
-                {name: 'hours', alias: 'h', type: Boolean},
-                {name: 'days', alias: 'd', type: Boolean}
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
             ]
         },
         {
@@ -180,8 +179,13 @@ const commandList = {
         },
         {
             Name: "ec2network",
-            Function: require('./cloudwatch').getEc2Network(),
-            Description: "Ec2 network information."
+            Function: require('./cloudwatch').getEc2Network,
+            Description: "Ec2 network information.",
+            Arguments: [
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
+            ]
         },
         {
             Name: "ec2info",

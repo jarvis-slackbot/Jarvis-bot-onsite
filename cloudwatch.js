@@ -32,9 +32,9 @@ module.exports = {
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
-            var time = getTime(args);
             var timems = getTimeMs(args);
             var timeLabel = getTimeType(args);
+            var time = getTimeByType(args, timeLabel);
 
             // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
@@ -108,13 +108,17 @@ module.exports = {
     },
     
 // NETWORK
-    getEc2Network: function() {
+    getEc2Network: function(args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
 
-            //Date + Time of request
+            var timems = getTimeMs(args);
+            var timeLabel = getTimeType(args);
+            var time = getTimeByType(args, timeLabel);
+
+            // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
-            var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
+            var date2 = new Date(Date.now() - timems);
 
             ec2.instList().then((instanceList) => {
 
@@ -135,7 +139,7 @@ module.exports = {
                             EndTime: date,
                             MetricName: 'NetworkIn',
                             Namespace: 'AWS/EC2',
-                            Period: DEFAULT_TIME * 60,
+                            Period: getPeriod(timems),
                             StartTime: date2,
                             Dimensions: [{
                                 Name: 'InstanceId',
@@ -198,9 +202,9 @@ module.exports = {
                                                 networkOutType = ' bytes.';
                                             }
                                                 text +=
-                                                    '\nAverage Network Usage in the last ' + DEFAULT_TIME + ' minutes:' +
-                                                    "\nNetwork usage In: " + networkIn + networkInType +
-                                                    "\nNetwork usage Out: " + networkOut + networkOutType;
+                                                    '\nAverage Network Usage in the last ' + time + ' ' + timeLabel + ':' +
+                                                    "\nNetwork usage In: " + roundInt(networkIn) + networkInType +
+                                                    "\nNetwork usage Out: " + roundInt(networkOut) + networkOutType;
 
                                             slackMsg.addColor(msg.SLACK_GREEN);
                                         }
@@ -321,33 +325,55 @@ module.exports = {
     }
 };
 
-// Get user input for time
-function getTime(args){
-    var value = 0;
-    if(args && args.hasOwnProperty('time')){
-        value = args.time;
+// Get user entered git time by type.
+function getTimeByType(args, type){
+    var value;
+
+    // If no args, then go to default time setting
+    if(!args){
+        type = 'null';
     }
-    else{
-        value = DEFAULT_TIME;
-    }
-    return value;
-}
-// Pass in entire argument object from user
-// Returns start time in ms
-function getTimeMs(args){
-    var value = getTime(args);
-    var type = getTimeType(args);
-    var ms;
 
     switch (type) {
         case MINUTES:
+            value = args.minutes;
+            break;
+        case HOURS:
+            value = args.hours;
+            break;
+        case DAYS:
+            value = args.days;
+            break;
+        default:
+            value = DEFAULT_TIME;
+    }
+    return value;
+}
+
+// Pass in entire argument object from user
+// Returns start time in ms
+function getTimeMs(args){
+    var value;
+    var type = getTimeType(args);
+    var ms;
+
+    // If no args, then go to default time setting
+    if(!args){
+        type = 'null';
+    }
+
+    switch (type) {
+        case MINUTES:
+            value = args.minutes;
             value = value < MIN_TIME ? MIN_TIME : value;
             ms = (value * 60) * 1000;
             break;
         case HOURS:
+            value = args.hours;
             ms = (value * 3600) * 1000;
             break;
         case DAYS:
+            value = args.days;
             ms = (value * 3600 * 24) * 1000;
             break;
         default:
@@ -360,7 +386,7 @@ function getTimeMs(args){
 
 // Return type of time
 function getTimeType(args){
-    var type = DEFAULT_TIME_TYPE;
+    var type;
 
     if(args) {
         if (args.hasOwnProperty('minutes')) {
@@ -372,6 +398,12 @@ function getTimeType(args){
         else if (args.hasOwnProperty('days')) {
             type = DAYS;
         }
+        else{
+            type = DEFAULT_TIME_TYPE;
+        }
+    }
+    else{
+        type = DEFAULT_TIME_TYPE;
     }
 
     return type;
@@ -404,4 +436,8 @@ function getPeriod(timems){
 // Round to two decimal places
 function round(avg){
     return +avg.toFixed(2);
+}
+// Round to 0 decimal places
+function roundInt(avg){
+    return +avg.toFixed(0);
 }
