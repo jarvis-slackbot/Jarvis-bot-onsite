@@ -157,13 +157,18 @@ const commandList = {
             Function: require('./ec2.js').getStatus,
             Description: "Server Online/Offline status.",
             Arguments: [
-                {name: 'tag', alias: 't', type: String}
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
         },
         {
             Name: "ami",
-            Function: require('./ec2.js').getAMIStatus(),
-            Description: "Amazon Machine Image (AMI) status information."
+            Function: require('./ec2.js').getAMIStatus,
+            Description: "Amazon Machine Image (AMI) status information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ec2cpu",
@@ -197,13 +202,21 @@ const commandList = {
         },
         {
             Name: "ec2info",
-            Function: require('./ec2.js').getHardwareInfo(),
-            Description: "Generic EC2 instance information."
+            Function: require('./ec2.js').getHardwareInfo,
+            Description: "Generic EC2 instance information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ec2net",
-            Function: require('./ec2.js').getNetworkInfo(),
-            Description: "Network information."
+            Function: require('./ec2.js').getNetworkInfo,
+            Description: "Network information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "health",
@@ -212,8 +225,12 @@ const commandList = {
         },
         {
             Name: "ec2ebs",
-            Function: require('./ec2.js').getEBSInfo(),
-            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information."
+            Function: require('./ec2.js').getEBSInfo,
+            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ec2bytag",
@@ -221,8 +238,8 @@ const commandList = {
             Description: "Get list of instances by tag data",
             Arguments: [
                 {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, defaultOption: true}, // List instances that have the specified tag
+                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
+                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
         }
