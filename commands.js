@@ -157,7 +157,7 @@ const commandList = {
             Function: require('./ec2.js').getStatus,
             Description: "Server Online/Offline status.",
             Arguments: [
-                {name: 'tags', alias: 't', type: String, multiple:true}
+                {name: 'tag', alias: 't', type: String}
             ]
         },
         {
@@ -214,6 +214,17 @@ const commandList = {
             Name: "ec2ebs",
             Function: require('./ec2.js').getEBSInfo(),
             Description: "EC2 attached EBS (Elastic Bloc Storage) volume information."
+        },
+        {
+            Name: "ec2bytag",
+            Function: require('./ec2.js').getByTag,
+            Description: "Get list of instances by tag data",
+            Arguments: [
+                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
+                {name: 'notag', alias: 'n', type: String}, // List instances that do not have the specified tag
+                {name: 'tag', alias: 't', type: String, defaultOption: true}, // List instances that have the specified tag
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         }
     ]
 };

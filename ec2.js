@@ -357,6 +357,41 @@ module.exports = {
         });
     },
 
+    // Get instance by tag information
+    getByTag: function(args){
+        return new Promise(function (resolve, reject) {
+            var slackMsg = new SlackTemplate();
+            var colorCounter = 0;
+
+            module.exports.instList().then((instancesList) => {
+                // Argument processing here
+                if(hasArgs(args)){
+                    instancesList = filterInstListByTagValues(instancesList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(instancesList)){
+                    reject(msg.errorMessage("No instances found matching your criteria."));
+                }
+                // Return data
+                else {
+                    instancesList.forEach((inst)=>{
+                        var name = module.exports.getEC2Name(inst);
+                        var id = inst.InstanceId;
+                        slackMsg.addAttachment(msg.getAttachNum());
+                        slackMsg.addTitle(msg.toTitle(name, id));
+                        slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                        colorCounter++;
+
+                    });
+                    resolve(slackMsg);
+                }
+
+            });
+
+
+        });
+    },
+
     // Get list of instances with all of instance information
     instList: function() {
         return new Promise(function (resolve, reject) {
@@ -471,41 +506,114 @@ module.exports = {
             
 };
 
-function getTagList(args){
-    var tags = [];
+// Get used defined tag from argument
+function getArgData(args){
+    var tag;
+    var argument = 'null';
+    var res = null;
 
-    if(args && args.hasOwnProperty('tags')){
-        tags = args.tags;
+    if(args) {
+        if (args.hasOwnProperty('notags')) {
+            tag = '';
+            argument = 'notags';
+        }
+        else if(args.hasOwnProperty('notag')){
+            tag = args.notag;
+            argument = 'notag';
+        }
+        // MUST be last check
+        else if (args.hasOwnProperty('tag')) {
+            tag = args.tag;
+            argument = 'tag';
+        }
+
+        res = {
+            Tag: tag,
+            Arg: argument,
+            Key: args.hasOwnProperty('key')
+        }
     }
 
-    return tags;
+    return res;
 }
 
 function hasArgs(args){
     return !!args;
 }
 
-// Filter instances by tag values
+
+// Filter instances by tag value
+// Handler for tag arguments
 function filterInstListByTagValues(instList,args){
     var newInstList = [];
-    var tagValues = getTagList(args);
-    if(tagValues) {
-        instList.forEach((inst) => {
-            var tags = inst.Tags;
-            tags.forEach((tag) => {
-                tag = tag.Value;
-                tagValues.forEach((tagVal) => {
-                    if (tag === tagVal && !inList(inst, newInstList)) {
-                        newInstList.push(inst);
-                    }
-                });
-            });
-        });
+    var tagData = getArgData(args);
+    // If there is user tag data
+    if(tagData && tagData.Arg !== 'null') {
+
+        // notags was selected
+        if(tagData.Arg === 'notags')
+            newInstList = getInstListWithNoTags(instList);
+        // notag was selected
+        else if(tagData.Arg === 'notag')
+            newInstList = getInstListByNoTag(instList,tagData.Tag, tagData.Key);
+        // tag -- DEFAULT OPTION FOR MOST TAG COMMANDS, KEEP AT END OF CHECKS
+        else if(tagData.Arg === 'tag')
+            newInstList = getInstListbyTag(instList,tagData.Tag, tagData.Key);
+        else
+            newInstList = instList;
+
     }
     else{
         newInstList = instList;
     }
 
+    return newInstList;
+}
+
+// Get inst list of all instances that have NO tags
+function getInstListWithNoTags(instList){
+    var newInstList = [];
+    instList.forEach((inst) => {
+       if(listEmpty(inst.Tags)){
+           newInstList.push(inst);
+       }
+    });
+    return newInstList;
+}
+
+
+// Get inst list that doesn't contain the tag
+function getInstListByNoTag(instList, tagName, keyFlag){
+    var newInstList = [];
+    instList.forEach((inst) => {
+        var tags = inst.Tags;
+        var hasTag = false;
+        tags.forEach((tag) => {
+            tag = keyFlag ? tag.Key : tag.Value;
+            if (tag === tagName && !inList(inst, newInstList)) {
+                hasTag = true;
+            }
+
+        });
+        if(!hasTag)
+            newInstList.push(inst);
+    });
+    return newInstList;
+}
+
+// Get inst list that does contain the tag
+function getInstListbyTag(instList, tagName, keyFlag){
+    var newInstList = [];
+    instList.forEach((inst) => {
+        var tags = inst.Tags;
+        tags.forEach((tag) => {
+            tag = keyFlag ? tag.Key : tag.Value;
+            if (tag === tagName && !inList(inst, newInstList)) {
+                newInstList.push(inst);
+            }
+
+        });
+    });
     return newInstList;
 }
 
