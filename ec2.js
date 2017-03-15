@@ -6,6 +6,7 @@
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
+const argHelper = require('./arguments.js');
 
 // AWS EC2
 const aws = require('aws-sdk');
@@ -32,8 +33,8 @@ module.exports = {
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(hasArgs(args)){
-                    instancesList = filterInstListByTagValues(instancesList, args);
+                if(argHelper.hasArgs(args)){
+                    instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(instancesList)){
@@ -133,8 +134,8 @@ module.exports = {
                             var images = data.Images;
 
                             // Argument processing here
-                            if(hasArgs(args)){
-                                images = filterInstListByTagValues(images, args);
+                            if(argHelper.hasArgs(args)){
+                                images = argHelper.filterInstListByTagValues(images, args);
                             }
                             // Either no instances match criteria OR no instances on AWS
                             if(listEmpty(images)){
@@ -192,8 +193,8 @@ module.exports = {
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(hasArgs(args)){
-                    instancesList = filterInstListByTagValues(instancesList, args);
+                if(argHelper.hasArgs(args)){
+                    instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(instancesList)){
@@ -260,8 +261,8 @@ module.exports = {
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(hasArgs(args)){
-                    instancesList = filterInstListByTagValues(instancesList, args);
+                if(argHelper.hasArgs(args)){
+                    instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(instancesList)){
@@ -336,8 +337,8 @@ module.exports = {
                 var volumes = data.Volumes;
 
                 // Argument processing here
-                if(hasArgs(args)){
-                    volumes = filterInstListByTagValues(volumes, args);
+                if(argHelper.hasArgs(args)){
+                    volumes = argHelper.filterInstListByTagValues(volumes, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(volumes)){
@@ -405,8 +406,8 @@ module.exports = {
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(hasArgs(args)){
-                    instancesList = filterInstListByTagValues(instancesList, args);
+                if(argHelper.hasArgs(args)){
+                    instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(instancesList)){
@@ -546,118 +547,6 @@ module.exports = {
             
 };
 
-// Get used defined tag from argument
-function getArgData(args){
-    var tag = [];
-    var argument = 'null';
-    var res = null;
-
-    if(args) {
-        if (args.hasOwnProperty('notags')) {
-            tag = '';
-            argument = 'notags';
-        }
-        else if(args.hasOwnProperty('notag')){
-            tag = args.notag;
-            tag = tag.join(' '); // For tags with spaces
-            argument = 'notag';
-        }
-        // MUST be last check
-        else if (args.hasOwnProperty('tag')) {
-            tag = args.tag;
-            tag = tag.join(' '); // For tags with spaces
-            argument = 'tag';
-        }
-
-        res = {
-            Tag: tag,
-            Arg: argument,
-            Key: args.hasOwnProperty('key')
-        }
-    }
-
-    return res;
-}
-
-function hasArgs(args){
-    return !!args;
-}
-
-
-// Filter instances by tag value
-// Handler for tag arguments
-function filterInstListByTagValues(instList,args){
-    var newInstList = [];
-    var tagData = getArgData(args);
-    // If there is user tag data
-    if(tagData && tagData.Arg !== 'null') {
-
-        // notags was selected
-        if(tagData.Arg === 'notags')
-            newInstList = getInstListWithNoTags(instList);
-        // notag was selected
-        else if(tagData.Arg === 'notag')
-            newInstList = getInstListByNoTag(instList,tagData.Tag, tagData.Key);
-        // tag -- DEFAULT OPTION FOR MOST TAG COMMANDS, KEEP AT END OF CHECKS
-        else if(tagData.Arg === 'tag')
-            newInstList = getInstListbyTag(instList,tagData.Tag, tagData.Key);
-        else
-            newInstList = instList;
-
-    }
-    else{
-        newInstList = instList;
-    }
-
-    return newInstList;
-}
-
-// Get inst list of all instances that have NO tags
-function getInstListWithNoTags(instList){
-    var newInstList = [];
-    instList.forEach((inst) => {
-       if(listEmpty(inst.Tags)){
-           newInstList.push(inst);
-       }
-    });
-    return newInstList;
-}
-
-
-// Get inst list that doesn't contain the tag
-function getInstListByNoTag(instList, tagName, keyFlag){
-    var newInstList = [];
-    instList.forEach((inst) => {
-        var tags = inst.Tags;
-        var hasTag = false;
-        tags.forEach((tag) => {
-            tag = keyFlag ? tag.Key : tag.Value;
-            if (tag === tagName && !inList(inst, newInstList)) {
-                hasTag = true;
-            }
-
-        });
-        if(!hasTag)
-            newInstList.push(inst);
-    });
-    return newInstList;
-}
-
-// Get inst list that does contain the tag
-function getInstListbyTag(instList, tagName, keyFlag){
-    var newInstList = [];
-    instList.forEach((inst) => {
-        var tags = inst.Tags;
-        tags.forEach((tag) => {
-            tag = keyFlag ? tag.Key : tag.Value;
-            if (tag === tagName && !inList(inst, newInstList)) {
-                newInstList.push(inst);
-            }
-
-        });
-    });
-    return newInstList;
-}
 
 // Similar to getInstNameIdList without making API call
 function getInstNameIdFromList(instancesList){
@@ -691,10 +580,6 @@ function getNamebyId(id, nameIdList){
         }
     });
     return name;
-}
-
-function inList(value, list){
-    return list.indexOf(value) > -1;
 }
 
 // Return true for empty list

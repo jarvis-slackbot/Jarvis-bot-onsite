@@ -2,12 +2,15 @@
     AWS CloudWatch
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/CloudWatch.html
  */
+
+'use strict';
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
 const aws = require('aws-sdk');
 const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
 const ec2 = require('./ec2.js');
+const argHelper = require('./arguments.js');
 
 const DEFAULT_TIME = 5; // In minutes.
 const MIN_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
@@ -34,7 +37,8 @@ module.exports = {
             var slackMsg = new SlackTemplate();
             var timems = getTimeMs(args);
             var timeLabel = getTimeType(args);
-            var time = getTimeByType(args, timeLabel);
+            var time = getUsersTime(args, timeLabel);
+            let count = 0;
 
             // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
@@ -42,66 +46,72 @@ module.exports = {
 
             ec2.instList().then((instanceList) => {
 
-                if (instanceList.length <= 0) {
-                    var errMsg = "No Instances found.";
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addText(errMsg);
-                    resolve(slackMsg);
-
-                } else {
-                    // Get CPU for each instance
-                    instanceList.forEach(function (inst) {
-
-                        var id = inst.InstanceId;
-                        var name = ec2.getEC2Name(inst);
-
-                        var instParams = {
-                            EndTime: date,
-                            MetricName: 'CPUUtilization',
-                            Namespace: 'AWS/EC2',
-                            Period: getPeriod(timems),    // Seconds
-                            StartTime: date2,
-                            Dimensions: [
-                                {
-                                    Name: 'InstanceId',
-                                    Value: id
-                                },
-                            ],
-                            Statistics:[
-                                'Average'
-                            ]
-                        };
-
-                        cw.getMetricStatistics(instParams, function (err, data) {
-
-                            if (err) {
-                                reject(msg.errorMessage(JSON.stringify(err)));
-                            } else {
-                                var dataPoint = data.Datapoints[0];
-                                var text = '';
-                                slackMsg.addAttachment(msg.getAttachNum());
-
-                                // Server is offline or terminated
-                                if(!dataPoint){
-                                    text +=
-                                        "No CPU data found.";
-                                    slackMsg.addColor(msg.SLACK_RED);
-                                // Server online
-                                } else {
-                                    var average = round(dataPoint.Average);
-                                    var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
-                                    text +=
-                                        "CPU averaged " + average + "% in the last " +
-                                        time + " " + timeLabel + ".\n";
-                                    slackMsg.addColor(color);
-                                }
-                                slackMsg.addTitle(msg.toTitle(name, id));
-                                slackMsg.addText(text);
-                            }
-                        });
-                    });
-                    resolve(slackMsg);
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    instanceList = argHelper.filterInstListByTagValues(instanceList, args);
                 }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(instanceList)){
+                    reject(msg.errorMessage("No instances found."));
+                }
+
+                // Get CPU for each instance
+                instanceList.forEach(function (inst) {
+
+                    var id = inst.InstanceId;
+                    var name = ec2.getEC2Name(inst);
+
+                    var instParams = {
+                        EndTime: date,
+                        MetricName: 'CPUUtilization',
+                        Namespace: 'AWS/EC2',
+                        Period: getPeriod(timems),    // Seconds
+                        StartTime: date2,
+                        Dimensions: [
+                            {
+                                Name: 'InstanceId',
+                                Value: id
+                            },
+                        ],
+                        Statistics:[
+                            'Average'
+                        ]
+                    };
+
+                    cw.getMetricStatistics(instParams, function (err, data) {
+
+                        if (err) {
+                            reject(msg.errorMessage(JSON.stringify(err)));
+                        } else {
+                            var dataPoint = data.Datapoints[0];
+                            var text = '';
+                            slackMsg.addAttachment(msg.getAttachNum());
+
+                            // Server is offline or terminated
+                            if(!dataPoint){
+                                text +=
+                                    "No CPU data found.";
+                                slackMsg.addColor(msg.SLACK_RED);
+                            // Server online
+                            } else {
+                                var average = round(dataPoint.Average);
+                                var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
+                                text +=
+                                    "CPU averaged " + average + "% in the last " +
+                                    time + " " + timeLabel + ".\n";
+                                slackMsg.addColor(color);
+                            }
+                            slackMsg.addTitle(msg.toTitle(name, id));
+                            slackMsg.addText(text);
+
+                            count++;
+                            if(count === instanceList.length){
+                                resolve(slackMsg);
+                            }
+
+                        }
+                    });
+                });
             });
 
         });
@@ -114,7 +124,8 @@ module.exports = {
 
             var timems = getTimeMs(args);
             var timeLabel = getTimeType(args);
-            var time = getTimeByType(args, timeLabel);
+            var time = getUsersTime(args, timeLabel);
+            let count = 0;
 
             // Date/Time of request (Date object created in milliseconds)
             var date = new Date(Date.now());
@@ -122,101 +133,105 @@ module.exports = {
 
             ec2.instList().then((instanceList) => {
 
-                if (instanceList.length <= 0) {
-                    var errMsg = "No instances found.";
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addText(errMsg);
-                    resolve(slackMsg);
-
-                } else {
-
-                    instanceList.forEach(function (inst) {
-
-                        var id = inst.InstanceId;
-                        var name = ec2.getEC2Name(inst);
-
-                        var instParams = {
-                            EndTime: date,
-                            MetricName: 'NetworkIn',
-                            Namespace: 'AWS/EC2',
-                            Period: getPeriod(timems),
-                            StartTime: date2,
-                            Dimensions: [{
-                                Name: 'InstanceId',
-                                Value: id
-                            },
-
-                            ],
-                            Statistics: [
-                                'Average'
-                            ]
-                        };
-
-                        cw.getMetricStatistics(instParams, function (err, data) {
-
-                            if (err) {
-                                reject(msg.errorMessage(JSON.stringify(err)));
-                            } else {
-                                var dataPoint = data.Datapoints[0];
-                                slackMsg.addAttachment(msg.getAttachNum());
-
-                                instParams.MetricName = 'NetworkOut';
-
-                                cw.getMetricStatistics(instParams, function (err, data) {
-                                    if (err) {
-                                        reject(msg.errorMessage(JSON.stringify(err)));
-                                    } else {
-                                        var dataPointOut = data.Datapoints[0];
-                                        var text = '';
-                                        slackMsg.addAttachment(msg.getAttachNum());
-                                        if (!dataPoint) {
-                                            text +=
-                                                "No Network data available.";
-                                            slackMsg.addColor(msg.SLACK_RED);
-                                        } else {
-                                            var networkIn = dataPoint.Average;
-                                            var networkOut = dataPointOut.Average;
-                                            var networkInType;
-                                            var networkOutType;
-                                            if(networkIn >= 1000000) {
-                                                networkInType = ' mb.';
-                                                networkIn = networkIn/1000000;
-                                            }
-                                            else if(networkIn > 1000 ){
-                                                networkInType = ' kb.';
-                                                networkIn = networkIn/1000;
-                                            }
-                                            else{
-                                                networkInType = ' bytes.';
-                                            }
-
-                                            if(networkOut >= 1000000) {
-                                                networkOutType = ' mb.';
-                                                networkOut = networkOut/1000000;
-                                            }
-                                            else if(networkOut > 1000 ){
-                                                networkOutType = ' kb.';
-                                                networkOut = networkOut/1000;
-                                            }
-                                            else{
-                                                networkOutType = ' bytes.';
-                                            }
-                                                text +=
-                                                    '\nAverage Network Usage in the last ' + time + ' ' + timeLabel + ':' +
-                                                    "\nNetwork usage In: " + roundInt(networkIn) + networkInType +
-                                                    "\nNetwork usage Out: " + roundInt(networkOut) + networkOutType;
-
-                                            slackMsg.addColor(msg.SLACK_GREEN);
-                                        }
-                                        slackMsg.addTitle(msg.toTitle(name, id));
-                                        slackMsg.addText(text);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                    resolve(slackMsg);
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    instanceList = argHelper.filterInstListByTagValues(instanceList, args);
                 }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(instanceList)){
+                    reject(msg.errorMessage("No instances found."));
+                }
+
+                instanceList.forEach(function (inst) {
+
+                    var id = inst.InstanceId;
+                    var name = ec2.getEC2Name(inst);
+
+                    var instParams = {
+                        EndTime: date,
+                        MetricName: 'NetworkIn',
+                        Namespace: 'AWS/EC2',
+                        Period: getPeriod(timems),
+                        StartTime: date2,
+                        Dimensions: [{
+                            Name: 'InstanceId',
+                            Value: id
+                        },
+
+                        ],
+                        Statistics: [
+                            'Average'
+                        ]
+                    };
+
+                    cw.getMetricStatistics(instParams, function (err, data) {
+
+                        if (err) {
+                            reject(msg.errorMessage(JSON.stringify(err)));
+                        } else {
+                            var dataPoint = data.Datapoints[0];
+                            slackMsg.addAttachment(msg.getAttachNum());
+
+                            instParams.MetricName = 'NetworkOut';
+
+                            cw.getMetricStatistics(instParams, function (err, data) {
+                                if (err) {
+                                    reject(msg.errorMessage(JSON.stringify(err)));
+                                } else {
+                                    var dataPointOut = data.Datapoints[0];
+                                    var text = '';
+                                    slackMsg.addAttachment(msg.getAttachNum());
+                                    if (!dataPoint) {
+                                        text +=
+                                            "No Network data available.";
+                                        slackMsg.addColor(msg.SLACK_RED);
+                                    } else {
+                                        var networkIn = dataPoint.Average;
+                                        var networkOut = dataPointOut.Average;
+                                        var networkInType;
+                                        var networkOutType;
+                                        if(networkIn >= 1000000) {
+                                            networkInType = ' mb.';
+                                            networkIn = networkIn/1000000;
+                                        }
+                                        else if(networkIn > 1000 ){
+                                            networkInType = ' kb.';
+                                            networkIn = networkIn/1000;
+                                        }
+                                        else{
+                                            networkInType = ' bytes.';
+                                        }
+
+                                        if(networkOut >= 1000000) {
+                                            networkOutType = ' mb.';
+                                            networkOut = networkOut/1000000;
+                                        }
+                                        else if(networkOut > 1000 ){
+                                            networkOutType = ' kb.';
+                                            networkOut = networkOut/1000;
+                                        }
+                                        else{
+                                            networkOutType = ' bytes.';
+                                        }
+                                            text +=
+                                                '\nAverage Network Usage in the last ' + time + ' ' + timeLabel + ':' +
+                                                "\nNetwork usage In: " + roundInt(networkIn) + networkInType +
+                                                "\nNetwork usage Out: " + roundInt(networkOut) + networkOutType;
+
+                                        slackMsg.addColor(msg.SLACK_GREEN);
+                                    }
+                                    slackMsg.addTitle(msg.toTitle(name, id));
+                                    slackMsg.addText(text);
+
+                                    count++;
+                                    if(count === instanceList.length){
+                                        resolve(slackMsg);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
         });
     });
     },
@@ -229,21 +244,24 @@ module.exports = {
 
             var timems = getTimeMs(args);
             var timeLabel = getTimeType(args);
-            var time = getTimeByType(args, timeLabel);
+            var time = getUsersTime(args, timeLabel);
+            let count = 0;
 
             //Date + Time of request
             var date = new Date(Date.now());
             var date2 = new Date(Date.now() - ((DEFAULT_TIME * 60) * 1000));
 
             ec2.instList().then((instanceList) => {
-    
-                if (instanceList.length <= 0) {
-                    var errMsg = "No instances found.";
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    slackMsg.addText(errMsg);
-                    resolve(slackMsg);
-    
-                } else {
+
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    instanceList = argHelper.filterInstListByTagValues(instanceList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(instanceList)){
+                    reject(msg.errorMessage("No instances found."));
+                }
+
                     instanceList.forEach(function (inst) {
                         var name = ec2.getEC2Name(inst);
                         var instId = inst.InstanceId;
@@ -315,6 +333,12 @@ module.exports = {
                                             }
                                             slackMsg.addTitle(msg.toTitle(name, instId));
                                             slackMsg.addText(text);
+
+                                            count++;
+                                            if(count === instanceList.length){
+                                                resolve(slackMsg);
+                                            }
+
                                         }
                                     });
 
@@ -323,23 +347,16 @@ module.exports = {
                         });
                         
                     });
-                    
-                    resolve(slackMsg);
-                }
             });
         });
     }
 };
 
-// Get user entered git time by type.
-function getTimeByType(args, type){
+// Get user entered time.
+function getUsersTime(args){
     var value;
-
-    // If no args, then go to default time setting
-    if(!args){
-        type = 'null';
-    }
-
+    var type = getTimeType(args);
+    type = hasUserTime(args) ? type : 'null';
     switch (type) {
         case MINUTES:
             value = args.minutes;
@@ -364,9 +381,7 @@ function getTimeMs(args){
     var ms;
 
     // If no args, then go to default time setting
-    if(!args){
-        type = 'null';
-    }
+    type = hasUserTime(args) ? type : 'null';
 
     switch (type) {
         case MINUTES:
@@ -394,7 +409,7 @@ function getTimeMs(args){
 function getTimeType(args){
     var type;
 
-    if(args) {
+    if(hasUserTime(args)) {
         if (args.hasOwnProperty('minutes')) {
             type = MINUTES;
         }
@@ -403,9 +418,6 @@ function getTimeType(args){
         }
         else if (args.hasOwnProperty('days')) {
             type = DAYS;
-        }
-        else{
-            type = DEFAULT_TIME_TYPE;
         }
     }
     else{
@@ -447,4 +459,14 @@ function round(avg){
 // Round to 0 decimal places
 function roundInt(avg){
     return +avg.toFixed(0);
+}
+
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
+// If user entered a time value or not
+function hasUserTime(args){
+    return args &&
+        (args.hasOwnProperty('minutes') || args.hasOwnProperty('hours') || args.hasOwnProperty('days'));
 }

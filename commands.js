@@ -175,6 +175,8 @@ const commandList = {
             Function: require('./cloudwatch').getEc2Cpu,
             Description: "Current server CPU usage.",
             Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
                 {name: 'hours', alias: 'h', type: Number},
                 {name: 'days', alias: 'd', type: Number}
@@ -185,6 +187,8 @@ const commandList = {
             Function: require('./cloudwatch').getEc2Disk,
             Description: "Amount of data stored on server bucket.",
             Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
                 {name: 'hours', alias: 'h', type: Number},
                 {name: 'days', alias: 'd', type: Number}
@@ -195,6 +199,8 @@ const commandList = {
             Function: require('./cloudwatch').getEc2Network,
             Description: "Ec2 network information.",
             Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
                 {name: 'hours', alias: 'h', type: Number},
                 {name: 'days', alias: 'd', type: Number}
