@@ -215,7 +215,7 @@ const commandList = {
         },
         {
             Name: "s3acl",
-            Function: require('./s3.js').getAcl(),
+            //Function: require('./s3.js').getAcl(),
             Description: "Gets acl objects from buckets (Command in Progress)."
         },
     ]

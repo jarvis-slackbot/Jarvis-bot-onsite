@@ -3,6 +3,8 @@
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
  */
 
+'use strict';
+
 //Library
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
@@ -11,6 +13,12 @@ const msg = require('./message.js');
 // AWS S3
 const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
+
+const SIZE_TYPE = {
+    KB: 'kilobyte',
+    MB: 'megabyte',
+    GB: 'gigabyte'
+};
 
 module.exports = {
     
@@ -84,6 +92,7 @@ module.exports = {
                 Prefix: '',
                 RequestPayer: ''
             };
+            // TODO - Consider using objectsList function below (V2 api)
 
             s3Data.listObjects(params, function(err, data) {
                 if (err) {
@@ -100,7 +109,6 @@ module.exports = {
 
                 }
             });
-            resolve(slackMsg);
         })
     }/*,
     
@@ -167,8 +175,62 @@ module.exports = {
 };
 
 
+//Get total size of bucket by name - in bytes
+function sizeOfBucket(bucketname){
+    return new Promise((resolve, reject)=> {
+        objectsList(bucketname).then((objects)=>{
+            let sum = 0;
+            objects.forEach((obj)=>{
+                if(obj.Size){
+                    sum += obj.Size;
+                }
+            });
+            resolve(sum);
+        });
+    });
+}
+
+// List objects per bucket name
+function objectsList(bucketName){
+    return new Promise((resolve, reject)=>{
+        let params = {
+            Bucket: bucketName
+        };
+        s3Data.listObjectsV2(params, (err, data) => {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(data.Contents);
+            }
+        });
+    })
+}
 
 
+function convertSize(bytes, type){
+    let res = 0;
+    switch(type){
+        case SIZE_TYPE.KB:
+            res = bytes / 1000;
+            break;
+        case SIZE_TYPE.MB:
+            res = bytes / 1000000;
+            break;
+        case SIZE_TYPE.GB:
+            res = bytes / 1000000000;
+            break;
+        default:
+            res = bytes;
+    }
+
+    res = round(res);
+    return res;
+}
+
+function round(num){
+    return +num.toFixed(1);
+}
 
 
 
