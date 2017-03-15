@@ -92,8 +92,8 @@ module.exports = {
                 Prefix: '',
                 RequestPayer: ''
             };
+            
             // TODO - Consider using objectsList function below (V2 api)
-
             s3Data.listObjects(params, function(err, data) {
                 if (err) {
                     reject(msg.errorMessage(JSON.stringify(err)));
@@ -106,7 +106,7 @@ module.exports = {
                     }
                     slackMsg.addAttachment(msg.getAttachNum());
                     slackMsg.addText(text);
-
+                    resolve(slackMsg);
                 }
             });
         })
