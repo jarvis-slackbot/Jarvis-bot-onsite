@@ -235,7 +235,9 @@ const commandList = {
             Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'encrypted', alias: 'e', type: Boolean}, // Get all volumes that are encrypted
+                {name: 'not-encrypted', alias: 'n', type: Boolean}, // Get all volumes that are not encrypted
             ]
         },
         {

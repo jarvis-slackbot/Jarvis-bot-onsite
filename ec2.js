@@ -339,6 +339,7 @@ module.exports = {
                 // Argument processing here
                 if(argHelper.hasArgs(args)){
                     volumes = argHelper.filterInstListByTagValues(volumes, args);
+                    volumes = argHelper.filterEBSByEncryption(volumes, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(volumes)){
@@ -360,7 +361,6 @@ module.exports = {
                         var type = vol.VolumeType;
                         var maxIops = vol.Iops + ' IOPS';
                         var encrypted = vol.Encrypted ? 'Yes' : 'No';
-
 
                         text +=
                             'Size: ' + size + '\n' +
@@ -546,7 +546,6 @@ module.exports = {
             
             
 };
-
 
 // Similar to getInstNameIdList without making API call
 function getInstNameIdFromList(instancesList){
