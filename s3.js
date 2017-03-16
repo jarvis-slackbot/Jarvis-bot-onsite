@@ -92,7 +92,7 @@ module.exports = {
                 Prefix: '',
                 RequestPayer: ''
             };
-            
+
             // TODO - Consider using objectsList function below (V2 api)
             s3Data.listObjects(params, function(err, data) {
                 if (err) {
@@ -110,7 +110,40 @@ module.exports = {
                 }
             });
         })
-    }/*,
+    },
+
+    getBucketPolicy: function(args){
+        return new Promise(function (resolve, reject) {
+
+            var slackMsg = new SlackTemplate();
+            let count = 0;
+
+            exports.bucketNamesList().then(bucketList => {
+                bucketList.forEach(bucketName => {
+
+                    if(listEmpty(bucketList)){
+                        reject(msg.errorMessage("No buckets found."));
+                    }
+
+                    slackMsg.addAttachment(msg.getAttachNum());
+
+                    s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
+                        if(err){reject(msg.errorMessage(JSON.stringify(err)))}
+                        let text = JSON.stringify(data.Policy);
+                        //slackMsg.addTitle(msg.toTitle(bucketName, ''));
+                        slackMsg.addText(text);
+                        count++;
+                        if(count === bucketList.length){
+                            resolve(slackMsg);
+                        }
+                    });
+                });
+            })
+        });
+    }
+
+
+    /*
     
     
         
@@ -232,7 +265,10 @@ function round(num){
     return +num.toFixed(1);
 }
 
-
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
 
 
 

@@ -218,5 +218,15 @@ const commandList = {
             //Function: require('./s3.js').getAcl(),
             Description: "Gets acl objects from buckets (Command in Progress)."
         },
+        {
+            Name: "s3policy",
+            Function: require('./s3.js').getBucketPolicy,
+            Description: "Returns the JSON bucket policy.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
+            ]
+        },
     ]
 };
