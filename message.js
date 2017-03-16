@@ -59,7 +59,11 @@ exports.capitalizeFirstLetter = function(str) {
 // Put name and id in consistent title format
 exports.toTitle = function(name, id){
     return name + ' (' + id + ')';
-}
+};
+
+exports.orderAttachments = function(){
+
+};
 
 // Clean and splice input.
 function cleanInput(message){

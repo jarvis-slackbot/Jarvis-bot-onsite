@@ -29,14 +29,14 @@ module.exports = {
         return new Promise(function (resolve, reject) {    
 
             var bucketNamesList = [];
-            s3Data.listBuckets({}, function callback (err, data){
+            s3Data.listBuckets({}, function (err, data){
                 if(err){
                     //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
                 }
                 else {//code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
-                    var buckets = data.Buckets;
+                    var buckets = data.Buckets ? data.Buckets : [];
                     buckets.forEach(function (bucket) {
                         var name = bucket.Name;
                         bucketNamesList.push(name);
@@ -115,22 +115,31 @@ module.exports = {
     getBucketPolicy: function(args){
         return new Promise(function (resolve, reject) {
 
-            var slackMsg = new SlackTemplate();
+            let slackMsg = new SlackTemplate();
             let count = 0;
+            let colorCount = 0; // Instead of count so colors are consistent between calls
+            module.exports.bucketNamesList().then(bucketList => {
 
-            exports.bucketNamesList().then(bucketList => {
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
                 bucketList.forEach(bucketName => {
 
-                    if(listEmpty(bucketList)){
-                        reject(msg.errorMessage("No buckets found."));
-                    }
-
-                    slackMsg.addAttachment(msg.getAttachNum());
-
                     s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
-                        if(err){reject(msg.errorMessage(JSON.stringify(err)))}
-                        let text = JSON.stringify(data.Policy);
-                        //slackMsg.addTitle(msg.toTitle(bucketName, ''));
+                        let text = '';
+                        slackMsg.addAttachment(msg.getAttachNum());
+                        if(err){
+                            text = err.message;
+                            slackMsg.addColor(msg.SLACK_RED);
+                        }
+                        else {
+                            // Make json pretty
+                            colorCount++;
+                            text = JSON.stringify(JSON.parse(data.Policy),null,2);
+                            slackMsg.addColor(colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                        }
+                        slackMsg.addTitle(bucketName);
                         slackMsg.addText(text);
                         count++;
                         if(count === bucketList.length){
@@ -138,7 +147,7 @@ module.exports = {
                         }
                     });
                 });
-            })
+            }).catch(err => reject(msg.errorMessage(err)));
         });
     }
 
