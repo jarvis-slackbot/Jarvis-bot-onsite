@@ -2,6 +2,8 @@
     Message handle/formatter module
  */
 
+'use strict';
+
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const cmd = require('./commands.js');
@@ -59,6 +61,60 @@ exports.capitalizeFirstLetter = function(str) {
 // Put name and id in consistent title format
 exports.toTitle = function(name, id){
     return name + ' (' + id + ')';
+};
+
+// Create attachment data
+// Make color null if not needed
+exports.createAttachmentData = function(name, id, text, color){
+    return {
+        name: name,
+        id: id,
+        text: text,
+        color: color
+    };
+};
+
+// Function to help put attachment in order by item name
+// attachmentList is the list of unorder attachments
+// alternateColors is a boolean to allow for alternating attachment colors.
+exports.buildAttachments = function(attachmentList, alternateColors){
+    let slackMsg = new SlackTemplate();
+    let colorCount = 0;
+
+    // Sort instances alphabetically
+    attachmentList.sort(function(a, b){
+        let nameA = a.name;
+        let nameB = b.name;
+        let val = 0;
+        if(nameA < nameB) val = -1;
+        if(nameA > nameB) val = 1;
+        return val;
+    });
+
+    attachmentList.forEach(attachment => {
+        slackMsg.addAttachment(exports.getAttachNum());
+        attachment.id?
+            slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id))
+            : slackMsg.addTitle(attachment.name);
+        slackMsg.addText(attachment.text);
+        // Color handling
+        if(!attachment.color && alternateColors){
+            let color = colorCount % 2 == 0 ? exports.SLACK_LOGO_BLUE : exports.SLACK_LOGO_PURPLE;
+            slackMsg.addColor(color);
+            colorCount++;
+        }
+        else if(validColor(attachment.color))
+            slackMsg.addColor(attachment.color);
+    });
+
+    return slackMsg;
+};
+
+function validColor(color){
+    return color && ((/^#[0-9A-F]{6}$/i.test(color))
+        || color === exports.SLACK_RED
+        || color === exports.SLACK_GREEN
+        || color === exports.SLACK_YELLOW);
 }
 
 // Clean and splice input.

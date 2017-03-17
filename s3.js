@@ -9,15 +9,17 @@
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
+const argHelper = require('./arguments.js');
 
 // AWS S3
 const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
 
 const SIZE_TYPE = {
-    KB: 'kilobyte',
-    MB: 'megabyte',
-    GB: 'gigabyte'
+    B: 'B',
+    KB: 'KB',
+    MB: 'MB',
+    GB: 'GB'
 };
 
 module.exports = {
@@ -29,14 +31,14 @@ module.exports = {
         return new Promise(function (resolve, reject) {    
 
             var bucketNamesList = [];
-            s3Data.listBuckets({}, function callback (err, data){
+            s3Data.listBuckets({}, function (err, data){
                 if(err){
                     //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
                 }
                 else {//code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
-                    var buckets = data.Buckets;
+                    var buckets = data.Buckets ? data.Buckets : [];
                     buckets.forEach(function (bucket) {
                         var name = bucket.Name;
                         bucketNamesList.push(name);
@@ -99,7 +101,7 @@ module.exports = {
             var param = {
                 Bucket: name,
             };
-            
+
             // TODO - Consider using objectsList function below (V2 api)
             s3Data.listObjects(params, function(err, data) {
                 if (err) {
@@ -118,7 +120,168 @@ module.exports = {
             });
             });
         })
-    }/*,
+    },
+
+    getBucketPolicy: function(args){
+        return new Promise(function (resolve, reject) {
+
+            let attachments = [];
+            let count = 0;
+            bucketListWithTags().then(bucketList => {
+
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+                    
+                    let bucketName = bucket.name;
+
+                    s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
+                        let text = '';
+                        if(err){
+                            text = err.message;
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+                        else {
+                            // Raw json
+                            if(argHelper.hasArgs(args) && args.raw) {
+                                // Make json pretty
+                                text = JSON.stringify(JSON.parse(data.Policy), null, 2);
+                            }
+                            else{
+                                // Print values of json
+                                try {
+                                    let policy = JSON.parse(data.Policy);
+                                    let statement = policy.Statement[0];
+                                    text += "Version: " + policy.Version + '\n' +
+                                        "Policy ID: " + policy.Id + '\n' +
+                                        "SID: " + statement.Sid + '\n' +
+                                        "Effect: " + statement.Effect + '\n' +
+                                        "Principals: \n";
+                                    let principals = statement.Principal.AWS;
+
+                                    // Are there multiple pricipals??
+                                    if(Object.prototype.toString.call(principals) === '[object Array]') {
+                                        principals.forEach(principal => {
+                                            text += '\t\t' + principal;
+                                        });
+                                    }
+                                    else {
+                                        text += '\t\t' + principals + "\n";
+                                    }
+
+                                    text += "Action: " + statement.Action + "\n" +
+                                        "Resource: " + statement.Resource;
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                }
+                                catch(err){
+                                    text = err.toString();
+                                    text += '\nTry using --raw.';
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                }
+
+                            }
+                        }
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+                    });
+                });
+            }).catch(err => reject(msg.errorMessage(err)));
+        });
+    },
+
+    // Generic bucket info - pulls from LOTS of api calls
+    getBucketInfo: function(args) {
+        return new Promise((resolve, reject) => {
+            let attachments = [];
+            let count = 0;
+
+            bucketListWithTags().then((bucketList) => {
+
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+
+                    let bucketName = bucket.name;
+                    let text = '';
+
+                    // All the promises with indices
+                    let bucketSize = sizeOfBucket(bucketName); // 0
+                    let bucketRegion = getBucketRegion(bucketName); // 1
+                    let objectNum = numberOfObjects(bucketName); // 2
+                    let accel = getAccelConfig(bucketName); // 3
+                    let owner = getBucketOwnerInfo(bucketName); // 4
+                    let version = getBucketVersioning(bucketName); // 5
+                    let logging = getLoggingStatus(bucketName); // 6
+
+                    // All done? Lets do it.
+                    Promise.all([
+                        bucketSize,
+                        bucketRegion,
+                        objectNum,
+                        accel,
+                        owner,
+                        version,
+                        logging
+                    ]).then((dataList)=>{
+                        try{
+                            let size = getSizeString(dataList[0]);
+                            let region = dataList[1];
+                            let objectsNumber = dataList[2];
+                            let accelConfig = dataList[3];
+                            let ownerName = dataList[4];
+                            let versionStatus = dataList[5];
+                            let logStatus = dataList[6];
+
+                            text +=
+                                'Region: ' + region + '\n' +
+                                'Owner: ' + ownerName + '\n' +
+                                'Size: ' + size + '\n' +
+                                'Number of Objects: ' + objectsNumber + '\n' +
+                                'Accel Configuration: ' + accelConfig + '\n' +
+                                'Versioning: ' + versionStatus + '\n' +
+                                'Logging: ' + logStatus + '\n';
+
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                        }
+                        catch(err){
+                            text = err.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+                    }).catch(err => {
+                        reject(msg.errorMessage(JSON.stringify(err)));
+                    });
+                });
+            }).catch(err => {
+                reject(msg.errorMessage(JSON.stringify(err)));
+            });
+        })
+    }
+
+
+    /*
     
     
         
@@ -182,6 +345,111 @@ module.exports = {
     
 };
 
+// Get the bucket list including tags for the bucket
+function bucketListWithTags() {
+    return new Promise((resolve, reject) => {
+        module.exports.bucketNamesList().then(bucketList => {
+            let count = 0;
+            let resultBucketList = [];
+            bucketList.forEach(bucketName => {
+                s3Data.getBucketTagging({Bucket: bucketName}, (err, data) => {
+                    if(err) {
+                        resultBucketList.push({
+                            name: bucketName,
+                            Tags: [] // Key must be Tags to match ec2
+                        });
+                    }
+                    else {
+
+                        resultBucketList.push({
+                            name: bucketName,
+                            Tags: data.TagSet ? data.TagSet : [] // Key must be Tags to match ec2
+                        });
+                    }
+
+                    count++;
+                    if(count === bucketList.length){
+                        resolve(resultBucketList);
+                    }
+                });
+            });
+        }).catch(err => {
+            reject(msg.errorMessage(JSON.stringify(err)));
+        });
+    })
+}
+
+// Get logging status
+function getLoggingStatus(bucketName){
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketLogging({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            resolve(data.LoggingEnabled ? 'Enabled' : 'Disabled');
+        });
+    });
+}
+
+// Get versioning status of the bucket
+function getBucketVersioning(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketVersioning({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let status;
+            try{
+                status = data.Status ? data.Status : "Disabled";
+            }
+            catch(err){
+                status = 'Unknown, ' + err.toString();
+            }
+            resolve(status);
+        });
+    });
+}
+
+// Get bucket owner name
+function getBucketOwnerInfo(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketAcl({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let info;
+            try{
+                info = data.Owner.DisplayName;
+            }
+            catch(err){
+                info = "Unknown: " + err.toString();
+            }
+            resolve(info);
+        });
+    });
+}
+
+// Get accelration configuration status
+function getAccelConfig(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketAccelerateConfiguration({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let status = '';
+            try{
+                status = data.Status ? data.Status : "Disabled";
+            }
+            catch(err){
+                status = "Unknown. " + err.toString();
+            }
+            resolve(status);
+        });
+    });
+}
+
+// Get bucket location
+function getBucketRegion(bucketName){
+    return new Promise((resolve, reject)=> {
+        s3Data.getBucketLocation({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            resolve(data.LocationConstraint);
+        });
+    });
+}
+
 
 //Get total size of bucket by name - in bytes
 function sizeOfBucket(bucketname){
@@ -195,6 +463,15 @@ function sizeOfBucket(bucketname){
             });
             resolve(sum);
         });
+    });
+}
+
+// Get number of objects in a bucket
+function numberOfObjects(bucketName){
+    return new Promise((resolve, reject) => {
+        objectsList(bucketName).then(objects => {
+            resolve(objects.length);
+        }).catch(err => {reject(err)});
     });
 }
 
@@ -215,6 +492,31 @@ function objectsList(bucketName){
     })
 }
 
+// Get string for size value
+function getSizeString(bytes){
+    let type = getSizeLabel(bytes);
+    let num = convertSize(bytes, type);
+    return num + ' ' + type;
+}
+
+// Get the appropriate size label for the number of bytes
+function getSizeLabel(bytes){
+    let type = '';
+    if(bytes < 1000){
+        type = SIZE_TYPE.B;
+    }
+    else if(bytes < 1000000){
+        type = SIZE_TYPE.KB;
+    }
+    else if(bytes < 1000000000){
+        type = SIZE_TYPE.MB;
+    }
+    else{
+        type = SIZE_TYPE.GB;
+    }
+
+    return type;
+}
 
 function convertSize(bytes, type){
     let res = 0;
@@ -240,7 +542,10 @@ function round(num){
     return +num.toFixed(1);
 }
 
-
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
 
 
 
