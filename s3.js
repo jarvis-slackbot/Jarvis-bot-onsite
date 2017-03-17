@@ -201,6 +201,7 @@ module.exports = {
                     let accel = getAccelConfig(bucketName); // 3
                     let owner = getBucketOwnerInfo(bucketName); // 4
                     let version = getBucketVersioning(bucketName); // 5
+                    let logging = getLoggingStatus(bucketName); // 6
 
                     // All done? Lets do it.
                     Promise.all([
@@ -209,7 +210,8 @@ module.exports = {
                         objectNum,
                         accel,
                         owner,
-                        version
+                        version,
+                        logging
                     ]).then((dataList)=>{
                         try{
                             let size = getSizeString(dataList[0]);
@@ -218,6 +220,7 @@ module.exports = {
                             let accelConfig = dataList[3];
                             let ownerName = dataList[4];
                             let versionStatus = dataList[5];
+                            let logStatus = dataList[6];
 
                             text +=
                                 'Region: ' + region + '\n' +
@@ -225,7 +228,8 @@ module.exports = {
                                 'Size: ' + size + '\n' +
                                 'Number of Objects: ' + objectsNumber + '\n' +
                                 'Accel Configuration: ' + accelConfig + '\n' +
-                                'Versioning: ' + versionStatus + '\n';
+                                'Versioning: ' + versionStatus + '\n' +
+                                'Logging: ' + logStatus + '\n';
 
                             attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                         }
@@ -311,6 +315,16 @@ module.exports = {
     */
     
 };
+
+// Get logging status
+function getLoggingStatus(bucketName){
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketLogging({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            resolve(data.LoggingEnabled ? 'Enabled' : 'Disabled');
+        });
+    });
+}
 
 // Get versioning status of the bucket
 function getBucketVersioning(bucketName) {
