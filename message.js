@@ -94,7 +94,6 @@ exports.buildAttachments = function(attachmentList){
         slackMsg.addText(attachment.text);
         if(validColor(attachment.color))
             slackMsg.addColor(attachment.color);
-
     });
 
     return slackMsg;

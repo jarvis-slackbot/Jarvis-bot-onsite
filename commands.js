@@ -154,44 +154,75 @@ const commandList = {
     AWSCommands:[
         {
             Name: "ec2status",
-            Function: require('./ec2.js').getStatus(),
-            Description: "Server Online/Offline status."
+            Function: require('./ec2.js').getStatus,
+            Description: "Server Online/Offline status.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ami",
-            Function: require('./ec2.js').getAMIStatus(),
-            Description: "Amazon Machine Image (AMI) status information."
+            Function: require('./ec2.js').getAMIStatus,
+            Description: "Amazon Machine Image (AMI) status information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ec2cpu",
             Function: require('./cloudwatch').getEc2Cpu,
             Description: "Current server CPU usage.",
             Arguments: [
-                {name: 'time', alias: 't', type: Number},
-                {name: 'minutes', alias: 'm', type: Boolean},
-                {name: 'hours', alias: 'h', type: Boolean},
-                {name: 'days', alias: 'd', type: Boolean}
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
             ]
         },
         {
             Name: "ec2disk",
-            Function: require('./cloudwatch').getEc2Disk(),
-            Description: "Amount of data stored on server bucket."
+            Function: require('./cloudwatch').getEc2Disk,
+            Description: "Amount of data stored on server bucket.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
+            ]
         },
         {
             Name: "ec2network",
-            Function: require('./cloudwatch').getEc2Network(),
-            Description: "Ec2 network information."
+            Function: require('./cloudwatch').getEc2Network,
+            Description: "Ec2 network information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'minutes', alias: 'm', type: Number},
+                {name: 'hours', alias: 'h', type: Number},
+                {name: 'days', alias: 'd', type: Number}
+            ]
         },
         {
             Name: "ec2info",
-            Function: require('./ec2.js').getHardwareInfo(),
-            Description: "Generic EC2 instance information."
+            Function: require('./ec2.js').getHardwareInfo,
+            Description: "Generic EC2 instance information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "ec2net",
-            Function: require('./ec2.js').getNetworkInfo(),
-            Description: "Network information."
+            Function: require('./ec2.js').getNetworkInfo,
+            Description: "Network information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "health",
@@ -200,8 +231,25 @@ const commandList = {
         },
         {
             Name: "ec2ebs",
-            Function: require('./ec2.js').getEBSInfo(),
-            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information."
+            Function: require('./ec2.js').getEBSInfo,
+            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'encrypted', alias: 'e', type: Boolean}, // Get all volumes that are encrypted
+                {name: 'not-encrypted', alias: 'n', type: Boolean}, // Get all volumes that are not encrypted
+            ]
+        },
+        {
+            Name: "ec2bytag",
+            Function: require('./ec2.js').getByTag,
+            Description: "Get list of instances by tag data",
+            Arguments: [
+                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
+                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
+                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "s3tags",
@@ -227,6 +275,6 @@ const commandList = {
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
             ]
-        },
+        }
     ]
 };
