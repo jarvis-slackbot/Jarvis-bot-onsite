@@ -119,8 +119,6 @@ module.exports = {
 
             let attachments = [];
             let count = 0;
-            let color = '';
-            let colorCount = 0; // Instead of count so colors are consistent between calls
             module.exports.bucketNamesList().then(bucketList => {
 
                 if(listEmpty(bucketList)){
@@ -133,15 +131,13 @@ module.exports = {
                         let text = '';
                         if(err){
                             text = err.message;
-                            color = msg.SLACK_RED;
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
                         else {
                             // Raw json
                             if(argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
                                 text = JSON.stringify(JSON.parse(data.Policy), null, 2);
-                                color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
-                                colorCount++;
                             }
                             else{
                                 // Print values of json
@@ -167,21 +163,19 @@ module.exports = {
 
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
-                                    color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
-                                    colorCount++;
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                                 }
                                 catch(err){
                                     text = err.toString();
-                                    color = msg.SLACK_RED;
                                     text += '\nTry using --raw.';
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                                 }
 
                             }
                         }
-                        attachments.push(msg.createAttachmentData(bucketName, '', text, color));
                         count++;
                         if(count === bucketList.length){
-                            let slackMsg = msg.buildAttachments(attachments);
+                            let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
                     });
@@ -195,8 +189,6 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let attachments = [];
             let count = 0;
-            let color = '';
-            let colorCount = 0; // Instead of count so colors are consistent between calls
 
             module.exports.bucketNamesList().then((bucketList) => {
                 bucketList.forEach(bucketName => {
@@ -204,32 +196,35 @@ module.exports = {
 
                     // All the promises with indices
                     let bucketSize = sizeOfBucket(bucketName); // 0
-                    let bucketRegion = getBucketRegion(bucketName); //1
+                    let bucketRegion = getBucketRegion(bucketName); // 1
+                    let objectNum = numberOfObjects(bucketName); // 2
 
                     // All done? Lets do it.
                     Promise.all([
                         bucketSize,
                         bucketRegion,
+                        objectNum,
                     ]).then((dataList)=>{
                         try{
                             let size = getSizeString(dataList[0]);
                             let region = dataList[1];
+                            let objectsNumber = dataList[2];
+
                             text +=
                                 'Region: ' + region + '\n' +
-                                'Size: ' + size + '\n';
+                                'Size: ' + size + '\n' +
+                                'Number of Objects: ' + objectsNumber + '\n';
 
-                            color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
-                            colorCount++;
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                         }
                         catch(err){
                             text = err.toString();
-                            color = msg.SLACK_RED;
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
-                        attachments.push(msg.createAttachmentData(bucketName, '', text, color));
                         count++;
                         if(count === bucketList.length){
-                            let slackMsg = msg.buildAttachments(attachments);
+                            let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
                     }).catch(err => {
@@ -327,6 +322,15 @@ function sizeOfBucket(bucketname){
             });
             resolve(sum);
         });
+    });
+}
+
+// Get number of objects in a bucket
+function numberOfObjects(bucketName){
+    return new Promise((resolve, reject) => {
+        objectsList(bucketName).then(objects => {
+            resolve(objects.length);
+        }).catch(err => {reject(err)});
     });
 }
 
