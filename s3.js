@@ -134,10 +134,46 @@ module.exports = {
                             color = msg.SLACK_RED;
                         }
                         else {
-                            // Make json pretty
-                            colorCount++;
-                            text = JSON.stringify(JSON.parse(data.Policy),null,2);
-                            color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                            // Raw json
+                            if(args && args.raw) {
+                                // Make json pretty
+                                text = JSON.stringify(JSON.parse(data.Policy), null, 2);
+                                color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                                colorCount++;
+                            }
+                            else{
+                                // Print values of json
+                                try {
+                                    let policy = JSON.parse(data.Policy);
+                                    let statement = policy.Statement[0];
+                                    text += "Version: " + policy.Version + '\n' +
+                                        "Policy ID: " + policy.Id + '\n' +
+                                        "SID: " + statement.Sid + '\n' +
+                                        "Effect: " + statement.Effect + '\n' +
+                                        "Principals: \n";
+                                    let principals = statement.Principal.AWS;
+                                    // Are there multiple pricipals??
+                                    if( Object.prototype.toString.call(principals) === '[object Array]' ) {
+                                        principals.forEach(principal => {
+                                            text += '\t\t' + principal;
+                                        });
+                                    }
+                                    else {
+                                        text += '\t\t' + principals + "\n";
+                                    }
+
+                                    text += "Action: " + statement.Action + "\n" +
+                                        "Resource: " + statement.Resource;
+                                    color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                                    colorCount++;
+                                }
+                                catch(err){
+                                    text = err.toString();
+                                    color = msg.SLACK_RED;
+                                    text += '\nTry using --raw.';
+                                }
+
+                            }
                         }
                         attachments.push(msg.createAttachmentData(bucketName, '', text, color));
                         count++;
