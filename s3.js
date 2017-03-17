@@ -9,6 +9,7 @@
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
+const argHelper = require('./arguments.js');
 
 // AWS S3
 const aws = require('aws-sdk');
@@ -135,7 +136,7 @@ module.exports = {
                         }
                         else {
                             // Raw json
-                            if(args && args.raw) {
+                            if(argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
                                 text = JSON.stringify(JSON.parse(data.Policy), null, 2);
                                 color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
@@ -152,8 +153,9 @@ module.exports = {
                                         "Effect: " + statement.Effect + '\n' +
                                         "Principals: \n";
                                     let principals = statement.Principal.AWS;
+
                                     // Are there multiple pricipals??
-                                    if( Object.prototype.toString.call(principals) === '[object Array]' ) {
+                                    if(Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
                                         });
