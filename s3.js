@@ -80,17 +80,24 @@ module.exports = {
     getS3BucketObject: function(){
         return new Promise(function (resolve, reject) {
 
+            var name;
             var slackMsg = new SlackTemplate();
 
-
-            var params = {
-                Bucket: 'jarvisbucket1',
-                Delimiter: 'key',
-                EncodingType: 'url',
-                Marker: '',
-                MaxKeys: 1000,
-                Prefix: '',
-                RequestPayer: ''
+            s3Data.listBuckets({}, function callback (err, data){
+                if(err){
+                    //console.log(err, err.stack);
+                    reject(msg.errorMessage(err.message));
+                }
+                else {//code
+                    //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
+                    var buckets = data.Buckets;
+                    buckets.forEach(function (bucket) {
+                        name = bucket.Name;
+                        bucketNamesList.push(name);
+                    });
+                }
+            var param = {
+                Bucket: name,
             };
             
             // TODO - Consider using objectsList function below (V2 api)
@@ -99,7 +106,7 @@ module.exports = {
                     reject(msg.errorMessage(JSON.stringify(err)));
                 }
                 else {
-                    var text = 'Objects in this bucket:\n';
+                    var text = 'Objects in : ' + name + '\n';
 
                     for(var i = 0; i < data.Contents.length; i++){
                         text = text + data.Contents[i].Key + '\n';
@@ -108,6 +115,7 @@ module.exports = {
                     slackMsg.addText(text);
                     resolve(slackMsg);
                 }
+            });
             });
         })
     }/*,
