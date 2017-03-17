@@ -275,6 +275,15 @@ const commandList = {
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
             ]
-        }
+        },
+        {
+            Name: "s3info",
+            Function: require('./s3.js').getBucketInfo,
+            Description: "Generic bucket info.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
+        },
     ]
 };

@@ -16,9 +16,10 @@ const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
 
 const SIZE_TYPE = {
-    KB: 'kilobyte',
-    MB: 'megabyte',
-    GB: 'gigabyte'
+    B: 'Bytes',
+    KB: 'Kilobytes',
+    MB: 'Megabytes',
+    GB: 'Gigabytes'
 };
 
 module.exports = {
@@ -187,6 +188,56 @@ module.exports = {
                 });
             }).catch(err => reject(msg.errorMessage(err)));
         });
+    },
+
+    // Generic bucket info - pulls from LOTS of api calls
+    getBucketInfo: function(args) {
+        return new Promise((resolve, reject) => {
+            let attachments = [];
+            let count = 0;
+            let color = '';
+            let colorCount = 0; // Instead of count so colors are consistent between calls
+
+            module.exports.bucketNamesList().then((bucketList) => {
+                bucketList.forEach(bucketName => {
+                    let text = '';
+
+                    // All the promises with indices
+                    let bucketSize = sizeOfBucket(bucketName); // 0
+                    let bucketRegion = getBucketRegion(bucketName); //1
+
+                    // All done? Lets do it.
+                    Promise.all([
+                        bucketSize,
+                        bucketRegion,
+                    ]).then((dataList)=>{
+                        try{
+                            let size = getSizeString(dataList[0]);
+                            let region = dataList[1];
+                            text +=
+                                'Region: ' + region + '\n' +
+                                'Size: ' + size + '\n';
+
+                            color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                            colorCount++;
+                        }
+                        catch(err){
+                            text = err.toString();
+                            color = msg.SLACK_RED;
+                        }
+
+                        attachments.push(msg.createAttachmentData(bucketName, '', text, color));
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments);
+                            resolve(slackMsg);
+                        }
+                    }).catch(err => {
+                        msg.errorMessage(JSON.stringify(err));
+                    });
+                });
+            });
+        });
     }
 
 
@@ -254,6 +305,15 @@ module.exports = {
     
 };
 
+function getBucketRegion(bucketName){
+    return new Promise((resolve, reject)=> {
+        s3Data.getBucketLocation({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            resolve(data.LocationConstraint);
+        });
+    });
+}
+
 
 //Get total size of bucket by name - in bytes
 function sizeOfBucket(bucketname){
@@ -287,6 +347,31 @@ function objectsList(bucketName){
     })
 }
 
+// Get string for size value
+function getSizeString(bytes){
+    let type = getSizeLabel(bytes);
+    let num = convertSize(bytes, type);
+    return num + ' ' + type;
+}
+
+// Get the appropriate size label for the number of bytes
+function getSizeLabel(bytes){
+    let type = '';
+    if(bytes < 1000){
+        type = SIZE_TYPE.B;
+    }
+    else if(bytes < 1000000){
+        type = SIZE_TYPE.KB;
+    }
+    else if(bytes < 1000000000){
+        type = SIZE_TYPE.MB;
+    }
+    else{
+        type = SIZE_TYPE.GB;
+    }
+
+    return type;
+}
 
 function convertSize(bytes, type){
     let res = 0;
