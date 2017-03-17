@@ -16,10 +16,10 @@ const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
 
 const SIZE_TYPE = {
-    B: 'Bytes',
-    KB: 'Kilobytes',
-    MB: 'Megabytes',
-    GB: 'Gigabytes'
+    B: 'B',
+    KB: 'KB',
+    MB: 'MB',
+    GB: 'GB'
 };
 
 module.exports = {
@@ -198,22 +198,34 @@ module.exports = {
                     let bucketSize = sizeOfBucket(bucketName); // 0
                     let bucketRegion = getBucketRegion(bucketName); // 1
                     let objectNum = numberOfObjects(bucketName); // 2
+                    let accel = getAccelConfig(bucketName); // 3
+                    let owner = getBucketOwnerInfo(bucketName); // 4
+                    let version = getBucketVersioning(bucketName); // 5
 
                     // All done? Lets do it.
                     Promise.all([
                         bucketSize,
                         bucketRegion,
                         objectNum,
+                        accel,
+                        owner,
+                        version
                     ]).then((dataList)=>{
                         try{
                             let size = getSizeString(dataList[0]);
                             let region = dataList[1];
                             let objectsNumber = dataList[2];
+                            let accelConfig = dataList[3];
+                            let ownerName = dataList[4];
+                            let versionStatus = dataList[5];
 
                             text +=
                                 'Region: ' + region + '\n' +
+                                'Owner: ' + ownerName + '\n' +
                                 'Size: ' + size + '\n' +
-                                'Number of Objects: ' + objectsNumber + '\n';
+                                'Number of Objects: ' + objectsNumber + '\n' +
+                                'Accel Configuration: ' + accelConfig + '\n' +
+                                'Versioning: ' + versionStatus + '\n';
 
                             attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                         }
@@ -300,6 +312,58 @@ module.exports = {
     
 };
 
+// Get versioning status of the bucket
+function getBucketVersioning(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketVersioning({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let status;
+            try{
+                status = data.Status ? data.Status : "Disabled";
+            }
+            catch(err){
+                status = 'Unknown, ' + err.toString();
+            }
+            resolve(status);
+        });
+    });
+}
+
+// Get bucket owner name
+function getBucketOwnerInfo(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketAcl({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let info;
+            try{
+                info = data.Owner.DisplayName;
+            }
+            catch(err){
+                info = "Unknown: " + err.toString();
+            }
+            resolve(info);
+        });
+    });
+}
+
+// Get accelration configuration status
+function getAccelConfig(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketAccelerateConfiguration({Bucket: bucketName}, (err, data) => {
+            if(err) reject(err);
+            let status = '';
+            try{
+                status = data.Status ? data.Status : "Disabled";
+            }
+            catch(err){
+                status = "Unknown. " + err.toString();
+            }
+            resolve(status);
+        });
+    });
+}
+
+// Get bucket location
 function getBucketRegion(bucketName){
     return new Promise((resolve, reject)=> {
         s3Data.getBucketLocation({Bucket: bucketName}, (err, data) => {
