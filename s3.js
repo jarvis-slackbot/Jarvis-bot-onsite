@@ -3,6 +3,8 @@
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
  */
 
+'use strict';
+
 //Library
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
@@ -11,6 +13,12 @@ const msg = require('./message.js');
 // AWS S3
 const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
+
+const SIZE_TYPE = {
+    KB: 'kilobyte',
+    MB: 'megabyte',
+    GB: 'gigabyte'
+};
 
 module.exports = {
     
@@ -21,14 +29,14 @@ module.exports = {
         return new Promise(function (resolve, reject) {    
 
             var bucketNamesList = [];
-            s3Data.listBuckets({}, function callback (err, data){
+            s3Data.listBuckets({}, function (err, data){
                 if(err){
                     //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
                 }
                 else {//code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
-                    var buckets = data.Buckets;
+                    var buckets = data.Buckets ? data.Buckets : [];
                     buckets.forEach(function (bucket) {
                         var name = bucket.Name;
                         bucketNamesList.push(name);
@@ -85,6 +93,7 @@ module.exports = {
                 RequestPayer: ''
             };
 
+            // TODO - Consider using objectsList function below (V2 api)
             s3Data.listObjects(params, function(err, data) {
                 if (err) {
                     reject(msg.errorMessage(JSON.stringify(err)));
@@ -97,12 +106,89 @@ module.exports = {
                     }
                     slackMsg.addAttachment(msg.getAttachNum());
                     slackMsg.addText(text);
-
+                    resolve(slackMsg);
                 }
             });
-            resolve(slackMsg);
         })
-    }/*,
+    },
+
+    getBucketPolicy: function(args){
+        return new Promise(function (resolve, reject) {
+
+            let attachments = [];
+            let count = 0;
+            let color = '';
+            let colorCount = 0; // Instead of count so colors are consistent between calls
+            module.exports.bucketNamesList().then(bucketList => {
+
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucketName => {
+
+                    s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
+                        let text = '';
+                        if(err){
+                            text = err.message;
+                            color = msg.SLACK_RED;
+                        }
+                        else {
+                            // Raw json
+                            if(args && args.raw) {
+                                // Make json pretty
+                                text = JSON.stringify(JSON.parse(data.Policy), null, 2);
+                                color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                                colorCount++;
+                            }
+                            else{
+                                // Print values of json
+                                try {
+                                    let policy = JSON.parse(data.Policy);
+                                    let statement = policy.Statement[0];
+                                    text += "Version: " + policy.Version + '\n' +
+                                        "Policy ID: " + policy.Id + '\n' +
+                                        "SID: " + statement.Sid + '\n' +
+                                        "Effect: " + statement.Effect + '\n' +
+                                        "Principals: \n";
+                                    let principals = statement.Principal.AWS;
+                                    // Are there multiple pricipals??
+                                    if( Object.prototype.toString.call(principals) === '[object Array]' ) {
+                                        principals.forEach(principal => {
+                                            text += '\t\t' + principal;
+                                        });
+                                    }
+                                    else {
+                                        text += '\t\t' + principals + "\n";
+                                    }
+
+                                    text += "Action: " + statement.Action + "\n" +
+                                        "Resource: " + statement.Resource;
+                                    color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
+                                    colorCount++;
+                                }
+                                catch(err){
+                                    text = err.toString();
+                                    color = msg.SLACK_RED;
+                                    text += '\nTry using --raw.';
+                                }
+
+                            }
+                        }
+                        attachments.push(msg.createAttachmentData(bucketName, '', text, color));
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments);
+                            resolve(slackMsg);
+                        }
+                    });
+                });
+            }).catch(err => reject(msg.errorMessage(err)));
+        });
+    }
+
+
+    /*
     
     
         
@@ -167,10 +253,67 @@ module.exports = {
 };
 
 
+//Get total size of bucket by name - in bytes
+function sizeOfBucket(bucketname){
+    return new Promise((resolve, reject)=> {
+        objectsList(bucketname).then((objects)=>{
+            let sum = 0;
+            objects.forEach((obj)=>{
+                if(obj.Size){
+                    sum += obj.Size;
+                }
+            });
+            resolve(sum);
+        });
+    });
+}
+
+// List objects per bucket name
+function objectsList(bucketName){
+    return new Promise((resolve, reject)=>{
+        let params = {
+            Bucket: bucketName
+        };
+        s3Data.listObjectsV2(params, (err, data) => {
+            if(err){
+                reject(err);
+            }
+            else{
+                resolve(data.Contents);
+            }
+        });
+    })
+}
 
 
+function convertSize(bytes, type){
+    let res = 0;
+    switch(type){
+        case SIZE_TYPE.KB:
+            res = bytes / 1000;
+            break;
+        case SIZE_TYPE.MB:
+            res = bytes / 1000000;
+            break;
+        case SIZE_TYPE.GB:
+            res = bytes / 1000000000;
+            break;
+        default:
+            res = bytes;
+    }
 
+    res = round(res);
+    return res;
+}
 
+function round(num){
+    return +num.toFixed(1);
+}
+
+// Return true for empty list
+function listEmpty(list){
+    return !(typeof list !== 'undefined' && list.length > 0);
+}
 
 
 
