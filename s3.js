@@ -115,8 +115,9 @@ module.exports = {
     getBucketPolicy: function(args){
         return new Promise(function (resolve, reject) {
 
-            let slackMsg = new SlackTemplate();
+            let attachments = [];
             let count = 0;
+            let color = '';
             let colorCount = 0; // Instead of count so colors are consistent between calls
             module.exports.bucketNamesList().then(bucketList => {
 
@@ -128,21 +129,20 @@ module.exports = {
 
                     s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
                         let text = '';
-                        slackMsg.addAttachment(msg.getAttachNum());
                         if(err){
                             text = err.message;
-                            slackMsg.addColor(msg.SLACK_RED);
+                            color = msg.SLACK_RED;
                         }
                         else {
                             // Make json pretty
                             colorCount++;
                             text = JSON.stringify(JSON.parse(data.Policy),null,2);
-                            slackMsg.addColor(colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
+                            color = colorCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE;
                         }
-                        slackMsg.addTitle(bucketName);
-                        slackMsg.addText(text);
+                        attachments.push(msg.createAttachmentData(bucketName, '', text, color));
                         count++;
                         if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments);
                             resolve(slackMsg);
                         }
                     });

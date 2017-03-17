@@ -2,6 +2,8 @@
     Message handle/formatter module
  */
 
+'use strict';
+
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const cmd = require('./commands.js');
@@ -61,9 +63,49 @@ exports.toTitle = function(name, id){
     return name + ' (' + id + ')';
 };
 
-exports.orderAttachments = function(){
-
+// Create attachment data
+// Make color null if not needed
+exports.createAttachmentData = function(name, id, text, color){
+    return {
+        name: name,
+        id: id,
+        text: text,
+        color: color
+    };
 };
+
+// Function to help put attachment in order by item name
+exports.buildAttachments = function(attachmentList){
+    let slackMsg = new SlackTemplate();
+
+    // Sort instances alphabetically
+    attachmentList.sort(function(a, b){
+        let nameA = a.name;
+        let nameB = b.name;
+        let val = 0;
+        if(nameA < nameB) val = -1;
+        if(nameA > nameB) val = 1;
+        return val;
+    });
+
+    attachmentList.forEach(attachment => {
+        slackMsg.addAttachment(exports.getAttachNum());
+        slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id));
+        slackMsg.addText(attachment.text);
+        if(validColor(attachment.color))
+            slackMsg.addColor(attachment.color);
+
+    });
+
+    return slackMsg;
+};
+
+function validColor(color){
+    return color && ((/^#[0-9A-F]{6}$/i.test(color))
+        || color === exports.SLACK_RED
+        || color === exports.SLACK_GREEN
+        || color === exports.SLACK_YELLOW);
+}
 
 // Clean and splice input.
 function cleanInput(message){
