@@ -119,13 +119,20 @@ module.exports = {
 
             let attachments = [];
             let count = 0;
-            module.exports.bucketNamesList().then(bucketList => {
+            bucketListWithTags().then(bucketList => {
+
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
 
                 if(listEmpty(bucketList)){
                     reject(msg.errorMessage("No buckets found."));
                 }
 
-                bucketList.forEach(bucketName => {
+                bucketList.forEach(bucket => {
+                    
+                    let bucketName = bucket.name;
 
                     s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
                         let text = '';
@@ -190,8 +197,20 @@ module.exports = {
             let attachments = [];
             let count = 0;
 
-            module.exports.bucketNamesList().then((bucketList) => {
-                bucketList.forEach(bucketName => {
+            bucketListWithTags().then((bucketList) => {
+
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+
+                    let bucketName = bucket.name;
                     let text = '';
 
                     // All the promises with indices
@@ -244,11 +263,13 @@ module.exports = {
                             resolve(slackMsg);
                         }
                     }).catch(err => {
-                        msg.errorMessage(JSON.stringify(err));
+                        reject(msg.errorMessage(JSON.stringify(err)));
                     });
                 });
+            }).catch(err => {
+                reject(msg.errorMessage(JSON.stringify(err)));
             });
-        });
+        })
     }
 
 
@@ -315,6 +336,40 @@ module.exports = {
     */
     
 };
+
+// Get the bucket list including tags for the bucket
+function bucketListWithTags() {
+    return new Promise((resolve, reject) => {
+        module.exports.bucketNamesList().then(bucketList => {
+            let count = 0;
+            let resultBucketList = [];
+            bucketList.forEach(bucketName => {
+                s3Data.getBucketTagging({Bucket: bucketName}, (err, data) => {
+                    if(err) {
+                        resultBucketList.push({
+                            name: bucketName,
+                            Tags: [] // Key must be Tags to match ec2
+                        });
+                    }
+                    else {
+
+                        resultBucketList.push({
+                            name: bucketName,
+                            Tags: data.TagSet ? data.TagSet : [] // Key must be Tags to match ec2
+                        });
+                    }
+
+                    count++;
+                    if(count === bucketList.length){
+                        resolve(resultBucketList);
+                    }
+                });
+            });
+        }).catch(err => {
+            reject(msg.errorMessage(JSON.stringify(err)));
+        });
+    })
+}
 
 // Get logging status
 function getLoggingStatus(bucketName){

@@ -259,12 +259,20 @@ const commandList = {
         {
             Name: "s3bucketobject",
             Function: require('./s3.js').getS3BucketObject(),
-            Description: "Return a list of objects in the bucket."
+            Description: "Return a list of objects in the bucket.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "s3acl",
             //Function: require('./s3.js').getAcl(),
-            Description: "Gets acl objects from buckets (Command in Progress)."
+            Description: "Gets acl objects from buckets (Command in Progress).",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
         },
         {
             Name: "s3policy",
