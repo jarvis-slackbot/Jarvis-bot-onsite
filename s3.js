@@ -391,6 +391,70 @@ module.exports = {
     
 };
 
+//------------------------
+// Object list filters
+
+// Objects by tag key or value
+// Very taxing, warn user of possible delay
+// key param is true/false
+function filterObjectsByTag(bucketName, objectKey, key){
+    return new Promise((resolve, reject) => {
+
+        let resultObjectList = [];
+        let objCount = 0;
+
+            objectsList(bucketName).then(objList => {
+                objList.forEach(obj => {
+                    let name;
+                    try{
+                        name = obj.Key; // obj name
+                    } catch(err){
+                        reject(err.toString());
+                    }
+                    getObjectTags(bucketName, name).then(objTags => {
+                        objTags.forEach(tag => {
+                            if(tag.Key && tag.Value) {
+                                // If user is searching by key
+                                if(key && (objectKey === tag.Key)) {
+                                    resultObjectList.push(obj);
+                                }
+                                else if(objectKey === tag.Value){
+                                    resultObjectList.push(obj);
+                                }
+                            }
+                        });
+                        objCount++;
+                        if(objCount >= objList.length){
+                            resolve(resultObjectList);
+                        }
+                    }).catch(err => {
+                        reject(JSON.stringify(err));
+                    });
+                })
+            }).catch(err => {
+                reject(JSON.stringify(err));
+            });
+        });
+}
+
+//------------------------
+
+function getObjectTags(bucketName, objectKey) {
+    return new Promise((resolve, reject) => {
+        s3Data.getObjectTagging({
+            Bucket: bucketName,
+            Key: objectKey
+        }, (err, data) => {
+            if(err) reject(JSON.stringify(err));
+            try{
+                resolve(data.TagSet)
+            } catch(err) {
+                resolve([]);
+            }
+        });
+    });
+}
+
 // Get the bucket list including tags for the bucket
 function bucketListWithTags() {
     return new Promise((resolve, reject) => {
