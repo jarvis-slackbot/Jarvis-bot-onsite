@@ -82,28 +82,82 @@ module.exports = {
     getS3BucketObject: function(){
         return new Promise(function (resolve, reject) {
 
-            var name;
-            var slackMsg = new SlackTemplate();
+            /*var name;
+             var slackMsg = new SlackTemplate();
 
-            s3Data.listBuckets({}, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
+             var param = {
+             Bucket: name,
+             };*/
+
+            //===========================TEST AREA BELOW============================
+            let buckets = [];
+            let count = 0;
+            bucketListWithTags().then(bucketList => {
+
+                // Argument processing here
+                if (argHelper.hasArgs(args)) {
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                 }
-                else {//code
-                    //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
-                    var buckets = data.Buckets;
-                    buckets.forEach(function (bucket) {
-                        name = bucket.Name;
-                        bucketNamesList.push(name);
+
+                if (listEmpty(bucketList)) {
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+
+                    let bucketName = bucket.name;
+
+                    s3Data.listObjects(params, function (err, data) {
+                        let text = '';
+                        if (err) {
+                            text = err.message;
+                            buckets.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+                        else {
+                            // Raw json
+                            if (argHelper.hasArgs(args) && args.raw) {
+                                // Make json pretty
+                                text = JSON.stringify(JSON.parse(data.List), null, 2);
+                            }
+                            else {
+                                if (argHelper.hasArgs(args) && args.raw) {
+                                    // Make json pretty
+                                    text = JSON.stringify(JSON.parse(data.List), null, 2);
+                                }
+                                else {
+                                    // Print values of json
+                                    try {
+                                        let list = JSON.parse(data.List);
+                                        let statement = list.Statement[0];
+                                        text += "Tag: " + list.Tag + "/n";
+                                        buckets.push(msg.createAttachmentData(bucketName, null, text, null));
+                                    }
+                                    catch (err) {
+                                        text = err.toString();
+                                        text += '\nTry using --raw.';
+                                        buckets.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                    }
+
+                                }
+                            }
+                        }
+                        count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildlist(list, true);
+                            resolve(slackMsg);
+                        }
                     });
-                }
-            var param = {
-                Bucket: name,
-            };
+                })
+            }).catch(err => {
+                reject(msg.errorMessage(JSON.stringify(err)));
+            });
+        )}
+    },
+
+                         //===========================TEST AREA ABOVE=============================
 
             // TODO - Consider using objectsList function below (V2 api)
-            s3Data.listObjects(params, function(err, data) {
+            /*s3Data.listObjects(params, function(err, data) {
                 if (err) {
                     reject(msg.errorMessage(JSON.stringify(err)));
                 }
@@ -118,9 +172,9 @@ module.exports = {
                     resolve(slackMsg);
                 }
             });
-            });
         })
-    },
+            }).catch(err => reject(msg.errorMessage(err)));
+    }, */
 
     getBucketPolicy: function(args){
         return new Promise(function (resolve, reject) {
@@ -139,22 +193,22 @@ module.exports = {
                 }
 
                 bucketList.forEach(bucket => {
-                    
+
                     let bucketName = bucket.name;
 
                     s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
                         let text = '';
-                        if(err){
+                        if (err) {
                             text = err.message;
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
                         else {
                             // Raw json
-                            if(argHelper.hasArgs(args) && args.raw) {
+                            if (argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
                                 text = JSON.stringify(JSON.parse(data.Policy), null, 2);
                             }
-                            else{
+                            else {
                                 // Print values of json
                                 try {
                                     let policy = JSON.parse(data.Policy);
@@ -167,7 +221,7 @@ module.exports = {
                                     let principals = statement.Principal.AWS;
 
                                     // Are there multiple pricipals??
-                                    if(Object.prototype.toString.call(principals) === '[object Array]') {
+                                    if (Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
                                         });
@@ -180,7 +234,7 @@ module.exports = {
                                         "Resource: " + statement.Resource;
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                                 }
-                                catch(err){
+                                catch (err) {
                                     text = err.toString();
                                     text += '\nTry using --raw.';
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
@@ -189,15 +243,18 @@ module.exports = {
                             }
                         }
                         count++;
-                        if(count === bucketList.length){
+                        if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
                     });
+
+                }).catch(err => {
+                    reject(msg.errorMessage(JSON.stringify(err)));
                 });
-            }).catch(err => reject(msg.errorMessage(err)));
-        });
-    },
+            })
+
+        },
 
     // Generic bucket info - pulls from LOTS of api calls
     getBucketInfo: function(args) {
