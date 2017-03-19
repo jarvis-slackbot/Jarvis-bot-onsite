@@ -253,12 +253,12 @@ const commandList = {
         },
         {
             Name: "s3tags",
-            Function: require('./s3.js').getS3Tags(),
+            Function: require('./s3.js').getS3Tags,
             Description: "Get S3 Tags from bucket."
         },
         {
             Name: "s3bucketobject",
-            Function: require('./s3.js').getS3BucketObject(),
+            Function: require('./s3.js').getS3BucketObject,
             Description: "Return a list of objects in the bucket.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
@@ -287,7 +287,16 @@ const commandList = {
         {
             Name: "s3info",
             Function: require('./s3.js').getBucketInfo,
-            Description: "Generic bucket info.",
+            Description: "Generic bucket information.",
+            Arguments: [
+                {name: 'tag', alias: 't', type: String, multiple: true},
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ]
+        },
+        {
+            Name: "s3logging",
+            Function: require('./s3.js').bucketLoggingInfo,
+            Description: "Bucket logging information.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value

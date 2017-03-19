@@ -335,6 +335,60 @@ module.exports = {
                 reject(msg.errorMessage(JSON.stringify(err)));
             });
         })
+    },
+
+    // Logging information for buckets
+    bucketLoggingInfo: function(args){
+        return new Promise((resolve, reject) => {
+            let count = 0;
+            let attachments = [];
+
+            bucketListWithTags().then(bucketList => {
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+                    let bucketName = bucket.name;
+                    s3Data.getBucketLogging({Bucket: bucketName}, (err, data) => {
+                        if(err) reject(err);
+                        let text = '';
+                        try{
+                            let logging = data.LoggingEnabled;
+
+                            if(!logging){
+                                text = 'Logging not enabled.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            }
+                            else{
+                                let target = logging.TargetBucket;
+                                let prefix = logging.TargetPrefix;
+                                text = 'Target Bucket: ' + target + '\n' +
+                                       'Target Prefix: ' + prefix + '\n';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            }
+
+                        }
+                        catch(error){
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+
+                    });
+                });
+            });
+        });
     }
 
 
