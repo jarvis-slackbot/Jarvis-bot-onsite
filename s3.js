@@ -472,6 +472,21 @@ function sortByDate(objList){
     });
 }
 
+function filterObjectsByOwner(objList, ownerName){
+    let resultList = [];
+    
+    objList.forEach((obj) => {
+        if(obj.Owner && obj.Owner.DisplayName){
+            let name = obj.Owner.DisplayName;
+            if(name === ownerName){
+                resultList.push(obj);
+            }
+        }
+    });
+
+    return resultList;
+}
+
 //------------------------
 
 function getObjectTags(bucketName, objectKey) {
