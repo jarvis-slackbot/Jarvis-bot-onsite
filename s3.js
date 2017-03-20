@@ -460,6 +460,18 @@ function sortByFileSize(objList){
     });
 }
 
+// Sort object list by last date modified
+function sortByDate(objList){
+    objList.sort((a, b) => {
+        let dateA = a.LastModified ? a.LastModified.getTime() : Date.now().getTime();
+        let dateB = b.LastModified ? b.LastModified.getTime() : Date.now().getTime();
+        let val = 0;
+        if(dateA < dateB) val = -1;
+        if(dateA > dateB) val = 1;
+        return val;
+    });
+}
+
 //------------------------
 
 function getObjectTags(bucketName, objectKey) {
