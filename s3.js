@@ -397,43 +397,53 @@ module.exports = {
 // Objects by tag key or value
 // Very taxing, warn user of possible delay
 // key param is true/false
-function filterObjectsByTag(bucketName, objectKey, key){
+function filterObjectsByTag(bucketName, objList, objectKey, key){
     return new Promise((resolve, reject) => {
 
         let resultObjectList = [];
         let objCount = 0;
 
-            objectsList(bucketName).then(objList => {
-                objList.forEach(obj => {
-                    let name;
-                    try{
-                        name = obj.Key; // obj name
-                    } catch(err){
-                        reject(err.toString());
-                    }
-                    getObjectTags(bucketName, name).then(objTags => {
-                        objTags.forEach(tag => {
-                            if(tag.Key && tag.Value) {
-                                // If user is searching by key
-                                if(key && (objectKey === tag.Key)) {
-                                    resultObjectList.push(obj);
-                                }
-                                else if(objectKey === tag.Value){
-                                    resultObjectList.push(obj);
-                                }
-                            }
-                        });
-                        objCount++;
-                        if(objCount >= objList.length){
-                            resolve(resultObjectList);
+        objList.forEach(obj => {
+            let name;
+            try {
+                name = obj.Key; // obj name
+            } catch (err) {
+                reject(err.toString());
+            }
+            getObjectTags(bucketName, name).then(objTags => {
+                objTags.forEach(tag => {
+                    if (tag.Key && tag.Value) {
+                        // If user is searching by key
+                        if (key && (objectKey === tag.Key)) {
+                            resultObjectList.push(obj);
                         }
-                    }).catch(err => {
-                        reject(JSON.stringify(err));
-                    });
-                })
+                        else if (objectKey === tag.Value) {
+                            resultObjectList.push(obj);
+                        }
+                    }
+                });
+                objCount++;
+                if (objCount >= objList.length) {
+                    resolve(resultObjectList);
+                }
             }).catch(err => {
                 reject(JSON.stringify(err));
             });
+        });
+    });
+
+}
+
+// Sort object list alphabetically
+function objByAlpha(objList){
+        // Sort instances alphabetically
+        objList.sort(function(a, b){
+            let nameA = a.Key;
+            let nameB = b.Key;
+            let val = 0;
+            if(nameA < nameB) val = -1;
+            if(nameA > nameB) val = 1;
+            return val;
         });
 }
 

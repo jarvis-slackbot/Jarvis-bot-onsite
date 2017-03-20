@@ -262,7 +262,8 @@ const commandList = {
             Description: "Return a list of objects in the bucket.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'alpha', alias: 'a', type: Boolean} // Sort alphabetically
             ]
         },
         {
