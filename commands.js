@@ -265,7 +265,8 @@ const commandList = {
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
                 {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
-                {name: 'date', alias: 'd', type: Boolean} // Sort by date modified
+                {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
+                {name: 'search', type: String, multiple: true} // Filter objects list by users search word
             ]
         },
         {

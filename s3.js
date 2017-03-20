@@ -10,6 +10,7 @@ var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
 const argHelper = require('./arguments.js');
+let stringSimilarity = require('string-similarity');
 
 // AWS S3
 const aws = require('aws-sdk');
@@ -21,6 +22,10 @@ const SIZE_TYPE = {
     MB: 'MB',
     GB: 'GB'
 };
+
+// Value associated with string-similarity when doing object list search
+// Value 0 - 1, Higher value means it require more similarity
+const SIMILARITY_VALUE = 0.8;
 
 module.exports = {
     
@@ -474,7 +479,7 @@ function sortByDate(objList){
 
 function filterObjectsByOwner(objList, ownerName){
     let resultList = [];
-    
+
     objList.forEach((obj) => {
         if(obj.Owner && obj.Owner.DisplayName){
             let name = obj.Owner.DisplayName;
@@ -485,6 +490,20 @@ function filterObjectsByOwner(objList, ownerName){
     });
 
     return resultList;
+}
+
+function filterBySimilarName(objList, keyword){
+    let resultsList = [];
+    keyword = keyword.join(' ');
+    objList.forEach((obj) => {
+        let objName = obj.Key ? obj.Key : "";
+        let similarity = stringSimilarity.compareTwoStrings(keyword, objName);
+        if(similarity >= SIMILARITY_VALUE){
+            resultsList.push(obj);
+        }
+    });
+
+    return resultsList;
 }
 
 //------------------------
