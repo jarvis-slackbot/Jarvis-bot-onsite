@@ -263,7 +263,8 @@ const commandList = {
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'alpha', alias: 'a', type: Boolean} // Sort alphabetically
+                {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
+                {name: 'size', alias: 's', type: Boolean} // Sort by size - largest to smallest
             ]
         },
         {

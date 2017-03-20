@@ -435,6 +435,7 @@ function filterObjectsByTag(bucketName, objList, objectKey, key){
 }
 
 // Sort object list alphabetically
+// Per bucket basis
 function objByAlpha(objList){
         // Sort instances alphabetically
         objList.sort(function(a, b){
@@ -445,6 +446,18 @@ function objByAlpha(objList){
             if(nameA > nameB) val = 1;
             return val;
         });
+}
+
+// Sort by file size, largest to smallest
+function sortByFileSize(objList){
+    objList.sort(function(a,b) => {
+        let aSize = a.Size ? a.Size : 0;
+        let bSize = b.Size ? b.Size : 0;
+        let val = 0;
+        if(aSize < bSize) val = 1;
+        if(aSize > bSize) val = -1;
+        return val;
+    });
 }
 
 //------------------------
