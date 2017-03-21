@@ -317,17 +317,27 @@ module.exports = {
 
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
-                    objectsList(bucketName).then((objList) => {
+                    let prom;
+
+                    // Objects by tag filtering
+                    if(argHelper.hasArgs(args) && args.objtag){
+                        try {
+                            prom = filterObjectsByTag(bucketName, args.objtag, args.objkey);
+                        }
+                        catch(err){
+                            reject(msg.errorMessage(err.toString()));
+                        }
+                    }
+                    else{
+                        prom = objectsList(bucketName);
+                    }
+
+                    prom.then((objList) => {
                         let text = '';
                         // Arguments filtering per object
                         if(argHelper.hasArgs(args)){
 
                             // ----Filters----
-                            // Objects by tag
-                            if(args.objtag){
-                               // objList = filterObjectsByTag(bucketName, objList, args.objtag, args.objkey);
-                            }
-
                             // Objects by keyword
                             if(args.search){
                                 objList = filterBySimilarName(objList, args.search);
@@ -344,9 +354,11 @@ module.exports = {
                             if(args.alpha){
                                 sortObjByAlpha(objList);
                             }
+                            // File size
                             else if(args.size){
                                 sortByFileSize(objList);
                             }
+                            // Date
                             else if(args.date){
                                 sortByDate(objList);
                             }
@@ -355,7 +367,7 @@ module.exports = {
                         try{
 
                             if(!objList.length){
-                                text += 'No objects in bucket.';
+                                text += 'No objects found.';
                                 attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
                             }
                             else{
@@ -378,6 +390,8 @@ module.exports = {
                             resolve(slackMsg);
                         }
 
+                    }).catch(err => {
+                        reject(msg.errorMessage(err.toString()));
                     });
                 });
             });
@@ -452,39 +466,45 @@ module.exports = {
 // Objects by tag key or value
 // Very taxing, warn user of possible delay
 // key param is true/false
-function filterObjectsByTag(bucketName, objList, objectKey, key){
+function filterObjectsByTag(bucketName, objectKey, key){
     return new Promise((resolve, reject) => {
 
         let resultObjectList = [];
         let objCount = 0;
         objectKey = objectKey.join(' ');
 
-        objList.forEach(obj => {
-            let name;
-            try {
-                name = obj.Key; // obj name
-            } catch (err) {
-                reject(err.toString());
+        objectsList(bucketName).then(objList => {
+            if(listEmpty(objList)){
+                resolve([]);
             }
-            getObjectTags(bucketName, name).then(objTags => {
-                objTags.forEach(tag => {
-                    if (tag.Key && tag.Value) {
-                        // If user is searching by key
-                        if (key && (objectKey === tag.Key)) {
-                            resultObjectList.push(obj);
-                        }
-                        else if (objectKey === tag.Value) {
-                            resultObjectList.push(obj);
-                        }
+            else {
+                objList.forEach(obj => {
+                    let name = obj.Key;
+                    if (name) {
+                        getObjectTags(bucketName, name).then(objTags => {
+                            objTags.forEach(tag => {
+                                if (tag.Key && tag.Value) {
+                                    // If user is searching by key
+                                    if (key && (objectKey === tag.Key)) {
+                                        resultObjectList.push(obj);
+                                    }
+                                    else if (!key && objectKey === tag.Value) {
+                                        resultObjectList.push(obj);
+                                    }
+                                }
+                            });
+                            objCount++;
+                            if (objCount === objList.length) {
+                                resolve(resultObjectList);
+                            }
+                        }).catch(err => {
+                            reject(JSON.stringify(err));
+                        });
                     }
                 });
-                objCount++;
-                if (objCount >= objList.length) {
-                    resolve(resultObjectList);
-                }
-            }).catch(err => {
-                reject(JSON.stringify(err));
-            });
+            }
+        }).catch(err => {
+            reject(JSON.stringify(err));
         });
     });
 
