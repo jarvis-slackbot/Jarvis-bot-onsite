@@ -10,6 +10,7 @@ var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
 const argHelper = require('./arguments.js');
+let stringSimilarity = require('string-similarity');
 
 // AWS S3
 const aws = require('aws-sdk');
@@ -21,6 +22,10 @@ const SIZE_TYPE = {
     MB: 'MB',
     GB: 'GB'
 };
+
+// Value associated with string-similarity when doing object list search
+// Value 0 - 1, Higher value means it require more similarity
+const SIMILARITY_VALUE = 0.8;
 
 module.exports = {
 
@@ -551,6 +556,134 @@ module.exports = {
      */
 
 };
+
+//------------------------
+// Object list filters
+
+// Objects by tag key or value
+// Very taxing, warn user of possible delay
+// key param is true/false
+function filterObjectsByTag(bucketName, objList, objectKey, key){
+    return new Promise((resolve, reject) => {
+
+        let resultObjectList = [];
+        let objCount = 0;
+
+        objList.forEach(obj => {
+            let name;
+            try {
+                name = obj.Key; // obj name
+            } catch (err) {
+                reject(err.toString());
+            }
+            getObjectTags(bucketName, name).then(objTags => {
+                objTags.forEach(tag => {
+                    if (tag.Key && tag.Value) {
+                        // If user is searching by key
+                        if (key && (objectKey === tag.Key)) {
+                            resultObjectList.push(obj);
+                        }
+                        else if (objectKey === tag.Value) {
+                            resultObjectList.push(obj);
+                        }
+                    }
+                });
+                objCount++;
+                if (objCount >= objList.length) {
+                    resolve(resultObjectList);
+                }
+            }).catch(err => {
+                reject(JSON.stringify(err));
+            });
+        });
+    });
+
+}
+
+// Sort object list alphabetically
+// Per bucket basis
+function objByAlpha(objList){
+        // Sort instances alphabetically
+        objList.sort(function(a, b){
+            let nameA = a.Key;
+            let nameB = b.Key;
+            let val = 0;
+            if(nameA < nameB) val = -1;
+            if(nameA > nameB) val = 1;
+            return val;
+        });
+}
+
+// Sort by file size, largest to smallest
+function sortByFileSize(objList){
+    objList.sort(function(a,b) => {
+        let aSize = a.Size ? a.Size : 0;
+        let bSize = b.Size ? b.Size : 0;
+        let val = 0;
+        if(aSize < bSize) val = 1;
+        if(aSize > bSize) val = -1;
+        return val;
+    });
+}
+
+// Sort object list by last date modified
+function sortByDate(objList){
+    objList.sort((a, b) => {
+        let dateA = a.LastModified ? a.LastModified.getTime() : Date.now().getTime();
+        let dateB = b.LastModified ? b.LastModified.getTime() : Date.now().getTime();
+        let val = 0;
+        if(dateA < dateB) val = -1;
+        if(dateA > dateB) val = 1;
+        return val;
+    });
+}
+
+function filterObjectsByOwner(objList, ownerName){
+    let resultList = [];
+
+    objList.forEach((obj) => {
+        if(obj.Owner && obj.Owner.DisplayName){
+            let name = obj.Owner.DisplayName;
+            if(name === ownerName){
+                resultList.push(obj);
+            }
+        }
+    });
+
+    return resultList;
+}
+
+function filterBySimilarName(objList, keyword){
+    let resultsList = [];
+    keyword = keyword.join(' ');
+    objList.forEach((obj) => {
+        let objName = obj.Key ? obj.Key : "";
+        let similarity = stringSimilarity.compareTwoStrings(keyword, objName);
+        if(similarity >= SIMILARITY_VALUE){
+            resultsList.push(obj);
+        }
+    });
+
+    return resultsList;
+}
+
+//------------------------
+
+function getObjectTags(bucketName, objectKey) {
+    return new Promise((resolve, reject) => {
+        s3Data.getObjectTagging({
+            Bucket: bucketName,
+            Key: objectKey
+        }, (err, data) => {
+            if(err) reject(JSON.stringify(err));
+            try{
+                resolve(data.TagSet)
+            } catch(err) {
+                resolve([]);
+            }
+        });
+    });
+}
 
 // Get the bucket list including tags for the bucket
 function bucketListWithTags() {
