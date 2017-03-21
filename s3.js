@@ -16,6 +16,7 @@ let stringSimilarity = require('string-similarity');
 const aws = require('aws-sdk');
 const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
 
+const QUICK_SIZE = 'N/A'; // The string shown to user when using quick option
 const SIZE_TYPE = {
     B: 'B',
     KB: 'KB',
@@ -26,6 +27,7 @@ const SIZE_TYPE = {
 // Value associated with string-similarity when doing object list search
 // Value 0 - 1, Higher value means it require more similarity
 const SIMILARITY_VALUE = 0.8;
+
 
 module.exports = {
 
@@ -223,7 +225,7 @@ module.exports = {
                     let text = '';
 
                     // All the promises with indices
-                    let bucketSize = skipSize ? 'N/A' : sizeOfBucket(bucketName); // 0
+                    let bucketSize = skipSize ? QUICK_SIZE : sizeOfBucket(bucketName); // 0
                     let bucketRegion = getBucketRegion(bucketName); // 1
                     let objectNum = numberOfObjects(bucketName); // 2
                     let accel = getAccelConfig(bucketName); // 3
@@ -856,24 +858,32 @@ function objectsList(bucketName){
 
 // Get string for size value
 function getSizeString(bytes){
-    let type = getSizeLabel(bytes);
-    let num = convertSize(bytes, type);
-    return num + ' ' + type;
+    let resString = '';
+    if(bytes != QUICK_SIZE) {
+        let type = getSizeLabel(bytes);
+        let num = convertSize(bytes, type);
+        resString = num + ' ' + type;
+    }
+    else{
+        resString = QUICK_SIZE;
+    }
+    return resString;
 }
 
 // Get the appropriate size label for the number of bytes
 function getSizeLabel(bytes){
     let type = '';
-    if(bytes < 1000){
+
+    if (bytes < 1000) {
         type = SIZE_TYPE.B;
     }
-    else if(bytes < 1000000){
+    else if (bytes < 1000000) {
         type = SIZE_TYPE.KB;
     }
-    else if(bytes < 1000000000){
+    else if (bytes < 1000000000) {
         type = SIZE_TYPE.MB;
     }
-    else{
+    else {
         type = SIZE_TYPE.GB;
     }
 
