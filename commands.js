@@ -264,16 +264,21 @@ const commandList = {
             ]
         },
         {
-            Name: "s3bucketobject",
+            Name: "s3objects",
             Function: require('./s3.js').getS3BucketObject,
             Description: "Return a list of objects in the bucket.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
+                // Sorters cannot be used with other sorters
                 {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
                 {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
                 {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
-                {name: 'search', type: String, multiple: true} // Filter objects list by users search word
+                {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
+                {name: 'objtag', type: String, multiple: true}, // Objects by tag
+                {name: 'objkey', type: Boolean}, // Objects by tag via key
+                {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
             ]
         },
         {
@@ -281,6 +286,7 @@ const commandList = {
             //Function: require('./s3.js').getAcl(),
             Description: "Gets acl objects from buckets (Command in Progress).",
             Arguments: [
+                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
@@ -290,6 +296,7 @@ const commandList = {
             Function: require('./s3.js').getBucketPolicy,
             Description: "Returns the JSON bucket policy.",
             Arguments: [
+                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
@@ -300,6 +307,7 @@ const commandList = {
             Function: require('./s3.js').getBucketInfo,
             Description: "Generic bucket information.",
             Arguments: [
+                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'quick', alias: 'q', type: Boolean} // Skip getting bucket size to speed up this action
@@ -310,6 +318,7 @@ const commandList = {
             Function: require('./s3.js').bucketLoggingInfo,
             Description: "Bucket logging information.",
             Arguments: [
+                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
