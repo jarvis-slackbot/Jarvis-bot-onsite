@@ -70,6 +70,7 @@ exports.filterEBSByEncryption = (volumes, args) => {
     return res;
 };
 
+
 // Get user defined tag from argument
 function getArgTagData(args){
     var tag = [];

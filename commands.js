@@ -259,16 +259,20 @@ const commandList = {
             Description: "Get S3 Tags from bucket."
         },
         {
-            Name: "s3bucketobject",
+            Name: "s3objects",
             Function: require('./s3.js').getS3BucketObject,
             Description: "Return a list of objects in the bucket.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                // Sorters cannot be used with other sorters
                 {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
                 {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
                 {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
-                {name: 'search', type: String, multiple: true} // Filter objects list by users search word
+                {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
+                {name: 'objtag', type: String, multiple: true}, // Objects by tag
+                {name: 'objkey', type: Boolean}, // Objects by tag via key
+                {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
             ]
         },
         {
