@@ -1,6 +1,6 @@
 /*
-    AWS S3
-    API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
+ AWS S3
+ API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/S3.html
  */
 
 'use strict';
@@ -23,12 +23,12 @@ const SIZE_TYPE = {
 };
 
 module.exports = {
-    
-    
-    
+
+
+
     //Get bucket info for other functions to use (bucketNames)
     bucketNamesList: function(){
-        return new Promise(function (resolve, reject) {    
+        return new Promise(function (resolve, reject) {
 
             var bucketNamesList = [];
             s3Data.listBuckets({}, function (err, data){
@@ -48,9 +48,9 @@ module.exports = {
             });
         });
     },
-    
-    
-    
+
+
+
     getS3Tags: function() {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
@@ -77,92 +77,31 @@ module.exports = {
         })
     },
 
-    
-    
-    getS3BucketObject: function(){
+
+
+    /*getS3BucketObject: function(){
         return new Promise(function (resolve, reject) {
 
-            /*var name;
-             var slackMsg = new SlackTemplate();
+            var slackMsg = new SlackTemplate();
 
-             var param = {
-             Bucket: name,
-             };*/
 
-            //===========================TEST AREA BELOW============================
-            let buckets = [];
-            let count = 0;
-            bucketListWithTags().then(bucketList => {
-
-                // Argument processing here
-                if (argHelper.hasArgs(args)) {
-                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
-                }
-
-                if (listEmpty(bucketList)) {
-                    reject(msg.errorMessage("No buckets found."));
-                }
-
-                bucketList.forEach(bucket => {
-
-                    let bucketName = bucket.name;
-
-                    s3Data.listObjects(params, function (err, data) {
-                        let text = '';
-                        if (err) {
-                            text = err.message;
-                            buckets.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-                        else {
-                            // Raw json
-                            if (argHelper.hasArgs(args) && args.raw) {
-                                // Make json pretty
-                                text = JSON.stringify(JSON.parse(data.List), null, 2);
-                            }
-                            else {
-                                if (argHelper.hasArgs(args) && args.raw) {
-                                    // Make json pretty
-                                    text = JSON.stringify(JSON.parse(data.List), null, 2);
-                                }
-                                else {
-                                    // Print values of json
-                                    try {
-                                        let list = JSON.parse(data.List);
-                                        let statement = list.Statement[0];
-                                        text += "Tag: " + list.Tag + "/n";
-                                        buckets.push(msg.createAttachmentData(bucketName, null, text, null));
-                                    }
-                                    catch (err) {
-                                        text = err.toString();
-                                        text += '\nTry using --raw.';
-                                        buckets.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                                    }
-
-                                }
-                            }
-                        }
-                        count++;
-                        if (count === bucketList.length) {
-                            let slackMsg = msg.buildlist(list, true);
-                            resolve(slackMsg);
-                        }
-                    });
-                })
-            }).catch(err => {
-                reject(msg.errorMessage(JSON.stringify(err)));
-            });
-        )}
-    },
-
-                         //===========================TEST AREA ABOVE=============================
+            var params = {
+                Bucket: 'jarvisbucket1',
+                Delimiter: 'key',
+                EncodingType: 'url',
+                Marker: '',
+                MaxKeys: 1000,
+                Prefix: '',
+                RequestPayer: ''
+            };
 
             // TODO - Consider using objectsList function below (V2 api)
-            /*s3Data.listObjects(params, function(err, data) {
+            s3Data.listObjectsV2(params, function(err, data) {
                 if (err) {
                     reject(msg.errorMessage(JSON.stringify(err)));
                 }
                 else {
-                    var text = 'Objects in : ' + name + '\n';
+                    var text = 'Objects in this bucket:\n';
 
                     for(var i = 0; i < data.Contents.length; i++){
                         text = text + data.Contents[i].Key + '\n';
@@ -173,8 +112,9 @@ module.exports = {
                 }
             });
         })
-            }).catch(err => reject(msg.errorMessage(err)));
-    }, */
+    },*/
+
+
 
     getBucketPolicy: function(args){
         return new Promise(function (resolve, reject) {
@@ -198,17 +138,17 @@ module.exports = {
 
                     s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
                         let text = '';
-                        if (err) {
+                        if(err){
                             text = err.message;
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
                         else {
                             // Raw json
-                            if (argHelper.hasArgs(args) && args.raw) {
+                            if(argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
                                 text = JSON.stringify(JSON.parse(data.Policy), null, 2);
                             }
-                            else {
+                            else{
                                 // Print values of json
                                 try {
                                     let policy = JSON.parse(data.Policy);
@@ -221,7 +161,7 @@ module.exports = {
                                     let principals = statement.Principal.AWS;
 
                                     // Are there multiple pricipals??
-                                    if (Object.prototype.toString.call(principals) === '[object Array]') {
+                                    if(Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
                                         });
@@ -234,7 +174,7 @@ module.exports = {
                                         "Resource: " + statement.Resource;
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                                 }
-                                catch (err) {
+                                catch(err){
                                     text = err.toString();
                                     text += '\nTry using --raw.';
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
@@ -243,18 +183,15 @@ module.exports = {
                             }
                         }
                         count++;
-                        if (count === bucketList.length) {
+                        if(count === bucketList.length){
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
                     });
-
-                }).catch(err => {
-                    reject(msg.errorMessage(JSON.stringify(err)));
                 });
-            })
-
-        },
+            }).catch(err => reject(msg.errorMessage(err)));
+        });
+    },
 
     // Generic bucket info - pulls from LOTS of api calls
     getBucketInfo: function(args) {
@@ -265,11 +202,11 @@ module.exports = {
             bucketListWithTags().then((bucketList) => {
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(bucketList)){
+                if (listEmpty(bucketList)) {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
@@ -296,8 +233,8 @@ module.exports = {
                         owner,
                         version,
                         logging
-                    ]).then((dataList)=>{
-                        try{
+                    ]).then((dataList) => {
+                        try {
                             let size = getSizeString(dataList[0]);
                             let region = dataList[1];
                             let objectsNumber = dataList[2];
@@ -317,13 +254,13 @@ module.exports = {
 
                             attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                         }
-                        catch(err){
+                        catch (err) {
                             text = err.toString();
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
                         count++;
-                        if(count === bucketList.length){
+                        if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
@@ -369,7 +306,7 @@ module.exports = {
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
-                                       'Target Prefix: ' + prefix + '\n';
+                                    'Target Prefix: ' + prefix + '\n';
                                 attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                             }
 
@@ -389,71 +326,230 @@ module.exports = {
                 });
             });
         });
-    }
+    },
+
+    getS3BucketObject: function(args){
+        return new Promise((resolve, reject) => {
+            let count = 0;
+            let attachments = [];
+
+            bucketListWithTags().then(bucketList => {
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+                    let bucketName = bucket.name;
+                    s3Data.listObjectsV2({Bucket: bucketName}, (err, data) => {
+                        if(err) reject(err);
+                        let text = '';
+                        try{
+
+                            if(!data.Contents.length){
+                                text = 'No objects in bucket.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            }
+                            else{
+                                text = 'Objects in bucket: \n'
+                                for(let i = 0; i < data.Contents.length; i++){
+                                    text = text + data.Contents[i].Key + '\n';
+                                }
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            }
+
+                        }
+                        catch(error){
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+
+                    });
+                });
+            });
+        });
+    },
+/*
+    getS3BucketObject: function(args){
+        return new Promise((resolve, reject) => {
+            let attachments = [];
+            let count = 0;
+
+            bucketListWithTags().then((bucketList) => {
+
+                // Argument processing here
+                if (argHelper.hasArgs(args)) {
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if (listEmpty(bucketList)) {
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+
+                    let bucketName = bucket.name;
+                    let text = '';
+
+                    let objectNum = numberOfObjects(bucketName); // 0
+                    let bucketObj = objectsList(bucketName); //1
+
+                    // All done? Lets do it.
+                    Promise.all([
+                        objectNum,
+                        bucketObj
+                    ]).then((dataList) => {
+                        try {
+                            let objectsNumber = dataList[0];
+                            let bucketObj = dataList[1];
+
+                            text +=
+                                'Number of Objects: ' + objectsNumber + '\n' +
+                                'Objects in Bucket: ' + bucketObj + '\n';
+
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                        }
+                        catch (err) {
+                            text = err.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+                    }).catch(err => {
+                        reject(msg.errorMessage(JSON.stringify(err)));
+                    });
+                });
+            }).catch(err => {
+                reject(msg.errorMessage(JSON.stringify(err)));
+            });
+        })
+    },
+*/
+/*
+    gets3BucketObject: function(args){
+        return new Promise((resolve, reject) => {
+            let count = 0;
+            let attachments = [];
+
+            bucketListWithTags().then(bucketList => {
+                // Argument processing here
+                if(argHelper.hasArgs(args)){
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if(listEmpty(bucketList)){
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+                    let bucketName = bucket.name;
+                    s3Data.listObjectsV2({Bucket: bucketName}, (err, data) => {
+                        if(err) reject(err);
+                        let text = '';
+                        try{
+                            let contents = data.Contents;
+
+                            if(!contents){
+                                text = 'No contents found.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            }
+                            else{
+                                let key = contents.Key;
+                                text = 'Object: ' + key + '\n';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            }
+
+                        }
+                        catch(error){
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if(count === bucketList.length){
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+
+                    });
+                });
+            });
+        });
+    },*/
 
 
     /*
-    
-    
-        
-    //access control policy (aka acl) of buckets.
-    getAcl : function (){
-        
-        return new Promise(function (resolve, reject) {    
 
-            var slackMsg = new SlackTemplate();
-            
-            var info = []; //collects data; (object-acl for buckets)
-            //params to be changed for multiple buckets through a seperate function
-            s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
-                if(err){
-                    //console.log(err, err.stack);
-                    reject(msg.errorMessage(err.message));
-                }
-                else {//code
-                    info.push(data);
-                    
 
-                    //slack message formatting
-                    slackMsg.addAttachment(msg.getAttachNum());
-                    var text = '';
 
-                    if (info.length > 0){
-                        info.forEach(function(acl){
-                            text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
-                        });
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                    else {
-                        text = "There are no acl for present S3 buckets.";
-                        slackMsg.addText(text);
-                        resolve(slackMsg);
-                    }
-                }
-            });
+     //access control policy (aka acl) of buckets.
+     getAcl : function (){
 
-        }).catch((err)=>{
-                reject(msg.errorMessage(err));
-        });
-    }/*,
-    
-    getBucketNames : function (){
-        
-        return new Promise(function (resolve, reject){
-            
-        });
-    },
-    getBucketRegions : function (){
-        
-        return new Promise(function (resolve, reject){
-            
-        });
-    },*/
+     return new Promise(function (resolve, reject) {
+     var slackMsg = new SlackTemplate();
+
+     var info = []; //collects data; (object-acl for buckets)
+     //params to be changed for multiple buckets through a seperate function
+     s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
+     if(err){
+     //console.log(err, err.stack);
+     reject(msg.errorMessage(err.message));
+     }
+     else {//code
+     info.push(data);
+
+     //slack message formatting
+     slackMsg.addAttachment(msg.getAttachNum());
+     var text = '';
+     if (info.length > 0){
+     info.forEach(function(acl){
+     text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
+     });
+     slackMsg.addText(text);
+     resolve(slackMsg);
+     }
+     else {
+     text = "There are no acl for present S3 buckets.";
+     slackMsg.addText(text);
+     resolve(slackMsg);
+     }
+     }
+     });
+     }).catch((err)=>{
+     reject(msg.errorMessage(err));
+     });
+     }/*,
+
+     getBucketNames : function (){
+
+     return new Promise(function (resolve, reject){
+
+     });
+     },
+     getBucketRegions : function (){
+
+     return new Promise(function (resolve, reject){
+
+     });
+     },*/
     /*considerations
-    sort, repeats, un/used, in/active    
-    */
-    
+     sort, repeats, un/used, in/active
+     */
+
 };
 
 // Get the bucket list including tags for the bucket
@@ -585,6 +681,26 @@ function numberOfObjects(bucketName){
         }).catch(err => {reject(err)});
     });
 }
+/*
+// Get Object key
+function objectName(bucketName){
+    return new Promise((resolve, reject)=>{
+        let params = {
+            Bucket: bucketName
+        };
+        s3Data.listObjectsV2(params, (err, data) => {
+            if(err){
+                reject(err);
+            }
+            else{
+                for(let i = 0; i < data.Contents.length; i++){
+                    text = text + data.Contents[i].Key + '\n';
+                }
+                resolve(text);
+            }
+        });
+    })
+}*/
 
 // List objects per bucket name
 function objectsList(bucketName){
@@ -680,22 +796,15 @@ function listEmpty(list){
 
 
 /* SCRATCH CODE
-
---DELETE-- Temp list. possible methods.
-(AWS.Request) getBucketAcl(params = {}, callback)
-    Gets the access control policy for the bucket.
-(AWS.Request) getBucketLocation(params = {}, callback)
-    Returns the region the bucket resides in.
-(AWS.Request) headBucket(params = {}, callback)
-    This operation is useful to determine if a bucket exists and you have permission to access it.
-(AWS.Request) headObject(params = {}, callback)
-    The HEAD operation retrieves metadata from an object without returning the object itself.
-(AWS.Request) listBuckets(params = {}, callback)
-    Returns a list of all buckets owned by the authenticated sender of the request.
-
-
-
-*/
-
-
-
+ --DELETE-- Temp list. possible methods.
+ (AWS.Request) getBucketAcl(params = {}, callback)
+ Gets the access control policy for the bucket.
+ (AWS.Request) getBucketLocation(params = {}, callback)
+ Returns the region the bucket resides in.
+ (AWS.Request) headBucket(params = {}, callback)
+ This operation is useful to determine if a bucket exists and you have permission to access it.
+ (AWS.Request) headObject(params = {}, callback)
+ The HEAD operation retrieves metadata from an object without returning the object itself.
+ (AWS.Request) listBuckets(params = {}, callback)
+ Returns a list of all buckets owned by the authenticated sender of the request.
+ */
