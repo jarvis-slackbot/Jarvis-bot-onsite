@@ -96,6 +96,7 @@ module.exports = {
                 // Argument processing here
                 if(argHelper.hasArgs(args)){
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
 
                 if(listEmpty(bucketList)){
@@ -175,6 +176,7 @@ module.exports = {
                 // Argument processing here
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                     skipSize = args.quick;
                 }
                 // Either no instances match criteria OR no instances on AWS
@@ -256,6 +258,7 @@ module.exports = {
                 // Argument processing here
                 if(argHelper.hasArgs(args)){
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(bucketList)){
@@ -309,6 +312,7 @@ module.exports = {
                 // Argument processing here
                 if(argHelper.hasArgs(args)){
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(bucketList)){
@@ -346,7 +350,8 @@ module.exports = {
                             // Objects by owner
                             if(args.owner){
                                 objList = filterObjectsByOwner(objList, args.owner);
-                                text += 'Filtering by owner name not available in all regions \n';
+                                if(listEmpty(objList))
+                                    text += 'Filtering by owner name not available in all regions \n';
                             }
 
                             // --- Sorters ---
@@ -580,6 +585,7 @@ function filterBySimilarName(objList, keyword){
 }
 
 //------------------------
+
 
 function getObjectTags(bucketName, objectKey) {
     return new Promise((resolve, reject) => {
