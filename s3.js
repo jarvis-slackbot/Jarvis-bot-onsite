@@ -85,7 +85,7 @@ module.exports = {
     },
 
 
-    
+
     getBucketPolicy: function(args){
         return new Promise(function (resolve, reject) {
 

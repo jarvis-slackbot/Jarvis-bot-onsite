@@ -254,9 +254,14 @@ const commandList = {
             ]
         },
         {
-            Name: "s3tags",
+            Name: "s3bytag",
             Function: require('./s3.js').getS3Tags,
-            Description: "Get S3 Tags from bucket."
+            Description: "Get buckets by tag.",
+            Arguments: [
+                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
+                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
+                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
+            ]
         },
         {
             Name: "s3bucketobject",
