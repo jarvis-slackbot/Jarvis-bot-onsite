@@ -2,6 +2,8 @@
     Handles parsing commands and command arguments
  */
 
+'use strict';
+
 const commandLineArgs = require('command-line-args');
 
 // Parse command and get select appropriate function
@@ -294,7 +296,8 @@ const commandList = {
             Description: "Generic bucket information.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'quick', alias: 'q', type: Boolean} // Skip getting bucket size to speed up this action
             ]
         },
         {

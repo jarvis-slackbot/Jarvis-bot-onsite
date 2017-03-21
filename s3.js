@@ -201,12 +201,14 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let attachments = [];
             let count = 0;
+            let skipSize = false;
 
             bucketListWithTags().then((bucketList) => {
 
                 // Argument processing here
                 if(argHelper.hasArgs(args)){
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    skipSize = args.quick;
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if(listEmpty(bucketList)){
@@ -219,7 +221,7 @@ module.exports = {
                     let text = '';
 
                     // All the promises with indices
-                    let bucketSize = sizeOfBucket(bucketName); // 0
+                    let bucketSize = skipSize ? 'N/A' : sizeOfBucket(bucketName); // 0
                     let bucketRegion = getBucketRegion(bucketName); // 1
                     let objectNum = numberOfObjects(bucketName); // 2
                     let accel = getAccelConfig(bucketName); // 3
@@ -455,7 +457,7 @@ function objByAlpha(objList){
 
 // Sort by file size, largest to smallest
 function sortByFileSize(objList){
-    objList.sort(function(a,b) => {
+    objList.sort(function(a, b){
         let aSize = a.Size ? a.Size : 0;
         let bSize = b.Size ? b.Size : 0;
         let val = 0;
