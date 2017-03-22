@@ -12,6 +12,7 @@
         CORRECT: /jarvis ec2cpu -t JarvisTestServer -m 20
  */
 
+'use strict';
 
 exports.hasArgs = (args) => {
     return !!args;
@@ -69,6 +70,28 @@ exports.filterEBSByEncryption = (volumes, args) => {
 
     return res;
 };
+
+exports.bucketNameArgHandler = (bucketList, args) => {
+    let resultList = bucketList;
+    if(args && args.name){
+        let name = args.name.join(' ');
+        resultList = getBucketsByName(bucketList, name);
+    }
+    return resultList;
+};
+
+
+// Get buckets that match the name
+// Should usually be one result
+function getBucketsByName(bucketList, bucketName){
+    let result = [];
+    bucketList.forEach(bucket => {
+        let name = bucket.name;
+        if(name === bucketName)
+            result.push(bucket);
+    });
+    return result;
+}
 
 // Get user defined tag from argument
 function getArgTagData(args){
