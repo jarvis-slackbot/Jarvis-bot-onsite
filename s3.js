@@ -408,7 +408,8 @@ module.exports = {
                             else{
                                 text += objList.length + ' Objects in bucket: \n';
                                 for(let i = 0; i < objList.length; i++){
-                                    text += objList[i].Key + '\n';
+                                    let size = getSizeString(objList[i].Size);
+                                    text += objList[i].Key + ' ('  + size + ')' + '\n';
                                 }
                                 attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                             }
