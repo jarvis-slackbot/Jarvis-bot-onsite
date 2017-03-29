@@ -383,7 +383,11 @@ module.exports = {
                                 if(listEmpty(objList))
                                     text += 'Filtering by owner name not available in all regions \n';
                             }
-
+                            // Objects older than date provided
+                            // Date given by mm/dd/yyyy-mm/dd/yyyy
+                            if(args['date-range']){
+                                objList = filterWithDateString(objList, args['date-range'], reject);
+                            }
                             // --- Sorters ---
                             // Alphabetically
                             if(args.alpha){
@@ -498,6 +502,43 @@ module.exports = {
 
 //------------------------
 // Object list filters
+
+// Filter object list by date range provided
+function filterWithDateString(objList, dateString, reject){
+    let dateList = dateString.split('-');
+    let resultList = [];
+    if(dateList.length != 2){
+        //TODO - handle length error
+        reject(msg.errorMessage("Invalid date range. Example: Start Date-End Date (mm/dd/yyyy-mm/dd/yyyy)"));
+    }
+    else{
+        // If asterisk, set date to earliest time (0) or now for end date
+        let startDate = dateList[0] === '*' ? 1 : new Date(dateList[0]).getTime();
+        let endDate = dateList[1] === '*' ? Date.now() : new Date(dateList[1]).getTime();
+
+        if(startDate > endDate){
+            reject(msg.errorMessage("Start date must be before end date."));
+        }
+        else if(startDate && endDate) {
+            objList.forEach((obj) => {
+                let objDate = obj.LastModified.getTime();
+                // In range?
+                if(objDate >= startDate && objDate <= endDate){
+                    resultList.push(obj);
+                }
+            });
+        }
+        // Handle specific error
+        else {
+            // TODO - handle specific date error
+            reject(msg.errorMessage("Date format incorrect. Dates should be in mm/dd/yyyy format."));
+        }
+
+
+    }
+
+    return resultList;
+}
 
 // Objects by tag key or value
 // Very taxing, warn user of possible delay

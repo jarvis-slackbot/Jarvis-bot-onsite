@@ -276,6 +276,7 @@ const commandList = {
                 {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
                 {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
                 {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
+                {name: 'date-range', alias: 'r', type: String}, // Filter by date range of modified (*-* means all)
                 {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
                 {name: 'objtag', type: String, multiple: true}, // Objects by tag
                 {name: 'objkey', type: Boolean}, // Objects by tag via key
