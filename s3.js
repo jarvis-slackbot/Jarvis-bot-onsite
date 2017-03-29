@@ -23,6 +23,10 @@ const SIZE_TYPE = {
     MB: 'MB',
     GB: 'GB'
 };
+const S3_BASE_LINK = "https://console.aws.amazon.com/s3/buckets/";
+const FILES_TAB = 'overview'; // AWS console tab query for list of files
+const PROPERTIES_TAB = 'properties'; // AWS console properties tab (Includes tags)
+const PERMISSIONS_TAB = 'permissions'; // AWS console permissions tab
 
 // Value associated with string-similarity when doing object list search
 // Value 0 - 1, Higher value means it require more similarity
@@ -87,20 +91,20 @@ module.exports = {
 
                         if (data == null) {
                             text += 'No tags found.';
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, null));
                         }
                         else {
                             text += data.TagSet.length + ' tag(s) associated with bucket: \n';
                             for (let i = 0; i < data.TagSet.length; i++) {
                                 text += data.TagSet[i].Key + '\n';
                             }
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_GREEN));
                         }
 
                     }
                     catch (error) {
                         text = error.toString();
-                        attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_RED));
                     }
 
                     count++;
@@ -141,7 +145,7 @@ module.exports = {
                         let text = '';
                         if(err){
                             text = err.message;
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
                         }
                         else {
                             // Raw json
@@ -173,12 +177,12 @@ module.exports = {
 
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, null));
                                 }
                                 catch(err){
                                     text = err.toString();
                                     text += '\nTry using --raw.';
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
                                 }
 
                             }
@@ -256,11 +260,11 @@ module.exports = {
                                 'Versioning: ' + versionStatus + '\n' +
                                 'Logging: ' + logStatus + '\n';
 
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                         }
                         catch (err) {
                             text = err.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
 
                         count++;
@@ -305,20 +309,20 @@ module.exports = {
 
                             if(!logging){
                                 text = 'Logging not enabled.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
                                     'Target Prefix: ' + prefix + '\n';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, null));
                             }
 
                         }
                         catch(error){
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
                         }
 
                         count++;
@@ -403,14 +407,14 @@ module.exports = {
 
                             if(!objList.length){
                                 text += 'No objects found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
                                 text += objList.length + ' Objects in bucket: \n';
                                 for(let i = 0; i < objList.length; i++){
                                     text += objList[i].Key + '\n';
                                 }
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                             }
 
                         }
@@ -494,6 +498,12 @@ module.exports = {
      */
 
 };
+
+// Get console link
+// tab param is the tab query for the link
+function getLink(bucketName, tab){
+    return S3_BASE_LINK + bucketName + '/' +'?' + 'tab=' + tab;
+}
 
 //------------------------
 // Object list filters
