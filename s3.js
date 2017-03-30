@@ -352,7 +352,7 @@ module.exports = {
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
                     let prom;
-
+                    const MAX = 2;
                     // Objects by tag filtering
                     if(argHelper.hasArgs(args) && args.objtag){
                         try {
@@ -367,7 +367,50 @@ module.exports = {
                     }
 
                     prom.then((objList) => {
+
+
+
+                        /*
+                        let olist = prom;
+                        prom = undefined;
+                        //Object.keys(prom).length
+                        //Object.keys(prom)[0]
+                        for (let k = 0; k < MAX; k++){
+                            let key = Object.keys(olist)[k];
+                            let value = olist[key];
+                            prom.key = value;
+                        }
+                        */
+                       
+                        /*
+                        //basics
+                        var key = "happyCount";
+                        var obj = {};
+                        obj[key] = value;
+                        array.push(obj);
+                        */
+                        
+                        
+                        /*
+                        size = function (objectsList) {
+                            for (object in objectsList){
+                                if (count == MAX){
+                                    //out
+                                }
+                                if (objectsList.hasOwnProperty(object)){
+                                    count++;
+                                }
+                            }
+                        }*/
+                        
+
+
+
+
+
+
                         let text = '';
+                        text = 'obj: ' + typeof(prom) + '\n';
                         // Arguments filtering per object
                         if(argHelper.hasArgs(args)){
 
@@ -407,7 +450,7 @@ module.exports = {
                             }
                             else{
                                 text += objList.length + ' Objects in bucket: \n';
-                                for(let i = 0; i < objList.length; i++){
+                                for(let i = 0; i < MAX; i++){
                                     text += objList[i].Key + '\n';
                                 }
                                 attachments.push(msg.createAttachmentData(bucketName, null, text, null));
