@@ -449,7 +449,7 @@ module.exports = {
                                 attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
                             }
                             else{
-                                text += objList.length + ' Objects in bucket: \n';
+                                text += objList.length + ' Objects in bucket (showing ' + MAX + 'max' + '): \n';
                                 for(let i = 0; i < MAX; i++){
                                     text += objList[i].Key + '\n';
                                 }
