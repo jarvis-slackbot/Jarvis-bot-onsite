@@ -14,7 +14,11 @@ let stringSimilarity = require('string-similarity');
 
 // AWS S3
 const aws = require('aws-sdk');
-const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
+const s3Data = new aws.S3({
+    region: 'us-west-2',
+    maxRetries: 15,
+    apiVersion: '2006-03-01'
+});
 
 const QUICK_SIZE = 'N/A'; // The string shown to user when using quick option
 const SIZE_TYPE = {
@@ -34,16 +38,15 @@ module.exports = {
 
 
     //Get bucket info for other functions to use (bucketNames)
-    bucketNamesList: function(){
+    bucketNamesList: function () {
         return new Promise(function (resolve, reject) {
 
             var bucketNamesList = [];
-            s3Data.listBuckets({}, function (err, data){
-                if(err){
+            s3Data.listBuckets({}, function (err, data) {
+                if (err) {
                     //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
-                }
-                else {//code
+                } else { //code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
                     var buckets = data.Buckets ? data.Buckets : [];
                     buckets.forEach(function (bucket) {
@@ -56,7 +59,7 @@ module.exports = {
         });
     },
 
-    getS3Tags:function(args) {
+    getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
             let count = 0;
             let attachments = [];
@@ -76,47 +79,47 @@ module.exports = {
                     let bucketName = bucket.name;
                     let text = '';
 
-                    s3Data.getBucketTagging({Bucket: bucketName}, function(err,data){
+                    s3Data.getBucketTagging({
+                        Bucket: bucketName
+                    }, function (err, data) {
 
-                        if(err){
+                        if (err) {
                             text = err.message + '\n';
                             //attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
-                    try {
+                        try {
 
-                        if (data == null) {
-                            text += 'No tags found.';
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                        }
-                        else {
-                            text += data.TagSet.length + ' tag(s) associated with bucket: \n';
-                            for (let i = 0; i < data.TagSet.length; i++) {
-                                text += data.TagSet[i].Key + '\n';
+                            if (data == null) {
+                                text += 'No tags found.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            } else {
+                                text += data.TagSet.length + ' tag(s) associated with bucket: \n';
+                                for (let i = 0; i < data.TagSet.length; i++) {
+                                    text += data.TagSet[i].Key + '\n';
+                                }
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
                             }
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
+
+                        } catch (error) {
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
-                    }
-                    catch (error) {
-                        text = error.toString();
-                        attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                    }
+                        count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
 
-                    count++;
-                    if (count === bucketList.length) {
-                        let slackMsg = msg.buildAttachments(attachments, true);
-                        resolve(slackMsg);
-                    }
-
-                })
+                    })
+                });
             });
         });
-    });
-},
+    },
 
 
-    getBucketPolicy: function(args){
+    getBucketPolicy: function (args) {
         return new Promise(function (resolve, reject) {
 
             let attachments = [];
@@ -124,12 +127,12 @@ module.exports = {
             bucketListWithTags().then(bucketList => {
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
 
-                if(listEmpty(bucketList)){
+                if (listEmpty(bucketList)) {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
@@ -137,19 +140,19 @@ module.exports = {
 
                     let bucketName = bucket.name;
 
-                    s3Data.getBucketPolicy({Bucket: bucketName}, (err, data) => {
+                    s3Data.getBucketPolicy({
+                        Bucket: bucketName
+                    }, (err, data) => {
                         let text = '';
-                        if(err){
+                        if (err) {
                             text = err.message;
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-                        else {
+                        } else {
                             // Raw json
-                            if(argHelper.hasArgs(args) && args.raw) {
+                            if (argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
                                 text = JSON.stringify(JSON.parse(data.Policy), null, 2);
-                            }
-                            else{
+                            } else {
                                 // Print values of json
                                 try {
                                     let policy = JSON.parse(data.Policy);
@@ -162,20 +165,18 @@ module.exports = {
                                     let principals = statement.Principal.AWS;
 
                                     // Are there multiple pricipals??
-                                    if(Object.prototype.toString.call(principals) === '[object Array]') {
+                                    if (Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
                                         });
-                                    }
-                                    else {
+                                    } else {
                                         text += '\t\t' + principals + "\n";
                                     }
 
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                }
-                                catch(err){
+                                } catch (err) {
                                     text = err.toString();
                                     text += '\nTry using --raw.';
                                     attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
@@ -184,7 +185,7 @@ module.exports = {
                             }
                         }
                         count++;
-                        if(count === bucketList.length){
+                        if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
@@ -195,7 +196,7 @@ module.exports = {
     },
 
     // Generic bucket info - pulls from LOTS of api calls
-    getBucketInfo: function(args) {
+    getBucketInfo: function (args) {
         return new Promise((resolve, reject) => {
             let attachments = [];
             let count = 0;
@@ -257,8 +258,7 @@ module.exports = {
                                 'Logging: ' + logStatus + '\n';
 
                             attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                        }
-                        catch (err) {
+                        } catch (err) {
                             text = err.toString();
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
@@ -279,35 +279,36 @@ module.exports = {
     },
 
     // Logging information for buckets
-    bucketLoggingInfo: function(args){
+    bucketLoggingInfo: function (args) {
         return new Promise((resolve, reject) => {
             let count = 0;
             let attachments = [];
 
             bucketListWithTags().then(bucketList => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(bucketList)){
+                if (listEmpty(bucketList)) {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
-                    s3Data.getBucketLogging({Bucket: bucketName}, (err, data) => {
-                        if(err) reject(err);
+                    s3Data.getBucketLogging({
+                        Bucket: bucketName
+                    }, (err, data) => {
+                        if (err) reject(err);
                         let text = '';
-                        try{
+                        try {
                             let logging = data.LoggingEnabled;
 
-                            if(!logging){
+                            if (!logging) {
                                 text = 'Logging not enabled.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
-                            }
-                            else{
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            } else {
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
@@ -315,14 +316,13 @@ module.exports = {
                                 attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                             }
 
-                        }
-                        catch(error){
+                        } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
                         count++;
-                        if(count === bucketList.length){
+                        if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
@@ -333,19 +333,19 @@ module.exports = {
         });
     },
 
-    getS3BucketObject: function(args){
+    getS3BucketObject: function (args) {
         return new Promise((resolve, reject) => {
             let count = 0;
             let attachments = [];
 
             bucketListWithTags().then(bucketList => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(bucketList)){
+                if (listEmpty(bucketList)) {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
@@ -354,73 +354,69 @@ module.exports = {
                     let prom;
 
                     // Objects by tag filtering
-                    if(argHelper.hasArgs(args) && args.objtag){
+                    if (argHelper.hasArgs(args) && args.objtag) {
                         try {
                             prom = filterObjectsByTag(bucketName, args.objtag, args.objkey);
-                        }
-                        catch(err){
+                        } catch (err) {
                             reject(msg.errorMessage(err.toString()));
                         }
-                    }
-                    else{
+                    } else {
                         prom = objectsList(bucketName);
                     }
 
                     prom.then((objList) => {
                         let text = '';
                         // Arguments filtering per object
-                        if(argHelper.hasArgs(args)){
+                        if (argHelper.hasArgs(args)) {
 
                             // ----Filters----
                             // Objects by keyword
-                            if(args.search){
+                            if (args.search) {
                                 objList = filterBySimilarName(objList, args.search);
                             }
 
                             // Objects by owner
-                            if(args.owner){
+                            if (args.owner) {
                                 objList = filterObjectsByOwner(objList, args.owner);
-                                if(listEmpty(objList))
+                                if (listEmpty(objList))
                                     text += 'Filtering by owner name not available in all regions \n';
                             }
 
                             // --- Sorters ---
                             // Alphabetically
-                            if(args.alpha){
+                            if (args.alpha) {
                                 sortObjByAlpha(objList);
                             }
                             // File size
-                            else if(args.size){
+                            else if (args.size) {
                                 sortByFileSize(objList);
                             }
                             // Date
-                            else if(args.date){
+                            else if (args.date) {
                                 sortByDate(objList);
                             }
                         }
 
-                        try{
+                        try {
 
-                            if(!objList.length){
+                            if (!objList.length) {
                                 text += 'No objects found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
-                            }
-                            else{
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            } else {
                                 text += objList.length + ' Objects in bucket: \n';
-                                for(let i = 0; i < objList.length; i++){
+                                for (let i = 0; i < objList.length; i++) {
                                     text += objList[i].Key + '\n';
                                 }
                                 attachments.push(msg.createAttachmentData(bucketName, null, text, null));
                             }
 
-                        }
-                        catch(error){
+                        } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
                         count++;
-                        if(count === bucketList.length){
+                        if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
@@ -435,63 +431,86 @@ module.exports = {
 
 
 
-    /*
 
 
 
-     //access control policy (aka acl) of buckets.
-     getAcl : function (){
+    //access control policy (aka acl) of buckets.
+    getBucketAcl: function (args) {
+        return new Promise(function (resolve, reject) {
 
-     return new Promise(function (resolve, reject) {
-     var slackMsg = new SlackTemplate();
+            let attachments = [];
+            let count = 0;
+            bucketListWithTags().then(bucketList => {
 
-     var info = []; //collects data; (object-acl for buckets)
-     //params to be changed for multiple buckets through a seperate function
-     s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
-     if(err){
-     //console.log(err, err.stack);
-     reject(msg.errorMessage(err.message));
-     }
-     else {//code
-     info.push(data);
+                // Argument processing here
+                if (argHelper.hasArgs(args)) {
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
+                }
 
-     //slack message formatting
-     slackMsg.addAttachment(msg.getAttachNum());
-     var text = '';
-     if (info.length > 0){
-     info.forEach(function(acl){
-     text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
-     });
-     slackMsg.addText(text);
-     resolve(slackMsg);
-     }
-     else {
-     text = "There are no acl for present S3 buckets.";
-     slackMsg.addText(text);
-     resolve(slackMsg);
-     }
-     }
-     });
-     }).catch((err)=>{
-     reject(msg.errorMessage(err));
-     });
-     }/*,
+                if (listEmpty(bucketList)) {
+                    reject(msg.errorMessage("No buckets found."));
+                }
 
-     getBucketNames : function (){
+                bucketList.forEach(bucket => {
 
-     return new Promise(function (resolve, reject){
+                    let bucketName = bucket.name;
 
-     });
-     },
-     getBucketRegions : function (){
+                    s3Data.getBucketAcl({
+                        Bucket: bucketName
+                    }, (err, data) => {
+                        let text = '';
+                        if (err) {
+                            text = err.message;
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        } else {
+                            // Raw json
+                            if (argHelper.hasArgs(args) && args.raw) {
+                                // Make json pretty
+                                text = JSON.stringify(data, null, 2);
+                            } else {
+                                // Print values of json
+                                try {
+                                    if (data.Grants == null) {
+                                        text += 'No tags found.';
+                                        attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                    } else {
 
-     return new Promise(function (resolve, reject){
+                                        let grants = data.Grants;
+                                        text += grants.length + ' acl(s) associated with bucket: \n';
+                                        for (let i = 0; i < grants.length; i++) {
+                                            text +=
+                                                "Owner DisplayName: " + data.Owner.DisplayName + '\n' +
+                                                "Owner ID: " + data.Owner.ID + '\n' +
+                                                "DisplayName: " + grants[i].Grantee.DisplayName + '\n' +
+                                                "EmailAddress : " + grants[i].Grantee.EmailAddress + '\n' +
+                                                "ID: " + grants[i].Grantee.ID + '\n' +
+                                                "Type : " + grants[i].Grantee.Type + '\n' +
+                                                "URI : " + grants[i].Grantee.URI + '\n' +
+                                                "Permission : " + grants[i].Permission + '\n';
+                                        }
+                                    }
 
-     });
-     },*/
-    /*considerations
-     sort, repeats, un/used, in/active
-     */
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                } catch (err) {
+                                    text = err.toString();
+                                    text += '\nTry using --raw.';
+                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                }
+                            }//without args
+                        }//code
+                        count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+                    }); //api call
+                }); //for each bucket
+            }).catch(err => reject(msg.errorMessage(err)));
+        }); //promise
+    } //getBucketAcl
+
+
 
 };
 
@@ -501,7 +520,7 @@ module.exports = {
 // Objects by tag key or value
 // Very taxing, warn user of possible delay
 // key param is true/false
-function filterObjectsByTag(bucketName, objectKey, key){
+function filterObjectsByTag(bucketName, objectKey, key) {
     return new Promise((resolve, reject) => {
 
         let resultObjectList = [];
@@ -509,10 +528,9 @@ function filterObjectsByTag(bucketName, objectKey, key){
         objectKey = objectKey.join(' ');
 
         objectsList(bucketName).then(objList => {
-            if(listEmpty(objList)){
+            if (listEmpty(objList)) {
                 resolve([]);
-            }
-            else {
+            } else {
                 objList.forEach(obj => {
                     let name = obj.Key;
                     if (name) {
@@ -522,8 +540,7 @@ function filterObjectsByTag(bucketName, objectKey, key){
                                     // If user is searching by key
                                     if (key && (objectKey === tag.Key)) {
                                         resultObjectList.push(obj);
-                                    }
-                                    else if (!key && objectKey === tag.Value) {
+                                    } else if (!key && objectKey === tag.Value) {
                                         resultObjectList.push(obj);
                                     }
                                 }
@@ -547,51 +564,51 @@ function filterObjectsByTag(bucketName, objectKey, key){
 
 // Sort object list alphabetically
 // Per bucket basis
-function sortObjByAlpha(objList){
-        // Sort instances alphabetically
-        objList.sort(function(a, b){
-            let nameA = a.Key;
-            let nameB = b.Key;
-            let val = 0;
-            if(nameA < nameB) val = -1;
-            if(nameA > nameB) val = 1;
-            return val;
-        });
+function sortObjByAlpha(objList) {
+    // Sort instances alphabetically
+    objList.sort(function (a, b) {
+        let nameA = a.Key;
+        let nameB = b.Key;
+        let val = 0;
+        if (nameA < nameB) val = -1;
+        if (nameA > nameB) val = 1;
+        return val;
+    });
 }
 
 // Sort by file size, largest to smallest
-function sortByFileSize(objList){
-    objList.sort(function(a, b){
+function sortByFileSize(objList) {
+    objList.sort(function (a, b) {
         let aSize = a.Size ? a.Size : 0;
         let bSize = b.Size ? b.Size : 0;
         let val = 0;
-        if(aSize < bSize) val = 1;
-        if(aSize > bSize) val = -1;
+        if (aSize < bSize) val = 1;
+        if (aSize > bSize) val = -1;
         return val;
     });
 }
 
 // Sort object list by last date modified
-function sortByDate(objList){
+function sortByDate(objList) {
     objList.sort((a, b) => {
         let dateA = a.LastModified ? a.LastModified.getTime() : Date.now().getTime();
         let dateB = b.LastModified ? b.LastModified.getTime() : Date.now().getTime();
         let val = 0;
-        if(dateA < dateB) val = 1;
-        if(dateA > dateB) val = -1;
+        if (dateA < dateB) val = 1;
+        if (dateA > dateB) val = -1;
         return val;
     });
 }
 
 // API does not return owner name (Even though it claims it does)
-function filterObjectsByOwner(objList, ownerName){
+function filterObjectsByOwner(objList, ownerName) {
     let resultList = [];
     ownerName = ownerName.join(' ');
 
     objList.forEach((obj) => {
-        if(obj.Owner && obj.Owner.DisplayName){
+        if (obj.Owner && obj.Owner.DisplayName) {
             let name = obj.Owner.DisplayName.toString();
-            if(name === ownerName){
+            if (name === ownerName) {
                 resultList.push(obj);
             }
         }
@@ -600,13 +617,13 @@ function filterObjectsByOwner(objList, ownerName){
     return resultList;
 }
 
-function filterBySimilarName(objList, keyword){
+function filterBySimilarName(objList, keyword) {
     let resultsList = [];
     keyword = keyword.join(' ');
     objList.forEach((obj) => {
         let objName = obj.Key ? obj.Key.toString() : "";
         let similarity = stringSimilarity.compareTwoStrings(keyword, objName);
-        if(similarity >= SIMILARITY_VALUE || objName.toLowerCase().includes(keyword.toLowerCase())){
+        if (similarity >= SIMILARITY_VALUE || objName.toLowerCase().includes(keyword.toLowerCase())) {
             resultsList.push(obj);
         }
     });
@@ -623,10 +640,10 @@ function getObjectTags(bucketName, objectKey) {
             Bucket: bucketName,
             Key: objectKey
         }, (err, data) => {
-            if(err) reject(JSON.stringify(err));
-            try{
+            if (err) reject(JSON.stringify(err));
+            try {
                 resolve(data.TagSet)
-            } catch(err) {
+            } catch (err) {
                 resolve([]);
             }
         });
@@ -640,14 +657,15 @@ function bucketListWithTags() {
             let count = 0;
             let resultBucketList = [];
             bucketList.forEach(bucketName => {
-                s3Data.getBucketTagging({Bucket: bucketName}, (err, data) => {
-                    if(err) {
+                s3Data.getBucketTagging({
+                    Bucket: bucketName
+                }, (err, data) => {
+                    if (err) {
                         resultBucketList.push({
                             name: bucketName,
                             Tags: [] // Key must be Tags to match ec2
                         });
-                    }
-                    else {
+                    } else {
 
                         resultBucketList.push({
                             name: bucketName,
@@ -656,7 +674,7 @@ function bucketListWithTags() {
                     }
 
                     count++;
-                    if(count === bucketList.length){
+                    if (count === bucketList.length) {
                         resolve(resultBucketList);
                     }
                 });
@@ -667,11 +685,19 @@ function bucketListWithTags() {
     })
 }
 
-// Get logging status
-function getLoggingStatus(bucketName){
+function doNothing() {
     return new Promise((resolve, reject) => {
-        s3Data.getBucketLogging({Bucket: bucketName}, (err, data) => {
-            if(err) reject(err);
+        resolve(null);
+    });
+}
+
+// Get logging status
+function getLoggingStatus(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketLogging({
+            Bucket: bucketName
+        }, (err, data) => {
+            if (err) reject(err);
             resolve(data.LoggingEnabled ? 'Enabled' : 'Disabled');
         });
     });
@@ -680,13 +706,14 @@ function getLoggingStatus(bucketName){
 // Get versioning status of the bucket
 function getBucketVersioning(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getBucketVersioning({Bucket: bucketName}, (err, data) => {
-            if(err) reject(err);
+        s3Data.getBucketVersioning({
+            Bucket: bucketName
+        }, (err, data) => {
+            if (err) reject(err);
             let status;
-            try{
+            try {
                 status = data.Status ? data.Status : "Disabled";
-            }
-            catch(err){
+            } catch (err) {
                 status = 'Unknown, ' + err.toString();
             }
             resolve(status);
@@ -697,13 +724,14 @@ function getBucketVersioning(bucketName) {
 // Get bucket owner name
 function getBucketOwnerInfo(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getBucketAcl({Bucket: bucketName}, (err, data) => {
-            if(err) reject(err);
+        s3Data.getBucketAcl({
+            Bucket: bucketName
+        }, (err, data) => {
+            if (err) reject(err);
             let info;
-            try{
+            try {
                 info = data.Owner.DisplayName;
-            }
-            catch(err){
+            } catch (err) {
                 info = "Unknown: " + err.toString();
             }
             resolve(info);
@@ -714,13 +742,14 @@ function getBucketOwnerInfo(bucketName) {
 // Get accelration configuration status
 function getAccelConfig(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getBucketAccelerateConfiguration({Bucket: bucketName}, (err, data) => {
-            if(err) reject(err);
+        s3Data.getBucketAccelerateConfiguration({
+            Bucket: bucketName
+        }, (err, data) => {
+            if (err) reject(err);
             let status = '';
-            try{
+            try {
                 status = data.Status ? data.Status : "Disabled";
-            }
-            catch(err){
+            } catch (err) {
                 status = "Unknown. " + err.toString();
             }
             resolve(status);
@@ -729,10 +758,12 @@ function getAccelConfig(bucketName) {
 }
 
 // Get bucket location
-function getBucketRegion(bucketName){
-    return new Promise((resolve, reject)=> {
-        s3Data.getBucketLocation({Bucket: bucketName}, (err, data) => {
-            if(err) reject(err);
+function getBucketRegion(bucketName) {
+    return new Promise((resolve, reject) => {
+        s3Data.getBucketLocation({
+            Bucket: bucketName
+        }, (err, data) => {
+            if (err) reject(err);
             resolve(data.LocationConstraint);
         });
     });
@@ -740,12 +771,12 @@ function getBucketRegion(bucketName){
 
 
 //Get total size of bucket by name - in bytes
-function sizeOfBucket(bucketname){
-    return new Promise((resolve, reject)=> {
-        objectsList(bucketname).then((objects)=>{
+function sizeOfBucket(bucketname) {
+    return new Promise((resolve, reject) => {
+        objectsList(bucketname).then((objects) => {
             let sum = 0;
-            objects.forEach((obj)=>{
-                if(obj.Size){
+            objects.forEach((obj) => {
+                if (obj.Size) {
                     sum += obj.Size;
                 }
             });
@@ -755,11 +786,13 @@ function sizeOfBucket(bucketname){
 }
 
 // Get number of objects in a bucket
-function numberOfObjects(bucketName){
+function numberOfObjects(bucketName) {
     return new Promise((resolve, reject) => {
         objectsList(bucketName).then(objects => {
             resolve(objects.length);
-        }).catch(err => {reject(err)});
+        }).catch(err => {
+            reject(err)
+        });
     });
 }
 /*
@@ -784,16 +817,15 @@ function objectName(bucketName){
 }*/
 
 // List objects per bucket name
-function objectsList(bucketName){
-    return new Promise((resolve, reject)=>{
+function objectsList(bucketName) {
+    return new Promise((resolve, reject) => {
         let params = {
             Bucket: bucketName
         };
         s3Data.listObjectsV2(params, (err, data) => {
-            if(err){
+            if (err) {
                 reject(err);
-            }
-            else{
+            } else {
                 resolve(data.Contents);
             }
         });
@@ -801,42 +833,38 @@ function objectsList(bucketName){
 }
 
 // Get string for size value
-function getSizeString(bytes){
+function getSizeString(bytes) {
     let resString = '';
-    if(bytes != QUICK_SIZE) {
+    if (bytes != QUICK_SIZE) {
         let type = getSizeLabel(bytes);
         let num = convertSize(bytes, type);
         resString = num + ' ' + type;
-    }
-    else{
+    } else {
         resString = QUICK_SIZE;
     }
     return resString;
 }
 
 // Get the appropriate size label for the number of bytes
-function getSizeLabel(bytes){
+function getSizeLabel(bytes) {
     let type = '';
 
     if (bytes < 1000) {
         type = SIZE_TYPE.B;
-    }
-    else if (bytes < 1000000) {
+    } else if (bytes < 1000000) {
         type = SIZE_TYPE.KB;
-    }
-    else if (bytes < 1000000000) {
+    } else if (bytes < 1000000000) {
         type = SIZE_TYPE.MB;
-    }
-    else {
+    } else {
         type = SIZE_TYPE.GB;
     }
 
     return type;
 }
 
-function convertSize(bytes, type){
+function convertSize(bytes, type) {
     let res = 0;
-    switch(type){
+    switch (type) {
         case SIZE_TYPE.KB:
             res = bytes / 1000;
             break;
@@ -854,27 +882,14 @@ function convertSize(bytes, type){
     return res;
 }
 
-function round(num){
+function round(num) {
     return +num.toFixed(1);
 }
 
 // Return true for empty list
-function listEmpty(list){
+function listEmpty(list) {
     return !(typeof list !== 'undefined' && list.length > 0);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
