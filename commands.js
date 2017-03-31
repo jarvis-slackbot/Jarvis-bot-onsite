@@ -170,8 +170,7 @@ const commandList = {
             Description: "Amazon Machine Image (AMI) status information.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'help', alias: 'h', type: String, multiple: true}
+                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
         },
         {
@@ -271,6 +270,7 @@ const commandList = {
             Function: require('./s3.js').getS3BucketObject,
             Description: "Return a list of objects in the bucket.",
             Arguments: [
+                {name: 'help', alias: 'h', type: String, multiple: true},
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
