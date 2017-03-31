@@ -170,27 +170,8 @@ const commandList = {
             Description: "Amazon Machine Image (AMI) status information.",
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ], 
-            Sections: [
-                {
-                    header: 'AMI usage info',
-                    content: 'Generates something [italic]{very} important.'
-                },
-                {
-                    header: 'Options',
-                    optionList: [
-                      {
-                        name: 'flag',
-                        typeLabel: '[underline]{file}',
-                        description: 'Does flag stuff, and gets a file.'
-                      },
-                      {
-                        name: 'flag2',
-                        description: 'Does flag2 stuff.'
-                      }
-                    ]
-                }
+                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
+                {name: 'help', alias: 'h', type: String, multiple: true}
             ]
         },
         {
@@ -301,6 +282,26 @@ const commandList = {
                 {name: 'objtag', type: String, multiple: true}, // Objects by tag
                 {name: 'objkey', type: Boolean}, // Objects by tag via key
                 {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
+            ], 
+            Sections: [
+                {
+                    header: 'AMI usage info',
+                    content: 'Generates something [italic]{very} important.'
+                },
+                {
+                    header: 'Options',
+                    optionList: [
+                      {
+                        name: 'flag',
+                        typeLabel: '[underline]{file}',
+                        description: 'Does flag stuff, and gets a file.'
+                      },
+                      {
+                        name: 'flag2',
+                        description: 'Does flag2 stuff.'
+                      }
+                    ]
+                }
             ]
         },
         {
