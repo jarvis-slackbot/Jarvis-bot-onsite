@@ -409,6 +409,13 @@ module.exports = {
                                 text += 'No objects found.';
                                 attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
+                            else if(argHelper.hasArgs(args) && args.help){
+                                text += "help flag mentioned.";
+                                //attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                //attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_LOGO_BLUE));
+                                
+                            }
                             else{
                                 text += objList.length + ' Objects in bucket: \n';
                                 for(let i = 0; i < objList.length; i++){
