@@ -5,6 +5,7 @@
 'use strict';
 
 const commandLineArgs = require('command-line-args');
+const commandLineUsage = require('command-line-usage');
 
 // Parse command and get select appropriate function
 // Param message is array of command line args (message[0] being command itself)
@@ -170,6 +171,26 @@ const commandList = {
             Arguments: [
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+            ], 
+            Sections: [
+                {
+                    header: 'AMI usage info',
+                    content: 'Generates something [italic]{very} important.'
+                },
+                {
+                    header: 'Options',
+                    optionList: [
+                      {
+                        name: 'flag',
+                        typeLabel: '[underline]{file}',
+                        description: 'Does flag stuff, and gets a file.'
+                      },
+                      {
+                        name: 'flag2',
+                        description: 'Does flag2 stuff.'
+                      }
+                    ]
+                }
             ]
         },
         {
