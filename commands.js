@@ -7,6 +7,7 @@
 const commandLineArgs = require('command-line-args');
 const commandLineUsage = require('command-line-usage');
 const commandList = require('./commands_list').commandList;
+let columnify = require('columnify');
 
 const DEFAULT_HELP_SPACING = 60;
 
@@ -167,29 +168,32 @@ function multiplyString(str, num){
 // Generates help output for a given command
 function helpForAWSCommand(command){
     let helpStr = '';
-    let argsStr = '';
+    let argsData = [];
     let commandBlock = getAWSCommand(command);
 
     // Build arguments section
     commandBlock.Arguments.forEach((arg) => {
-        let spacing = DEFAULT_HELP_SPACING; // for description spacing
+        let argsLeftStr = '';
+        let argsRightStr = '';
         if(arg.alias){
-            argsStr += '-' + arg.alias + ', ';
-            spacing -= 4; // alias characters above
+            argsLeftStr += '-' + arg.alias + ', ';
         }
-        argsStr += '--' + arg.name + ' ';
-        spacing -= (2 + arg.name.length);
+        argsLeftStr += '--' + arg.name + ' ';
         // If there is a type
-        if(arg.type !== Boolean){
-            argsStr += ' ' + italic(arg.TypeExample);
-            spacing -= (arg.TypeExample.length + 1); // +1 for extra space on line above
-            argsStr +=  ' ' + arg.TypeExample.length.toString();
+        if(arg.type !== Boolean && arg.TypeExample){
+            argsLeftStr += ' ' + italic(arg.TypeExample);
+            // Double the length is required here for some reason??
         }
-        argsStr += multiplyString(' ', spacing);
-        argsStr += arg.ArgumentDescription;
-        argsStr += '\n';
+        argsRightStr += arg.ArgumentDescription;
+        argsData.push({
+            Argument: argsLeftStr,
+            Description: argsRightStr
+        });
     });
 
+    let argsStr = columnify(argsData,{
+        minWidth: 60,
+    });
     // Build title and description with args
     helpStr += '\n\n' +
         bold(commandBlock.Name) + "\n\n" +
