@@ -14,7 +14,11 @@ let stringSimilarity = require('string-similarity');
 
 // AWS S3
 const aws = require('aws-sdk');
-const s3Data = new aws.S3({region: 'us-west-2', maxRetries: 15, apiVersion: '2006-03-01'});
+const s3Data = new aws.S3({
+    region: 'us-west-2', 
+    maxRetries: 15, 
+    apiVersion: '2006-03-01'
+});
 
 const QUICK_SIZE = 'N/A'; // The string shown to user when using quick option
 const SIZE_TYPE = {
@@ -433,72 +437,11 @@ module.exports = {
                     }).catch(err => {
                         reject(msg.errorMessage(err.toString()));
                     });
-                });
-            });
-        });
-    },
-
-
-
-    /*
-
-
-
-     //access control policy (aka acl) of buckets.
-     getAcl : function (){
-
-     return new Promise(function (resolve, reject) {
-     var slackMsg = new SlackTemplate();
-
-     var info = []; //collects data; (object-acl for buckets)
-     //params to be changed for multiple buckets through a seperate function
-     s3Data.getBucketAcl({Bucket: 'jarvisbucket1'}, function callback (err, data){
-     if(err){
-     //console.log(err, err.stack);
-     reject(msg.errorMessage(err.message));
-     }
-     else {//code
-     info.push(data);
-
-     //slack message formatting
-     slackMsg.addAttachment(msg.getAttachNum());
-     var text = '';
-     if (info.length > 0){
-     info.forEach(function(acl){
-     text += "ACL for bucket: " + JSON.stringify(acl) + "\n";
-     });
-     slackMsg.addText(text);
-     resolve(slackMsg);
-     }
-     else {
-     text = "There are no acl for present S3 buckets.";
-     slackMsg.addText(text);
-     resolve(slackMsg);
-     }
-     }
-     });
-     }).catch((err)=>{
-     reject(msg.errorMessage(err));
-     });
-     }/*,
-
-     getBucketNames : function (){
-
-     return new Promise(function (resolve, reject){
-
-     });
-     },
-     getBucketRegions : function (){
-
-     return new Promise(function (resolve, reject){
-
-     });
-     },*/
-    /*considerations
-     sort, repeats, un/used, in/active
-     */
-
-};
+                });//bucketList.forEach
+            });//bucketListWithTags
+        });//promise
+    }//getS3BucketObject
+};//module.exports
 
 //------------------------
 // Object list filters
@@ -790,11 +733,19 @@ function sizeOfBucket(bucketname){
                 if(obj.Size){
                     sum += obj.Size;
                 }
+                else {
+                    text = "There are no s3 buckets to obtain acl from, check if s3 buckets exist or acl exists for a bucket.";
+                }
+                slackMsg.addText(text);
+                resolve(slackMsg);
+                
+            }).catch((err)=>{
+                    reject(msg.errorMessage(err));
             });
             resolve(sum);
         });
     });
-}
+}//sizeOfBucket
 
 // Get number of objects in a bucket
 function numberOfObjects(bucketName){
