@@ -285,7 +285,7 @@ const commandList = {
         },
         {
             Name: "s3acl",
-            //Function: require('./s3.js').getAcl(),
+            Function: require('./s3.js').getBucketAcl,
             Description: "Gets acl objects from buckets (Command in Progress).",
             Arguments: [
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
