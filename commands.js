@@ -9,6 +9,9 @@ const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
 
 const DEFAULT_HELP_SPACING = 40;
+const OPTIONS_HEADING = 'OPTIONS';
+const EXAMPLES_HEADING = 'EXAMPLES';
+const COMMANDS_HEADING = 'COMMANDS';
 
 
 // Parse command and get select appropriate function
@@ -128,16 +131,38 @@ function isAWSCommand(first){
     return res;
 }
 
-// Commands
+// High level help for displaying commands
+// /jarvis help directs here for output
 function helpList(){
-    var str = "";
+    let helpStr = '';
+    let argsData = [];
+
     commandList.commands.forEach((cmd)=>{
-        str += cmd.Name + "\t\t" + cmd.Description + "\n";
+        argsData.push({
+            Argument: cmd.Name,
+            Description: cmd.Description
+        });
     });
     commandList.AWSCommands.forEach((awsCmd)=>{
-        str += awsCmd.Name + "\t\t" + awsCmd.Description + "\n";
+        argsData.push({
+            Argument: awsCmd.Name,
+            Description: awsCmd.Description
+        });
     });
-    return "Here are my available commands:\n" + toCodeBlock(str);
+
+    let argsStr = columnify(argsData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+    helpStr += 'HELP' + "\n\n" +
+        commandList.commands[0].Description + "\n\n" +
+        COMMANDS_HEADING + '\n' +
+        argsStr;
+
+    return "Here are my available commands:\n" + toCodeBlock(helpStr);
 }
 
 // Turn string into slack codeblock
@@ -168,6 +193,7 @@ function multiplyString(str, num){
 function helpForAWSCommand(command){
     let helpStr = '';
     let argsData = [];
+    let exData = [];
     let commandBlock = getAWSCommand(command);
 
     // Build arguments section
@@ -190,6 +216,11 @@ function helpForAWSCommand(command){
         });
     });
 
+    // Build examples section
+    commandBlock.Examples.forEach((example) => {
+        exData.push({Examples: example});
+    });
+
     let argsStr = columnify(argsData,{
         minWidth: DEFAULT_HELP_SPACING,
         headingTransform: function(heading) {
@@ -197,12 +228,22 @@ function helpForAWSCommand(command){
             return heading;
         }
     });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
     let name = (commandBlock.Name).toUpperCase();
     // Build title and description with args
     helpStr += name + "\n\n" +
-            commandBlock.Description + "\n\n" +
-            'OPTIONS' + '\n' +
-            argsStr;
+            commandBlock.Description + "\n\n\n" +
+            OPTIONS_HEADING +
+            argsStr + '\n\n\n' +
+            EXAMPLES_HEADING  + exStr;
 
     return toCodeBlock(helpStr);
 }
