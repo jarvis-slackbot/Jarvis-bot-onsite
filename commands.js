@@ -1,11 +1,27 @@
 /*
     Handles parsing commands and command arguments
  */
+/* Permissions from open-source
+
+string-similarity
+    https://www.npmjs.com/package/string-similarity
+    link: https://spdx.org/licenses/ISC
+ISC License:
+Copyright (c) 2004-2010 by Internet Systems Consortium, Inc. ("ISC") 
+Copyright (c) 1995-2003 by Internet Software Consortium
+
+Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+ */
+
 
 'use strict';
 
 const commandLineArgs = require('command-line-args');
-const commandLineUsage = require('command-line-usage');
+//const stringSimilarity = require('string-similarity');
+
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
 
@@ -39,8 +55,35 @@ exports.parseCommand = function(message){
                 func = new Promise(function(resolve, reject){
                     if (err.name === "UNKNOWN_OPTION"){
                         var msg = require('./message.js').errorMessage(
-                            "Argument error: " + err.name + "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                            "Argument error: " + err.name + 
+                            "\nSuggestion: Please use the --help flag for a list of valid arguments."
                         );
+
+                        //find and print most similar existing flag of user's passed flag for their AWS command
+                        //obj.Arguments.name
+                        /*
+                        let cmd_flagNamesArray = [];
+                        cmd.Arguments.forEach((flag)=>{
+                            cmd_flagNamesArray.push(flag.name);
+                        });
+                        let bestFlagMatch = (stringSimilarity.findBestMatch('cmd.Name', cmd_flagNamesArray)).bestMatch.target;
+                        msg += "\nDid you mean: --" + bestFlagMatch;
+                        */
+                        /*
+                        { ratings:
+                           [ { target: 'For sale: green Subaru Impreza, 210,000 miles',
+                               rating: 0.3013698630136986 },
+                             { target: 'For sale: table in very good condition, olive green in colour.',
+                               rating: 0.7073170731707317 },
+                             { target: 'Wanted: mountain bike with at least 21 gears.',
+                               rating: 0.11267605633802817 } ],
+                          bestMatch:
+                           { target: 'For sale: table in very good condition, olive green in colour.',
+                             rating: 0.7073170731707317 } 
+                        }
+                        */
+                        
+                        
                     }
                     else {
                         var msg = require('./message.js').errorMessage(
