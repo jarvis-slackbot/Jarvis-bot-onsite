@@ -8,7 +8,7 @@ const commandLineArgs = require('command-line-args');
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
 
-const DEFAULT_HELP_SPACING = 60;
+const DEFAULT_HELP_SPACING = 40;
 
 
 // Parse command and get select appropriate function
@@ -173,7 +173,7 @@ function helpForAWSCommand(command){
         argsLeftStr += '--' + arg.name + ' ';
         // If there is a type
         if(arg.type !== Boolean && arg.TypeExample){
-            argsLeftStr += ' ' + italic(arg.TypeExample);
+            argsLeftStr += ' [' + arg.TypeExample + ']';
             // Double the length is required here for some reason??
         }
         argsRightStr += arg.ArgumentDescription;
@@ -184,14 +184,18 @@ function helpForAWSCommand(command){
     });
 
     let argsStr = columnify(argsData,{
-        minWidth: 60,
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
     });
+    let name = (commandBlock.Name).toUpperCase();
     // Build title and description with args
-    helpStr += '\n\n' +
-        bold(commandBlock.Name) + "\n\n" +
+    helpStr += name + "\n\n" +
             commandBlock.Description + "\n\n" +
-            bold('Options') + '\n\n' +
+            'OPTIONS' + '\n' +
             argsStr;
 
-    return helpStr;
+    return toCodeBlock(helpStr);
 }
