@@ -6,7 +6,7 @@
 // Response commandList
 exports.commandList = {
     // Add commands here that do not gather data from AWS
-    commands:[
+    commands: [
         {
             Name: "help",
             Function: "Cannot call myself!",
@@ -20,7 +20,7 @@ exports.commandList = {
     ],
 
     // Add new AWS commands here
-    AWSCommands:[
+    AWSCommands: [
         // EC2 status
         {
             Name: "ec2status",
@@ -30,11 +30,18 @@ exports.commandList = {
                 {name: 'help', type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'tag', alias: 't', type: String, multiple: true,
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
                     ArgumentDescription: 'Filter by tag name',
                     TypeExample: "tag_name"
                 },
-                {name: 'key', alias: 'k', type: Boolean,
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
                     ArgumentDescription: 'Flag to filter by tag key instead of name'
                 }
             ]
@@ -179,13 +186,41 @@ exports.commandList = {
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 // Sorters cannot be used with other sorters
-                {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
-                {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
-                {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
-                {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
-                {name: 'objtag', type: String, multiple: true}, // Objects by tag
-                {name: 'objkey', type: Boolean}, // Objects by tag via key
-                {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
+                {
+                    name: 'alpha',
+                    alias: 'a',
+                    type: Boolean
+                }, // Sort alphabetically
+                {
+                    name: 'size',
+                    alias: 's',
+                    type: Boolean
+                }, // Sort by size - largest to smallest
+                {
+                    name: 'date',
+                    alias: 'd',
+                    type: Boolean
+                }, // Sort by date modified
+                {
+                    name: 'search',
+                    type: String,
+                    multiple: true
+                }, // Filter objects list by users search word
+                {
+                    name: 'objtag',
+                    type: String,
+                    multiple: true
+                }, // Objects by tag
+                {
+                    name: 'objkey',
+                    type: Boolean
+                }, // Objects by tag via key
+                {
+                    name: 'owner',
+                    alias: 'o',
+                    type: String,
+                    multiple: true
+                } // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
             ]
         },
         {
