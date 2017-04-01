@@ -12,6 +12,8 @@ const DEFAULT_HELP_SPACING = 40;
 const OPTIONS_HEADING = 'OPTIONS';
 const EXAMPLES_HEADING = 'EXAMPLES';
 const COMMANDS_HEADING = 'COMMANDS';
+const EC2_SECTION = 'EC2';
+const S3_SECTION = 'S3';
 
 
 // Parse command and get select appropriate function
@@ -135,32 +137,75 @@ function isAWSCommand(first){
 // /jarvis help directs here for output
 function helpList(){
     let helpStr = '';
-    let argsData = [];
+    let ec2Data = [];
+    let s3Data = [];
+    let otherData = [];
+    let exData = [];
 
     commandList.commands.forEach((cmd)=>{
-        argsData.push({
-            Argument: cmd.Name,
+        otherData.push({
+            Command: cmd.Name,
             Description: cmd.Description
         });
     });
-    commandList.AWSCommands.forEach((awsCmd)=>{
-        argsData.push({
-            Argument: awsCmd.Name,
-            Description: awsCmd.Description
-        });
+    commandList.AWSCommands.forEach((awsCmd)=> {
+        if (awsCmd.Section === EC2_SECTION){
+            ec2Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.Description
+            });
+        }
+        else if(awsCmd.Section === S3_SECTION){
+            s3Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.Description
+            });
+        }
+    });
+    commandList.commands[0].Examples.forEach((ex) => {
+        exData.push({
+            Examples: ex
+        })
     });
 
-    let argsStr = columnify(argsData,{
+    let otherCmds = columnify(otherData,{
         minWidth: DEFAULT_HELP_SPACING,
         headingTransform: function(heading) {
             heading = '';
             return heading;
         }
     });
+
+    let ec2Cmds = columnify(ec2Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let s3Cmds = columnify(s3Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
     helpStr += 'HELP' + "\n\n" +
-        commandList.commands[0].Description + "\n\n" +
-        COMMANDS_HEADING + '\n' +
-        argsStr;
+        commandList.commands[0].Description + "\n\n\n" +
+        COMMANDS_HEADING + '\n' + otherCmds + '\n\n' +
+        'EC2 Commands' + ec2Cmds + '\n\n' +
+        'S3 Commands' + s3Cmds + '\n\n\n' +
+        EXAMPLES_HEADING  + exStr;
 
     return "Here are my available commands:\n" + toCodeBlock(helpStr);
 }
