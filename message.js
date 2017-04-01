@@ -116,8 +116,10 @@ exports.buildAttachments = function(attachmentList, alternateColors){
         else{
             attachment.id?
                 slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id))
-                : slackMsg.addTitle(attachment.name);
-            slackMsg.addText(attachment.text);
+                : slackMsg.addText(attachment.text);
+            if (attachment.name) {
+                slackMsg.addTitle(attachment.name)
+            }
         }
 
         // Color handling

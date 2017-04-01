@@ -353,6 +353,24 @@ module.exports = {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
+
+                let text = '';
+                try {
+                    if(argHelper.hasArgs(args) && args.help){
+                        text += "help flag mentioned.";
+                        // attachments.push(msg.createAttachmentData(null, null, null, text, null));
+                        attachments.push({ text: text} );
+                        let slackMsg = msg.buildAttachments(attachments, false);
+                        resolve(slackMsg);
+                    }
+                }
+                catch(error){
+                    text = error.toString();
+                    attachments.push(msg.createAttachmentData(null, null, text,  msg.SLACK_RED));
+                    let slackMsg = msg.buildAttachments(attachments, false);
+                    resolve(slackMsg);
+                }//help flag catch
+
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
                     let prom;
@@ -371,7 +389,7 @@ module.exports = {
                     }
 
                     prom.then((objList) => {
-                        let text = '';
+                        // let text = '';
                         // Arguments filtering per object
                         if(argHelper.hasArgs(args)){
 
@@ -409,13 +427,12 @@ module.exports = {
                                 text += 'No objects found.';
                                 attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
-                            else if(argHelper.hasArgs(args) && args.help){
-                                text += "help flag mentioned.";
-                                //attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                //attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_LOGO_BLUE));
-                                
-                            }
+                            // else if(argHelper.hasArgs(args) && args.help){
+                            //     text += "help flag mentioned.";
+                            //     //attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            //     //attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
+                            //     attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
+                            // }
                             else{
                                 text += objList.length + ' Objects in bucket: \n';
                                 for(let i = 0; i < objList.length; i++){
