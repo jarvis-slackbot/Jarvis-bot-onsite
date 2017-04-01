@@ -5,6 +5,7 @@
 'use strict';
 
 const commandLineArgs = require('command-line-args');
+const commandLineUsage = require('command-line-usage');
 const commandList = require('./commands_list').commandList;
 
 const DEFAULT_HELP_SPACING = 60;
@@ -35,9 +36,16 @@ exports.parseCommand = function(message){
             } catch(err){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
-                    var msg = require('./message.js').errorMessage(
-                        "Argument error: " + err.name
-                    );
+                    if (err.name === "UNKNOWN_OPTION"){
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name + "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                        );
+                    }
+                    else {
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name
+                        );
+                    }
                     resolve(msg);
                 });
             }
@@ -188,7 +196,6 @@ function helpForAWSCommand(command){
             commandBlock.Description + "\n\n" +
             bold('Options') + '\n\n' +
             argsStr;
-
 
     return helpStr;
 }
