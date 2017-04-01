@@ -5,9 +5,14 @@
 'use strict';
 
 const commandLineArgs = require('command-line-args');
+const commandList = require('./commands_list').commandList;
+
+const DEFAULT_HELP_SPACING = 60;
+
 
 // Parse command and get select appropriate function
 // Param message is array of command line args (message[0] being command itself)
+// Returns string or a promise that resolves a SlackTemplate
 exports.parseCommand = function(message){
     var first = message[0].toString();
     var func;
@@ -21,7 +26,12 @@ exports.parseCommand = function(message){
             try {
                 var options = listEmpty(message) ? null
                     : commandLineArgs(cmd.Arguments, {argv: message});
-                func = cmd.Function(options);
+                if(options && options.help){
+                    func = helpForAWSCommand(first);
+                }
+                else{
+                    func = cmd.Function(options);
+                }
             } catch(err){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
@@ -128,201 +138,57 @@ function toCodeBlock(str){
     var backticks = "```";
     return backticks + str + backticks;
 }
+// Turn to slack bold
+function bold(str){
+    return '*' + str + '*';
+}
+
+function italic(str){
+    return '_' + str + '_';
+}
 
 // Return true for empty list
 function listEmpty(list){
     return !(typeof list !== 'undefined' && list.length > 0);
 }
 
-// ------------------COMMANDS---------------------------
+function multiplyString(str, num){
+    return new Array(num + 1).join(str);
+}
 
-// Response commandList
-const commandList = {
-    // Add commands here that do not gather data from AWS
-    commands:[
-        {
-            Name: "help",
-            Function: "Cannot call myself!",
-            Description: "Lists available commands.",
-        },
-        {
-            Name: "man",
-            Function: "Sorry, I have not been given a user manual yet.",
-            Description: "Sorry, I have not been given a user manual yet."
+// Generates help output for a given command
+function helpForAWSCommand(command){
+    let helpStr = '';
+    let argsStr = '';
+    let commandBlock = getAWSCommand(command);
+
+    // Build arguments section
+    commandBlock.Arguments.forEach((arg) => {
+        let spacing = DEFAULT_HELP_SPACING; // for description spacing
+        if(arg.alias){
+            argsStr += '-' + arg.alias + ', ';
+            spacing -= 4; // alias characters above
         }
-    ],
+        argsStr += '--' + arg.name + ' ';
+        spacing -= (2 + arg.name.length);
+        // If there is a type
+        if(arg.type !== Boolean){
+            argsStr += ' ' + italic(arg.TypeExample);
+            spacing -= (arg.TypeExample.length + 1); // +1 for extra space on line above
+            argsStr +=  ' ' + arg.TypeExample.length.toString();
+        }
+        argsStr += multiplyString(' ', spacing);
+        argsStr += arg.ArgumentDescription;
+        argsStr += '\n';
+    });
 
-    // Add new AWS commands here
-    AWSCommands:[
-        {
-            Name: "ec2status",
-            Function: require('./ec2.js').getStatus,
-            Description: "Server Online/Offline status.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ami",
-            Function: require('./ec2.js').getAMIStatus,
-            Description: "Amazon Machine Image (AMI) status information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ec2cpu",
-            Function: require('./cloudwatch').getEc2Cpu,
-            Description: "Current server CPU usage.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2disk",
-            Function: require('./cloudwatch').getEc2Disk,
-            Description: "Amount of data stored on server bucket.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2network",
-            Function: require('./cloudwatch').getEc2Network,
-            Description: "Ec2 network information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2info",
-            Function: require('./ec2.js').getHardwareInfo,
-            Description: "Generic EC2 instance information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ec2net",
-            Function: require('./ec2.js').getNetworkInfo,
-            Description: "Network information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "health",
-            Function: require('./health.js').getAWSHealth(),
-            Description: "Overall percentage of uptime vs downtime of the server"
-        },
-        {
-            Name: "ec2ebs",
-            Function: require('./ec2.js').getEBSInfo,
-            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'encrypted', alias: 'e', type: Boolean}, // Get all volumes that are encrypted
-                {name: 'not-encrypted', alias: 'n', type: Boolean}, // Get all volumes that are not encrypted
-            ]
-        },
-        {
-            Name: "ec2bytag",
-            Function: require('./ec2.js').getByTag,
-            Description: "Get list of instances by tag data",
-            Arguments: [
-                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "s3bytag",
-            Function: require('./s3.js').getS3Tags,
-            Description: "Get buckets by tag.",
-            Arguments: [
-                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true} // List instances that have the specified tag
-                //{name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "s3objects",
-            Function: require('./s3.js').getS3BucketObject,
-            Description: "Return a list of objects in the bucket.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                // Sorters cannot be used with other sorters
-                {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
-                {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
-                {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
-                {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
-                {name: 'objtag', type: String, multiple: true}, // Objects by tag
-                {name: 'objkey', type: Boolean}, // Objects by tag via key
-                {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
-            ]
-        },
-        {
-            Name: "s3acl",
-            //Function: require('./s3.js').getAcl(),
-            Description: "Gets acl objects from buckets (Command in Progress).",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "s3policy",
-            Function: require('./s3.js').getBucketPolicy,
-            Description: "Returns the JSON bucket policy.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
-            ]
-        },
-        {
-            Name: "s3info",
-            Function: require('./s3.js').getBucketInfo,
-            Description: "Generic bucket information.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'quick', alias: 'q', type: Boolean} // Skip getting bucket size to speed up this action
-            ]
-        },
-        {
-            Name: "s3logging",
-            Function: require('./s3.js').bucketLoggingInfo,
-            Description: "Bucket logging information.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-    ]
-};
+    // Build title and description with args
+    helpStr += '\n\n' +
+        bold(commandBlock.Name) + "\n\n" +
+            commandBlock.Description + "\n\n" +
+            bold('Options') + '\n\n' +
+            argsStr;
+
+
+    return helpStr;
+}
