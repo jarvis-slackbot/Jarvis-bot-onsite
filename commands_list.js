@@ -44,6 +44,9 @@ exports.commandList = {
             Function: require('./ec2.js').getAMIStatus,
             Description: "Amazon Machine Image (AMI) status information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
@@ -53,6 +56,9 @@ exports.commandList = {
             Function: require('./cloudwatch').getEc2Cpu,
             Description: "Current server CPU usage.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
@@ -65,6 +71,9 @@ exports.commandList = {
             Function: require('./cloudwatch').getEc2Disk,
             Description: "Amount of data stored on server bucket.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
@@ -77,6 +86,9 @@ exports.commandList = {
             Function: require('./cloudwatch').getEc2Network,
             Description: "Ec2 network information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'minutes', alias: 'm', type: Number},
@@ -89,6 +101,9 @@ exports.commandList = {
             Function: require('./ec2.js').getHardwareInfo,
             Description: "Generic EC2 instance information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
@@ -98,6 +113,9 @@ exports.commandList = {
             Function: require('./ec2.js').getNetworkInfo,
             Description: "Network information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
             ]
@@ -112,6 +130,9 @@ exports.commandList = {
             Function: require('./ec2.js').getEBSInfo,
             Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'encrypted', alias: 'e', type: Boolean}, // Get all volumes that are encrypted
@@ -123,6 +144,9 @@ exports.commandList = {
             Function: require('./ec2.js').getByTag,
             Description: "Get list of instances by tag data",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'notags', type: Boolean}, // List ALL instances that have no tags
                 {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
                 {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
@@ -134,6 +158,9 @@ exports.commandList = {
             Function: require('./s3.js').getS3Tags,
             Description: "Get buckets by tag.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'notags', type: Boolean}, // List ALL instances that have no tags
                 {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
                 {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true} // List instances that have the specified tag
@@ -145,6 +172,9 @@ exports.commandList = {
             Function: require('./s3.js').getS3BucketObject,
             Description: "Return a list of objects in the bucket.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
@@ -163,6 +193,9 @@ exports.commandList = {
             //Function: require('./s3.js').getAcl(),
             Description: "Gets acl objects from buckets (Command in Progress).",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
@@ -173,6 +206,9 @@ exports.commandList = {
             Function: require('./s3.js').getBucketPolicy,
             Description: "Returns the JSON bucket policy.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
@@ -184,6 +220,9 @@ exports.commandList = {
             Function: require('./s3.js').getBucketInfo,
             Description: "Generic bucket information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
@@ -195,6 +234,9 @@ exports.commandList = {
             Function: require('./s3.js').bucketLoggingInfo,
             Description: "Bucket logging information.",
             Arguments: [
+                {name: 'help', type: Boolean,
+                    ArgumentDescription: 'Displays this help information'
+                },
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
                 {name: 'tag', alias: 't', type: String, multiple: true},
                 {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
