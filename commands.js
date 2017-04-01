@@ -55,41 +55,15 @@ exports.parseCommand = function(message){
                 func = new Promise(function(resolve, reject){
                     if (err.name === "UNKNOWN_OPTION"){
                         var preparedText = "";
-
                         //suggest most similar existing flag to the user's passed flag for their AWS command                        
                         let cmd_flagNamesArray = []; //will hold '--flagName'
                         cmd.Arguments.forEach((flag)=>{
                             cmd_flagNamesArray.push("--" + flag.name);
-                            //preparedText += "\nFlagName: " + flag.name;
                         });
                         let bestFlagMatch = (stringSimilarity.findBestMatch(message[0], cmd_flagNamesArray)).bestMatch.target;
-                        // preparedText += 
-                        //     "\ntypeOf(message): " + typeof(message[0]) +
-                        //     "\ncontentsOf(message): " + JSON.stringify(message[0]) + 
-
-                        //     "\nflags: " + cmd.Arguments[0].name + //help
-                        //     "\nfirst: " + first + //ec2cpu
-                        //     "\nmessage: " + message; // --minute //+ cmd_flagNamesArray[0]
-                        
-                        // for (flagName in cmd_flagNamesArray){
-                        //     preparedText += "\nflagName";
-                        // }
-                        
                         preparedText += "\nDid you mean: " + bestFlagMatch;
-                        
-                        /*
-                        { ratings:
-                           [ { target: 'For sale: green Subaru Impreza, 210,000 miles',
-                               rating: 0.3013698630136986 },
-                             { target: 'For sale: table in very good condition, olive green in colour.',
-                               rating: 0.7073170731707317 },
-                             { target: 'Wanted: mountain bike with at least 21 gears.',
-                               rating: 0.11267605633802817 } ],
-                          bestMatch:
-                           { target: 'For sale: table in very good condition, olive green in colour.',
-                             rating: 0.7073170731707317 } 
-                        }
-                        */
+
+                        //crates slacktemplate to hold the message. Final slack edit ends here.
                         var msg = require('./message.js').errorMessage(
                             "Argument error: " + err.name + 
                             "\nSuggestion: Please use the --help flag for a list of valid arguments."
