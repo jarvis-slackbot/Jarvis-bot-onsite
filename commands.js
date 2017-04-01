@@ -20,7 +20,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO
 'use strict';
 
 const commandLineArgs = require('command-line-args');
-//const stringSimilarity = require('string-similarity');
+const stringSimilarity = require('string-similarity');
 
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
@@ -54,21 +54,29 @@ exports.parseCommand = function(message){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
                     if (err.name === "UNKNOWN_OPTION"){
-                        var msg = require('./message.js').errorMessage(
-                            "Argument error: " + err.name + 
-                            "\nSuggestion: Please use the --help flag for a list of valid arguments."
-                        );
+                        var preparedText = "";
 
-                        //find and print most similar existing flag of user's passed flag for their AWS command
-                        //obj.Arguments.name
-                        /*
-                        let cmd_flagNamesArray = [];
+                        //suggest most similar existing flag to the user's passed flag for their AWS command                        
+                        let cmd_flagNamesArray = []; //will hold '--flagName'
                         cmd.Arguments.forEach((flag)=>{
-                            cmd_flagNamesArray.push(flag.name);
+                            cmd_flagNamesArray.push("--" + flag.name);
+                            //preparedText += "\nFlagName: " + flag.name;
                         });
-                        let bestFlagMatch = (stringSimilarity.findBestMatch('cmd.Name', cmd_flagNamesArray)).bestMatch.target;
-                        msg += "\nDid you mean: --" + bestFlagMatch;
-                        */
+                        let bestFlagMatch = (stringSimilarity.findBestMatch(message[0], cmd_flagNamesArray)).bestMatch.target;
+                        // preparedText += 
+                        //     "\ntypeOf(message): " + typeof(message[0]) +
+                        //     "\ncontentsOf(message): " + JSON.stringify(message[0]) + 
+
+                        //     "\nflags: " + cmd.Arguments[0].name + //help
+                        //     "\nfirst: " + first + //ec2cpu
+                        //     "\nmessage: " + message; // --minute //+ cmd_flagNamesArray[0]
+                        
+                        // for (flagName in cmd_flagNamesArray){
+                        //     preparedText += "\nflagName";
+                        // }
+                        
+                        preparedText += "\nDid you mean: " + bestFlagMatch;
+                        
                         /*
                         { ratings:
                            [ { target: 'For sale: green Subaru Impreza, 210,000 miles',
@@ -82,8 +90,10 @@ exports.parseCommand = function(message){
                              rating: 0.7073170731707317 } 
                         }
                         */
-                        
-                        
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name + 
+                            "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                            + preparedText);
                     }
                     else {
                         var msg = require('./message.js').errorMessage(
