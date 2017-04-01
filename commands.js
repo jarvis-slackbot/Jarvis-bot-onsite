@@ -26,9 +26,16 @@ exports.parseCommand = function(message){
             } catch(err){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
-                    var msg = require('./message.js').errorMessage(
-                        "Argument error: " + err.name
-                    );
+                    if (err.name === "UNKNOWN_OPTION"){
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name + "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                        );
+                    }
+                    else {
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name
+                        );
+                    }
                     resolve(msg);
                 });
             }
