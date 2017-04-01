@@ -34,7 +34,6 @@ const api = botBuilder((message, apiRequest) => {
 
 }, { platforms: ['slackSlashCommand'] });
 
-//if did not correctly promise return a slackTemplate message may not be intercepted or maybe if not returned on time, even with delay (kinda a bad feature)  
 api.intercept((event) => {
     if (!event.slackEvent){ // if this is a normal web request, let it run
         return event;
@@ -51,27 +50,20 @@ api.intercept((event) => {
             // AI or test response
             if(typeof res === 'string' || res instanceof String){
                 var message = new SlackTemplate(res);
-                return slackDelayedReply(data, message.channelMessage(true).addText("returned a string\n").get());
+                return slackDelayedReply(data, message.channelMessage(true).get());
             }
             // Response that pinged AWS (res is a Promise function)
             // msg should be a SlackTemplate object
             // TODO - Error checking for promise function
-            else { //: i think it executes slack delay and returns a false (nothing) to this method. added a text for better debugging. possibility too: If there is an error in a command you may not see it since it may not be correct nor return anything. So what you do is call another command that you know is correct and it will get to this portion of the code and you may find there is an error in the code--sadly no complete trace to the bad command. health caught an error in the intercept's promise delay's return meaning something wrong in return, probably res. ec2status did not return a string in the intercept's promiseDelay's return, meaning res was passed, but wasn't a string.
+            else {
                 return res.then((msg) => {
                     return slackDelayedReply(data, msg.channelMessage(true).get());
-                    //may be causing errors if attach text
-                    //.addText("did not return a string in the intercept's promiseDelay's return")
                 }).then(() => false).catch((err) => {
                     return slackDelayedReply(data, err.channelMessage(true).get());
-                    //.addText("caught an error in the intercept's promiseDelay's return")
                 });
             }
         })
-        .then(() => false) // prevent normal execution
-        .catch((err) => {
-            return slackDelayedReply(data, err.channelMessage(true).get());
-        //.addText("error caught in the intercept's promiseDelay")
-        }); 
+        .then(() => false); // prevent normal execution
 });
 
 
