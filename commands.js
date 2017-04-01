@@ -5,7 +5,6 @@
 'use strict';
 
 const commandLineArgs = require('command-line-args');
-const commandLineUsage = require('command-line-usage');
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
 
