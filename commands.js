@@ -145,20 +145,20 @@ function helpList(){
     commandList.commands.forEach((cmd)=>{
         otherData.push({
             Command: cmd.Name,
-            Description: cmd.Description
+            Description: cmd.ShortDescription
         });
     });
     commandList.AWSCommands.forEach((awsCmd)=> {
         if (awsCmd.Section === EC2_SECTION){
             ec2Data.push({
                 Command: awsCmd.Name,
-                Description: awsCmd.Description
+                Description: awsCmd.ShortDescription
             });
         }
         else if(awsCmd.Section === S3_SECTION){
             s3Data.push({
                 Command: awsCmd.Name,
-                Description: awsCmd.Description
+                Description: awsCmd.ShortDescription
             });
         }
     });
@@ -268,6 +268,7 @@ function helpForAWSCommand(command){
 
     let argsStr = columnify(argsData,{
         minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
         headingTransform: function(heading) {
             heading = '';
             return heading;
@@ -276,6 +277,7 @@ function helpForAWSCommand(command){
 
     let exStr = columnify(exData,{
         minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
         headingTransform: function(heading) {
             heading = '';
             return heading;
