@@ -48,7 +48,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 }
             ],
             Examples: [
@@ -83,7 +83,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
             ],
             Examples: [
@@ -119,7 +119,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
                 {
                     name: 'minutes',
@@ -177,7 +177,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
                 {
                     name: 'minutes',
@@ -235,7 +235,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
                 {
                     name: 'minutes',
@@ -290,7 +290,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 }
             ],
             Examples: [
@@ -377,7 +377,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
                 { // Get all volumes that are encrypted
                     name: 'encrypted',
@@ -422,7 +422,6 @@ exports.commandList = {
                 },
                 { // List instances that do not have the specified tag
                     name: 'notag',
-                    alias: 'n',
                     type: String,
                     multiple: true,
                     ArgumentDescription: 'Filter results by instances that have a user specified tag'
@@ -439,7 +438,7 @@ exports.commandList = {
                     name: 'key',
                     alias: 'k',
                     type: Boolean,
-                    ArgumentDescription: 'Flag to filter by tag key instead of name'
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
                 },
             ],
             Examples: [
@@ -448,137 +447,329 @@ exports.commandList = {
                 "/jarvis ec2bytag -kt TagKey",
                 "/jarvis ec2bytag --notags",
                 "/jarvis ec2bytag --notag TagName",
-                "/jarvis ec2bytag -kt TagKey -n TagName"
+                "/jarvis ec2bytag -kt TagKey --notag TagName"
             ]
         },
         {
             Name: "s3bytag",
             Function: require('./s3.js').getS3Tags,
             Section: 'S3',
-            Description: "Get buckets by tag.",
+            Description: "Lists buckets by specified tag data. " +
+            "Bucket Name/ID provided for all buckets that match the users filter criteria. " +
+            "If no arguments are provided, then all buckets will be listed.",
+            ShortDescription: "Lists buckets by specified tag data.",
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true} // List instances that have the specified tag
-                //{name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                { // List ALL buckets that have no tags
+                    name: 'notags',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter results by buckets that have no tags'
+                },
+                { // List buckets that do not have the specified tag
+                    name: 'notag',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by buckets that have a user specified tag'
+                },
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3bytag",
+                "/jarvis s3bytag -t TagName",
+                "/jarvis s3bytag -kt TagKey",
+                "/jarvis s3bytag --notags",
+                "/jarvis s3bytag --notag TagName",
+                "/jarvis s3bytag -kt TagKey --notag TagName"
+            ]
         },
         {
             Name: "s3objects",
             Function: require('./s3.js').getS3BucketObject,
             Section: 'S3',
-            Description: "Return a list of objects in the bucket.",
+            Description: "Lists objects in S3 bucket(s). " +
+            "Provides a list of objects based on users criteria from S3 buckets. " +
+            "Object filename and size are provided.",
+            ShortDescription: "Lists objects in S3 bucket(s)",
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
+                {
+                    name: 'name',
+                    alias: 'n',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by bucket name'
+                }, // filter buckets by name
                 // Sorters cannot be used with other sorters
                 {
                     name: 'alpha',
                     alias: 'a',
-                    type: Boolean
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to sort objects alphabetically A-Z'
                 }, // Sort alphabetically
                 {
                     name: 'size',
                     alias: 's',
-                    type: Boolean
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to sort objects by file size'
                 }, // Sort by size - largest to smallest
                 {
                     name: 'date',
                     alias: 'd',
-                    type: Boolean
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to sort objects by date last modifed'
                 }, // Sort by date modified
                 {
                     name: 'search',
                     type: String,
-                    multiple: true
+                    multiple: true,
+                    ArgumentDescription: 'Search for objects related given string'
                 }, // Filter objects list by users search word
                 {
                     name: 'objtag',
                     type: String,
-                    multiple: true
+                    multiple: true,
+                    ArgumentDescription: 'Filter objects by object tag'
                 }, // Objects by tag
                 {
                     name: 'objkey',
-                    type: Boolean
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by object tag key instead of value'
                 }, // Objects by tag via key
                 {
                     name: 'owner',
                     alias: 'o',
                     type: String,
-                    multiple: true
+                    multiple: true,
+                    ArgumentDescription: 'Filter objects by provided owner name (Not available in all regions)'
                 } // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3objects",
+                "/jarvis s3objects -t TagName",
+                "/jarvis s3objects -kt TagKey",
+                "/jarvis s3objects --alpha",
+                "/jarvis s3objects --search Keyword -s",
+                "/jarvis s3objects -ao OwnerName"
+            ]
         },
         {
             Name: "s3acl",
             //Function: require('./s3.js').getAcl(),
-            Description: "Gets acl objects from buckets (Command in Progress).",
+            Description: "Retrieves the Life Cycle Configuration for an S3 bucket. " +
+            "The Life Cycle Configuration sets rules for the life of specified objects. " +
+            "Expiration dates, rules and more are provided.",
+            ShortDescription: "Retrieves the Life Cycle Configuration for an S3 bucket.",
             Section: 'S3',
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
+                {
+                    name: 'name',
+                    alias: 'n',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by bucket name'
+                }
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3acl",
+                "/jarvis s3acl -t TagName",
+                "/jarvis s3acl -kt TagKey",
+                "/jarvis s3acl -n BucketName"
+            ]
         },
         {
             Name: "s3policy",
             Function: require('./s3.js').getBucketPolicy,
-            Description: "Returns the JSON bucket policy.",
+            ShortDescription: "Retrieves S3 bucket policy information.",
+            Description: "Retrieves S3 bucket policy information. S3 bucket policy is the access policy for a bucket. " +
+            "Policy version, ID, SID, Principals and more are provided.",
             Section: 'S3',
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
+                {
+                    name: 'name',
+                    alias: 'n',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by bucket name'
+                },
+                {
+                    name: 'raw',
+                    alias: 'r',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag which will return the raw JSON policy of the bucket'
+                }, // Return raw json policy
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3policy",
+                "/jarvis s3policy -t TagName",
+                "/jarvis s3policy -kt TagKey",
+                "/jarvis s3policy -n BucketName",
+                "/jarvis s3policy --raw --name BucketName"
+            ]
         },
         {
             Name: "s3info",
             Function: require('./s3.js').getBucketInfo,
-            Description: "Generic bucket information.",
+            ShortDescription: "Generic bucket information.",
+            Description: "Generic bucket information.  Retrieves \"everyday\" information about an S3 bucket. " +
+            "Bucket region, owner, size and more are provided.",
             Section: 'S3',
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'quick', alias: 'q', type: Boolean} // Skip getting bucket size to speed up this action
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
+                {
+                    name: 'name',
+                    alias: 'n',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by bucket name'
+                },
+                {
+                    name: 'quick',
+                    alias: 'q',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to speed up this command by not providing bucket size'
+                } // Skip getting bucket size to speed up this action
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3info",
+                "/jarvis s3info -t TagName",
+                "/jarvis s3info -kt TagKey",
+                "/jarvis s3info -n BucketName",
+                "/jarvis s3info -qn BucketName"
+            ]
         },
         {
             Name: "s3logging",
             Function: require('./s3.js').bucketLoggingInfo,
-            Description: "Bucket logging information.",
+            ShortDescription: "Bucket logging information.",
+            Description: "Bucket logging information. " +
+            "Logging provides records of access requests to the bucket. Logs are usually stored in a target bucket. " +
+            "Target Bucket and Target Prefix are provided.",
             Section: 'S3',
             Arguments: [
-                {name: 'help', type: Boolean,
+                {
+                    name: 'help',
+                    type: Boolean,
                     ArgumentDescription: 'Displays this help information'
                 },
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {
+                    name: 'tag',
+                    alias: 't',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter by tag name',
+                    TypeExample: "tag_name"
+                },
+                {
+                    name: 'key',
+                    alias: 'k',
+                    type: Boolean,
+                    ArgumentDescription: 'Flag to filter by tag key instead of value'
+                },
+                {
+                    name: 'name',
+                    alias: 'n',
+                    type: String,
+                    multiple: true,
+                    ArgumentDescription: 'Filter results by bucket name'
+                }
             ],
-            Examples: []
+            Examples: [
+                "/jarvis s3logging",
+                "/jarvis s3logging -t TagName",
+                "/jarvis s3logging -kt TagKey",
+                "/jarvis s3logging -n BucketName"
+            ]
         },
     ]
 };
