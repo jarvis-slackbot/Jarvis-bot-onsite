@@ -59,6 +59,7 @@ module.exports = {
         });
     },
 
+        /*
     getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
             let count = 0;
@@ -69,6 +70,64 @@ module.exports = {
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if (listEmpty(bucketList)) {
+                    reject(msg.errorMessage("No buckets found."));
+                }
+
+                bucketList.forEach(bucket => {
+                    let bucketName = bucket.name;
+                    let text = '';
+
+                    s3Data.getBucketTagging({
+                        Bucket: bucketName
+                    }, function (err, data) {
+
+                        if (err) {
+                            text = err.message + '\n';
+                            //attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+
+                        try {
+
+                            if (data == null) {
+                                text += 'No tags found.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            } else {
+                                text += data.TagSet.length + ' tag(s) associated with bucket: \n';
+                                for (let i = 0; i < data.TagSet.length; i++) {
+                                    text += data.TagSet[i].Key + '\n';
+                                }
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
+                            }
+
+                        } catch (error) {
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+
+                        count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
+
+                    })
+                });
+            });
+        });
+    },*/
+
+    getS3Tags: function (args) {
+        return new Promise((resolve, reject) => {
+            let count = 0;
+            let attachments = [];
+
+            bucketListWithTags().then(bucketList => {
+                // Argument processing here
+                if (argHelper.hasArgs(args)) {
+                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if (listEmpty(bucketList)) {

@@ -260,8 +260,8 @@ const commandList = {
             Arguments: [
                 {name: 'notags', type: Boolean}, // List ALL instances that have no tags
                 {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true} // List instances that have the specified tag
-                //{name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
+                {name: 'key', alias: 'k', type: Boolean} // Search by key "tag name"
             ]
         },
         {
