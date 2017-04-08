@@ -27,6 +27,10 @@ const SIZE_TYPE = {
     MB: 'MB',
     GB: 'GB'
 };
+const S3_BASE_LINK = "https://console.aws.amazon.com/s3/buckets/";
+const FILES_TAB = 'overview'; // AWS console tab query for list of files
+const PROPERTIES_TAB = 'properties'; // AWS console properties tab (Includes tags)
+const PERMISSIONS_TAB = 'permissions'; // AWS console permissions tab
 
 // Value associated with string-similarity when doing object list search
 // Value 0 - 1, Higher value means it require more similarity
@@ -58,66 +62,6 @@ module.exports = {
             });
         });
     },
-
-        /*
-    getS3Tags: function (args) {
-        return new Promise((resolve, reject) => {
-            let count = 0;
-            let attachments = [];
-
-            bucketListWithTags().then(bucketList => {
-                // Argument processing here
-                if (argHelper.hasArgs(args)) {
-                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
-                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
-                }
-                // Either no instances match criteria OR no instances on AWS
-                if (listEmpty(bucketList)) {
-                    reject(msg.errorMessage("No buckets found."));
-                }
-
-                bucketList.forEach(bucket => {
-                    let bucketName = bucket.name;
-                    let text = '';
-
-                    s3Data.getBucketTagging({
-                        Bucket: bucketName
-                    }, function (err, data) {
-
-                        if (err) {
-                            text = err.message + '\n';
-                            //attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-
-                        try {
-
-                            if (data == null) {
-                                text += 'No tags found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                            } else {
-                                text += data.TagSet.length + ' tag(s) associated with bucket: \n';
-                                for (let i = 0; i < data.TagSet.length; i++) {
-                                    text += data.TagSet[i].Key + '\n';
-                                }
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
-                            }
-
-                        } catch (error) {
-                            text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-
-                        count++;
-                        if (count === bucketList.length) {
-                            let slackMsg = msg.buildAttachments(attachments, true);
-                            resolve(slackMsg);
-                        }
-
-                    })
-                });
-            });
-        });
-    },*/
 
     getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
@@ -205,8 +149,10 @@ module.exports = {
                         let text = '';
                         if (err) {
                             text = err.message;
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        } else {
+
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
+                        }
+                        else {
                             // Raw json
                             if (argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
@@ -234,11 +180,12 @@ module.exports = {
 
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                } catch (err) {
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, null));
+                                }
+                                catch(err){
                                     text = err.toString();
                                     text += '\nTry using --raw.';
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
                                 }
 
                             }
@@ -316,10 +263,12 @@ module.exports = {
                                 'Versioning: ' + versionStatus + '\n' +
                                 'Logging: ' + logStatus + '\n';
 
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                        } catch (err) {
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
+                        }
+                        catch (err) {
+
                             text = err.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
 
                         count++;
@@ -366,18 +315,19 @@ module.exports = {
 
                             if (!logging) {
                                 text = 'Logging not enabled.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                            } else {
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                            }
+                            else{
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
                                     'Target Prefix: ' + prefix + '\n';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, null));
                             }
 
                         } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
                         }
 
                         count++;
@@ -407,6 +357,7 @@ module.exports = {
                 if (listEmpty(bucketList)) {
                     reject(msg.errorMessage("No buckets found."));
                 }
+
 
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
@@ -507,7 +458,7 @@ module.exports = {
 
                             if (!objList.length) {
                                 text += 'No objects found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
                                 text += objList.length + ' Objects in bucket (showing ' + MAX + 'max' + '): \n';
@@ -515,7 +466,7 @@ module.exports = {
                                     let size = getSizeString(objList[i].Size);
                                     text += objList[i].Key + ' (' + size + ')' + '\n';
                                 }
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                             }
 
                         } catch (error) {
@@ -618,6 +569,12 @@ module.exports = {
 
 
 
+// Get console link
+// tab param is the tab query for the link
+function getLink(bucketName, tab){
+    return S3_BASE_LINK + bucketName + '/' +'?' + 'tab=' + tab;
+}
+
 //------------------------
 // Object list filters
 
@@ -700,16 +657,17 @@ function filterObjectsByTag(bucketName, objectKey, key) {
 
 // Sort object list alphabetically
 // Per bucket basis
-function sortObjByAlpha(objList) {
-    // Sort instances alphabetically
-    objList.sort(function (a, b) {
-        let nameA = a.Key;
-        let nameB = b.Key;
-        let val = 0;
-        if (nameA < nameB) val = -1;
-        if (nameA > nameB) val = 1;
-        return val;
-    });
+
+function sortObjByAlpha(objList){
+        // Sort instances alphabetically
+        objList.sort(function(a, b){
+            let nameA = a.Key.toLowerCase();
+            let nameB = b.Key.toLowerCase();
+            let val = 0;
+            if(nameA < nameB) val = -1;
+            if(nameA > nameB) val = 1;
+            return val;
+        });
 }
 
 // Sort by file size, largest to smallest
