@@ -260,8 +260,8 @@ const commandList = {
             Arguments: [
                 {name: 'notags', type: Boolean}, // List ALL instances that have no tags
                 {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true} // List instances that have the specified tag
-                //{name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
+                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
+                {name: 'key', alias: 'k', type: Boolean} // Search by key "tag name"
             ]
         },
         {
@@ -276,6 +276,7 @@ const commandList = {
                 {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
                 {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
                 {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
+                {name: 'date-range', alias: 'r', type: String}, // Filter by date range of modified (*-* means all)
                 {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
                 {name: 'objtag', type: String, multiple: true}, // Objects by tag
                 {name: 'objkey', type: Boolean}, // Objects by tag via key
@@ -284,7 +285,7 @@ const commandList = {
         },
         {
             Name: "s3acl",
-            //Function: require('./s3.js').getAcl(),
+            Function: require('./s3.js').getBucketAcl,
             Description: "Gets acl objects from buckets (Command in Progress).",
             Arguments: [
                 {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
