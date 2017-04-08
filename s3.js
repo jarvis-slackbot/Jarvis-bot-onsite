@@ -266,11 +266,9 @@ module.exports = {
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                         }
                         catch (err) {
-
                             text = err.toString();
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
-
                         count++;
                         if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
@@ -362,7 +360,6 @@ module.exports = {
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
                     let prom;
-                    const MAX = 2;
                     // Objects by tag filtering
                     if (argHelper.hasArgs(args) && args.objtag) {
                         try {
@@ -461,8 +458,7 @@ module.exports = {
                                 attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
-                                text += objList.length + ' Objects in bucket (showing ' + MAX + 'max' + '): \n';
-                                for(let i = 0; i < MAX; i++){
+                                for(let i = 0; i < objList.length; i++){
                                     let size = getSizeString(objList[i].Size);
                                     text += objList[i].Key + ' (' + size + ')' + '\n';
                                 }
@@ -808,7 +804,7 @@ function getBucketVersioning(bucketName) {
             try {
                 status = data.Status ? data.Status : "Disabled";
             } catch (err) {
-                status = 'Unknown, ' + err.toString();
+                status = 'Unknown: ' + err.toString();
             }
             resolve(status);
         });
@@ -872,12 +868,7 @@ function sizeOfBucket(bucketname) {
             objects.forEach((obj) => {
                 if (obj.Size) {
                     sum += obj.Size;
-                } else {
-                    text = "There are no s3 buckets to obtain acl from, check if s3 buckets exist or acl exists for a bucket.";
                 }
-                slackMsg.addText(text);
-                resolve(slackMsg);
-
             }).catch((err) => {
                 reject(msg.errorMessage(err));
             });
