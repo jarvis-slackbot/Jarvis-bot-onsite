@@ -561,8 +561,8 @@ function filterObjectsByTag(bucketName, objectKey, key){
 function sortObjByAlpha(objList){
         // Sort instances alphabetically
         objList.sort(function(a, b){
-            let nameA = a.Key;
-            let nameB = b.Key;
+            let nameA = a.Key.toLowerCase();
+            let nameB = b.Key.toLowerCase();
             let val = 0;
             if(nameA < nameB) val = -1;
             if(nameA > nameB) val = 1;
