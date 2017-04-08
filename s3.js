@@ -869,8 +869,6 @@ function sizeOfBucket(bucketname) {
                 if (obj.Size) {
                     sum += obj.Size;
                 }
-            }).catch((err) => {
-                reject(msg.errorMessage(err));
             });
             resolve(sum);
         });
