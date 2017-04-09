@@ -853,7 +853,10 @@ function getBucketRegion(bucketName) {
             Bucket: bucketName
         }, (err, data) => {
             if (err) reject(err);
-            resolve(data.LocationConstraint);
+            if(data.LocationConstraint)
+                resolve(data.LocationConstraint);
+            else
+                resolve("Not found");
         });
     });
 }
