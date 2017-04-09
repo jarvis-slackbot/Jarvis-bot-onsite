@@ -27,6 +27,10 @@ const SIZE_TYPE = {
     MB: 'MB',
     GB: 'GB'
 };
+const S3_BASE_LINK = "https://console.aws.amazon.com/s3/buckets/";
+const FILES_TAB = 'overview'; // AWS console tab query for list of files
+const PROPERTIES_TAB = 'properties'; // AWS console properties tab (Includes tags)
+const PERMISSIONS_TAB = 'permissions'; // AWS console permissions tab
 
 // Value associated with string-similarity when doing object list search
 // Value 0 - 1, Higher value means it require more similarity
@@ -58,66 +62,6 @@ module.exports = {
             });
         });
     },
-
-        /*
-    getS3Tags: function (args) {
-        return new Promise((resolve, reject) => {
-            let count = 0;
-            let attachments = [];
-
-            bucketListWithTags().then(bucketList => {
-                // Argument processing here
-                if (argHelper.hasArgs(args)) {
-                    bucketList = argHelper.filterInstListByTagValues(bucketList, args);
-                    bucketList = argHelper.bucketNameArgHandler(bucketList, args);
-                }
-                // Either no instances match criteria OR no instances on AWS
-                if (listEmpty(bucketList)) {
-                    reject(msg.errorMessage("No buckets found."));
-                }
-
-                bucketList.forEach(bucket => {
-                    let bucketName = bucket.name;
-                    let text = '';
-
-                    s3Data.getBucketTagging({
-                        Bucket: bucketName
-                    }, function (err, data) {
-
-                        if (err) {
-                            text = err.message + '\n';
-                            //attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-
-                        try {
-
-                            if (data == null) {
-                                text += 'No tags found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                            } else {
-                                text += data.TagSet.length + ' tag(s) associated with bucket: \n';
-                                for (let i = 0; i < data.TagSet.length; i++) {
-                                    text += data.TagSet[i].Key + '\n';
-                                }
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
-                            }
-
-                        } catch (error) {
-                            text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        }
-
-                        count++;
-                        if (count === bucketList.length) {
-                            let slackMsg = msg.buildAttachments(attachments, true);
-                            resolve(slackMsg);
-                        }
-
-                    })
-                });
-            });
-        });
-    },*/
 
     getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
@@ -205,8 +149,10 @@ module.exports = {
                         let text = '';
                         if (err) {
                             text = err.message;
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        } else {
+
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
+                        }
+                        else {
                             // Raw json
                             if (argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
@@ -234,11 +180,12 @@ module.exports = {
 
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                } catch (err) {
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, null));
+                                }
+                                catch(err){
                                     text = err.toString();
                                     text += '\nTry using --raw.';
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                                    attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
                                 }
 
                             }
@@ -316,12 +263,12 @@ module.exports = {
                                 'Versioning: ' + versionStatus + '\n' +
                                 'Logging: ' + logStatus + '\n';
 
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                        } catch (err) {
-                            text = err.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                         }
-
+                        catch (err) {
+                            text = err.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
+                        }
                         count++;
                         if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
@@ -366,18 +313,19 @@ module.exports = {
 
                             if (!logging) {
                                 text = 'Logging not enabled.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                            } else {
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                            }
+                            else{
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
                                     'Target Prefix: ' + prefix + '\n';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, null));
                             }
 
                         } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
                         }
 
                         count++;
@@ -408,10 +356,10 @@ module.exports = {
                     reject(msg.errorMessage("No buckets found."));
                 }
 
+
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
                     let prom;
-                    const MAX = 2;
                     // Objects by tag filtering
                     if (argHelper.hasArgs(args) && args.objtag) {
                         try {
@@ -507,15 +455,14 @@ module.exports = {
 
                             if (!objList.length) {
                                 text += 'No objects found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, text,  msg.SLACK_RED));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
-                                text += objList.length + ' Objects in bucket (showing ' + MAX + 'max' + '): \n';
-                                for(let i = 0; i < MAX; i++){
+                                for(let i = 0; i < objList.length; i++){
                                     let size = getSizeString(objList[i].Size);
                                     text += objList[i].Key + ' (' + size + ')' + '\n';
                                 }
-                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                             }
 
                         } catch (error) {
@@ -539,7 +486,7 @@ module.exports = {
 
 
     //access control policy (aka acl) of buckets.
-    getBucketAcl: function (args) {
+    getAcl: function (args) {
         return new Promise(function (resolve, reject) {
 
             let attachments = [];
@@ -563,60 +510,65 @@ module.exports = {
                     s3Data.getBucketAcl({
                         Bucket: bucketName
                     }, (err, data) => {
+                        if (err) reject(err);
                         let text = '';
-                        if (err) {
-                            text = err.message;
-                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                        } else {
-                            // Raw json
-                            if (argHelper.hasArgs(args) && args.raw) {
-                                // Make json pretty
-                                text = JSON.stringify(data, null, 2);
-                            } else {
-                                // Print values of json
-                                try {
-                                    if (data.Grants == null) {
-                                        text += 'No tags found.';
-                                        attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                    } else {
+                        try {
+                            let grants = data.Grants;
 
-                                        let grants = data.Grants;
-                                        text += grants.length + ' acl(s) associated with bucket: \n';
-                                        for (let i = 0; i < grants.length; i++) {
-                                            text +=
-                                                "Owner DisplayName: " + data.Owner.DisplayName + '\n' +
-                                                "Owner ID: " + data.Owner.ID + '\n' +
-                                                "DisplayName: " + grants[i].Grantee.DisplayName + '\n' +
-                                                "EmailAddress : " + grants[i].Grantee.EmailAddress + '\n' +
-                                                "ID: " + grants[i].Grantee.ID + '\n' +
-                                                "Type : " + grants[i].Grantee.Type + '\n' +
-                                                "URI : " + grants[i].Grantee.URI + '\n' +
-                                                "Permission : " + grants[i].Permission + '\n';
-                                        }
+                            if (!grants || listEmpty(grants)) {
+                                text = 'Grant not applied.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                            }
+                            else{
+                                let grantCount = 0;
+                                grants.forEach((grant) => {
+                                    if(grant.Grantee.DisplayName) {
+                                        let email = grant.Grantee.EmailAddress ? grant.Grantee.EmailAddress : "None on file";
+                                        let userId = grant.Grantee.ID ? grant.Grantee.ID : "Not found";
+                                        let type = grant.Grantee.Type ? grant.Grantee.Type : "Not found";
+                                        let uri = grant.Grantee.URI ? grant.Grantee.URI : "None on file";
+                                        grantCount++;
+                                        text += "--Grant " + grantCount + '--\n';
+                                        text +=
+                                            "DisplayName: " + grant.Grantee.DisplayName + '\n' +
+                                            "EmailAddress : " + email + '\n' +
+                                            "ID: " + userId + '\n' +
+                                            "Type : " + type + '\n' +
+                                            "URI : " + uri + '\n' +
+                                            "Permission : " + grant.Permission + '\n' +
+                                            '\n';
                                     }
+                                });
+                                text = grantCount + " Grant(s) found.\n\n" + text;
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, null));
+                            }
 
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, null));
-                                } catch (err) {
-                                    text = err.toString();
-                                    text += '\nTry using --raw.';
-                                    attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
-                                }
-                            } //without args
-                        } //code
+                        } catch (error) {
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                        }
+
                         count++;
                         if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
-                    }); //api call
+
+                    });
                 }); //for each bucket
             }).catch(err => reject(msg.errorMessage(err)));
         }); //promise
-    } //getBucketAcl
+    } //getAcl
 
 }; //module.exports
 
 
+
+// Get console link
+// tab param is the tab query for the link
+function getLink(bucketName, tab){
+    return S3_BASE_LINK + bucketName + '/' +'?' + 'tab=' + tab;
+}
 
 //------------------------
 // Object list filters
@@ -700,16 +652,17 @@ function filterObjectsByTag(bucketName, objectKey, key) {
 
 // Sort object list alphabetically
 // Per bucket basis
-function sortObjByAlpha(objList) {
-    // Sort instances alphabetically
-    objList.sort(function (a, b) {
-        let nameA = a.Key;
-        let nameB = b.Key;
-        let val = 0;
-        if (nameA < nameB) val = -1;
-        if (nameA > nameB) val = 1;
-        return val;
-    });
+
+function sortObjByAlpha(objList){
+        // Sort instances alphabetically
+        objList.sort(function(a, b){
+            let nameA = a.Key.toLowerCase();
+            let nameB = b.Key.toLowerCase();
+            let val = 0;
+            if(nameA < nameB) val = -1;
+            if(nameA > nameB) val = 1;
+            return val;
+        });
 }
 
 // Sort by file size, largest to smallest
@@ -850,7 +803,7 @@ function getBucketVersioning(bucketName) {
             try {
                 status = data.Status ? data.Status : "Disabled";
             } catch (err) {
-                status = 'Unknown, ' + err.toString();
+                status = 'Unknown: ' + err.toString();
             }
             resolve(status);
         });
@@ -860,7 +813,7 @@ function getBucketVersioning(bucketName) {
 // Get bucket owner name
 function getBucketOwnerInfo(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getBucketAcl({
+        s3Data.getAcl({
             Bucket: bucketName
         }, (err, data) => {
             if (err) reject(err);
@@ -914,14 +867,7 @@ function sizeOfBucket(bucketname) {
             objects.forEach((obj) => {
                 if (obj.Size) {
                     sum += obj.Size;
-                } else {
-                    text = "There are no s3 buckets to obtain acl from, check if s3 buckets exist or acl exists for a bucket.";
                 }
-                slackMsg.addText(text);
-                resolve(slackMsg);
-
-            }).catch((err) => {
-                reject(msg.errorMessage(err));
             });
             resolve(sum);
         });
@@ -1044,7 +990,7 @@ function listEmpty(list) {
 
 /* SCRATCH CODE
  --DELETE-- Temp list. possible methods.
- (AWS.Request) getBucketAcl(params = {}, callback)
+ (AWS.Request) getAcl(params = {}, callback)
  Gets the access control policy for the bucket.
  (AWS.Request) getBucketLocation(params = {}, callback)
  Returns the region the bucket resides in.

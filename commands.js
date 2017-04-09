@@ -5,9 +5,20 @@
 'use strict';
 
 const commandLineArgs = require('command-line-args');
+const commandList = require('./commands_list').commandList;
+let columnify = require('columnify');
+
+const DEFAULT_HELP_SPACING = 40;
+const OPTIONS_HEADING = 'OPTIONS';
+const EXAMPLES_HEADING = 'EXAMPLES';
+const COMMANDS_HEADING = 'COMMANDS';
+const EC2_SECTION = 'EC2';
+const S3_SECTION = 'S3';
+
 
 // Parse command and get select appropriate function
 // Param message is array of command line args (message[0] being command itself)
+// Returns string or a promise that resolves a SlackTemplate
 exports.parseCommand = function(message){
     var first = message[0].toString();
     var func;
@@ -21,13 +32,25 @@ exports.parseCommand = function(message){
             try {
                 var options = listEmpty(message) ? null
                     : commandLineArgs(cmd.Arguments, {argv: message});
-                func = cmd.Function(options);
+                if(options && options.help){
+                    func = helpForAWSCommand(first);
+                }
+                else{
+                    func = cmd.Function(options);
+                }
             } catch(err){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
-                    var msg = require('./message.js').errorMessage(
-                        "Argument error: " + err.name
-                    );
+                    if (err.name === "UNKNOWN_OPTION"){
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name + "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                        );
+                    }
+                    else {
+                        var msg = require('./message.js').errorMessage(
+                            "Argument error: " + err.name
+                        );
+                    }
                     resolve(msg);
                 });
             }
@@ -110,16 +133,81 @@ function isAWSCommand(first){
     return res;
 }
 
-// Commands
+// High level help for displaying commands
+// /jarvis help directs here for output
 function helpList(){
-    var str = "";
+    let helpStr = '';
+    let ec2Data = [];
+    let s3Data = [];
+    let otherData = [];
+    let exData = [];
+
     commandList.commands.forEach((cmd)=>{
-        str += cmd.Name + "\t\t" + cmd.Description + "\n";
+        otherData.push({
+            Command: cmd.Name,
+            Description: cmd.ShortDescription
+        });
     });
-    commandList.AWSCommands.forEach((awsCmd)=>{
-        str += awsCmd.Name + "\t\t" + awsCmd.Description + "\n";
+    commandList.AWSCommands.forEach((awsCmd)=> {
+        if (awsCmd.Section === EC2_SECTION){
+            ec2Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.ShortDescription
+            });
+        }
+        else if(awsCmd.Section === S3_SECTION){
+            s3Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.ShortDescription
+            });
+        }
     });
-    return "Here are my available commands:\n" + toCodeBlock(str);
+    commandList.commands[0].Examples.forEach((ex) => {
+        exData.push({
+            Examples: ex
+        })
+    });
+
+    let otherCmds = columnify(otherData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let ec2Cmds = columnify(ec2Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let s3Cmds = columnify(s3Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    helpStr += 'HELP' + "\n\n" +
+        commandList.commands[0].Description + "\n\n\n" +
+        COMMANDS_HEADING + '\n' + otherCmds + '\n\n' +
+        'EC2 Commands' + ec2Cmds + '\n\n' +
+        'S3 Commands' + s3Cmds + '\n\n\n' +
+        EXAMPLES_HEADING  + exStr;
+
+    return "Here are my available commands:\n" + toCodeBlock(helpStr);
 }
 
 // Turn string into slack codeblock
@@ -128,202 +216,81 @@ function toCodeBlock(str){
     var backticks = "```";
     return backticks + str + backticks;
 }
+// Turn to slack bold
+function bold(str){
+    return '*' + str + '*';
+}
+
+function italic(str){
+    return '_' + str + '_';
+}
 
 // Return true for empty list
 function listEmpty(list){
     return !(typeof list !== 'undefined' && list.length > 0);
 }
 
-// ------------------COMMANDS---------------------------
+function multiplyString(str, num){
+    return new Array(num + 1).join(str);
+}
 
-// Response commandList
-const commandList = {
-    // Add commands here that do not gather data from AWS
-    commands:[
-        {
-            Name: "help",
-            Function: "Cannot call myself!",
-            Description: "Lists available commands.",
-        },
-        {
-            Name: "man",
-            Function: "Sorry, I have not been given a user manual yet.",
-            Description: "Sorry, I have not been given a user manual yet."
+// Generates help output for a given command
+function helpForAWSCommand(command){
+    let helpStr = '';
+    let argsData = [];
+    let exData = [];
+    let commandBlock = getAWSCommand(command);
+
+    // Build arguments section
+    commandBlock.Arguments.forEach((arg) => {
+        let argsLeftStr = '';
+        let argsRightStr = '';
+        if(arg.alias){
+            argsLeftStr += '-' + arg.alias + ', ';
         }
-    ],
+        argsLeftStr += '--' + arg.name + ' ';
+        // If there is a type
+        if(arg.type !== Boolean && arg.TypeExample){
+            argsLeftStr += ' [' + arg.TypeExample + ']';
+            // Double the length is required here for some reason??
+        }
+        argsRightStr += arg.ArgumentDescription;
+        argsData.push({
+            Argument: argsLeftStr,
+            Description: argsRightStr
+        });
+    });
 
-    // Add new AWS commands here
-    AWSCommands:[
-        {
-            Name: "ec2status",
-            Function: require('./ec2.js').getStatus,
-            Description: "Server Online/Offline status.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ami",
-            Function: require('./ec2.js').getAMIStatus,
-            Description: "Amazon Machine Image (AMI) status information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ec2cpu",
-            Function: require('./cloudwatch').getEc2Cpu,
-            Description: "Current server CPU usage.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2disk",
-            Function: require('./cloudwatch').getEc2Disk,
-            Description: "Amount of data stored on server bucket.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2network",
-            Function: require('./cloudwatch').getEc2Network,
-            Description: "Ec2 network information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'minutes', alias: 'm', type: Number},
-                {name: 'hours', alias: 'h', type: Number},
-                {name: 'days', alias: 'd', type: Number}
-            ]
-        },
-        {
-            Name: "ec2info",
-            Function: require('./ec2.js').getHardwareInfo,
-            Description: "Generic EC2 instance information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "ec2net",
-            Function: require('./ec2.js').getNetworkInfo,
-            Description: "Network information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "health",
-            Function: require('./health.js').getAWSHealth(),
-            Description: "Overall percentage of uptime vs downtime of the server"
-        },
-        {
-            Name: "ec2ebs",
-            Function: require('./ec2.js').getEBSInfo,
-            Description: "EC2 attached EBS (Elastic Bloc Storage) volume information.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'encrypted', alias: 'e', type: Boolean}, // Get all volumes that are encrypted
-                {name: 'not-encrypted', alias: 'n', type: Boolean}, // Get all volumes that are not encrypted
-            ]
-        },
-        {
-            Name: "ec2bytag",
-            Function: require('./ec2.js').getByTag,
-            Description: "Get list of instances by tag data",
-            Arguments: [
-                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "s3bytag",
-            Function: require('./s3.js').getS3Tags,
-            Description: "Get buckets by tag.",
-            Arguments: [
-                {name: 'notags', type: Boolean}, // List ALL instances that have no tags
-                {name: 'notag', alias: 'n', type: String, multiple: true}, // List instances that do not have the specified tag
-                {name: 'tag', alias: 't', type: String, multiple: true, defaultOption: true}, // List instances that have the specified tag
-                {name: 'key', alias: 'k', type: Boolean} // Search by key "tag name"
-            ]
-        },
-        {
-            Name: "s3objects",
-            Function: require('./s3.js').getS3BucketObject,
-            Description: "Return a list of objects in the bucket.",
-            Arguments: [
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                // Sorters cannot be used with other sorters
-                {name: 'alpha', alias: 'a', type: Boolean}, // Sort alphabetically
-                {name: 'size', alias: 's', type: Boolean}, // Sort by size - largest to smallest
-                {name: 'date', alias: 'd', type: Boolean}, // Sort by date modified
-                {name: 'date-range', alias: 'r', type: String}, // Filter by date range of modified (*-* means all)
-                {name: 'search', type: String, multiple: true}, // Filter objects list by users search word
-                {name: 'objtag', type: String, multiple: true}, // Objects by tag
-                {name: 'objkey', type: Boolean}, // Objects by tag via key
-                {name: 'owner', alias:'o', type: String, multiple: true} // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
-            ]
-        },
-        {
-            Name: "s3acl",
-            Function: require('./s3.js').getBucketAcl,
-            Description: "Gets acl objects from buckets (Command in Progress).",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-        {
-            Name: "s3policy",
-            Function: require('./s3.js').getBucketPolicy,
-            Description: "Returns the JSON bucket policy.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'raw', alias: 'r', type: Boolean}, // Return raw json policy
-            ]
-        },
-        {
-            Name: "s3info",
-            Function: require('./s3.js').getBucketInfo,
-            Description: "Generic bucket information.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean}, // Search by key instead of value
-                {name: 'quick', alias: 'q', type: Boolean} // Skip getting bucket size to speed up this action
-            ]
-        },
-        {
-            Name: "s3logging",
-            Function: require('./s3.js').bucketLoggingInfo,
-            Description: "Bucket logging information.",
-            Arguments: [
-                {name: 'name', alias: 'n', type: String, multiple: true}, // filter buckets by name
-                {name: 'tag', alias: 't', type: String, multiple: true},
-                {name: 'key', alias: 'k', type: Boolean} // Search by key instead of value
-            ]
-        },
-    ]
-};
+    // Build examples section
+    commandBlock.Examples.forEach((example) => {
+        exData.push({Examples: example});
+    });
+
+    let argsStr = columnify(argsData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let name = (commandBlock.Name).toUpperCase();
+    // Build title and description with args
+    helpStr += name + "\n\n" +
+            commandBlock.Description + "\n\n\n" +
+            OPTIONS_HEADING +
+            argsStr + '\n\n\n' +
+            EXAMPLES_HEADING  + exStr;
+
+    return toCodeBlock(helpStr);
+}

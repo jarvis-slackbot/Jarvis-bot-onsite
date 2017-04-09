@@ -74,6 +74,18 @@ exports.createAttachmentData = function(name, id, text, color){
     };
 };
 
+// Create attachment data
+// Make color null if not needed
+exports.createAttachmentData = function(name, id, link, text, color){
+    return {
+        name: name,
+        id: id,
+        link: link,
+        text: text,
+        color: color
+    };
+};
+
 // Function to help put attachment in order by item name
 // attachmentList is the list of unorder attachments
 // alternateColors is a boolean to allow for alternating attachment colors.
@@ -93,10 +105,21 @@ exports.buildAttachments = function(attachmentList, alternateColors){
 
     attachmentList.forEach(attachment => {
         slackMsg.addAttachment(exports.getAttachNum());
-        attachment.id?
-            slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id))
-            : slackMsg.addTitle(attachment.name);
-        slackMsg.addText(attachment.text);
+
+        // Handle title
+        if(attachment.link){
+            attachment.id?
+                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id), attachment.link)
+                : slackMsg.addTitle(attachment.name, attachment.link);
+            slackMsg.addText(attachment.text);
+        }
+        else{
+            attachment.id?
+                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id))
+                : slackMsg.addTitle(attachment.name);
+            slackMsg.addText(attachment.text);
+        }
+
         // Color handling
         if(!attachment.color && alternateColors){
             let color = colorCount % 2 == 0 ? exports.SLACK_LOGO_BLUE : exports.SLACK_LOGO_PURPLE;

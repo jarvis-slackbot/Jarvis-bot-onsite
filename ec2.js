@@ -3,6 +3,8 @@
     API: http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/EC2.html
  */
 
+'use strict';
+
 var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
@@ -22,6 +24,12 @@ const EC2_NA = 'not-applicable';
 // AMI states
 const AMI_AVBL = 'available';
 const AMI_PEND = 'pending';
+
+// URLs
+const EC2_BASE_LINK = 'https://console.aws.amazon.com/ec2/v2/home';
+const INST_TAB = 'Instances';
+const AMI_TAB = 'images';
+const EBS_TAB = 'Volumes';
 
 module.exports = {
 
@@ -85,7 +93,7 @@ module.exports = {
                             slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
 
 
-                            slackMsg.addTitle(msg.toTitle(name, instId));
+                            slackMsg.addTitle(msg.toTitle(name, instId), getLink(INST_TAB));
                             slackMsg.addText(text);
                         });
 
@@ -170,7 +178,7 @@ module.exports = {
                                         slackMsg.addColor(color);
                                     }
                                     text += "\n\n";
-                                    slackMsg.addTitle(msg.toTitle(name, id));
+                                    slackMsg.addTitle(msg.toTitle(name, id), getLink(AMI_TAB));
                                     slackMsg.addText(text);
                                 });
                                 resolve(slackMsg);
@@ -239,7 +247,7 @@ module.exports = {
                             'ENA Support: ' + ena + '\n';
 
                         slackMsg.addAttachment(msg.getAttachNum());
-                        slackMsg.addTitle(msg.toTitle(name, instanceId));
+                        slackMsg.addTitle(msg.toTitle(name, instanceId),getLink(INST_TAB));
                         // Give every other instance a different color
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         slackMsg.addText(text);
@@ -306,7 +314,7 @@ module.exports = {
                         }
 
                         slackMsg.addAttachment(msg.getAttachNum());
-                        slackMsg.addTitle(msg.toTitle(name, instanceId));
+                        slackMsg.addTitle(msg.toTitle(name, instanceId), getLink(INST_TAB));
                         // Give every other instance a different color
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         slackMsg.addText(text);
@@ -384,7 +392,7 @@ module.exports = {
                             text += '\t Key: ' + tag.Key + ',  Value: ' + tag.Value + '\n';
                         });
 
-                        slackMsg.addTitle(msg.toTitle(name, id));
+                        slackMsg.addTitle(msg.toTitle(name, id), getLink(EBS_TAB));
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         slackMsg.addText(text);
                         colorCounter++;
@@ -418,7 +426,7 @@ module.exports = {
                     instancesList.forEach((inst)=>{
                         var name = module.exports.getEC2Name(inst);
                         var id = inst.InstanceId;
-                        slackMsg.addAttachment(msg.getAttachNum());
+                        slackMsg.addAttachment(msg.getAttachNum(), getLink(INST_TAB));
                         slackMsg.addTitle(msg.toTitle(name, id));
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         colorCounter++;
@@ -533,7 +541,7 @@ module.exports = {
                        text += '' + iamRole.RoleName;
                        slackMsg.addColor(msg.SLACK_GREEN);
                    }
-                   slackMsg.addTitle(msg.toTitle(name, instanceId));
+                   slackMsg.addTitle(msg.toTitle(name, instanceId), getLink(INST_TAB));
                    slackMsg.addText(text);
                     
                 });
@@ -553,9 +561,11 @@ function getInstNameIdFromList(instancesList){
     instancesList.forEach(function(inst){
         var name = module.exports.getEC2Name(inst);
         var instanceId = inst.InstanceId;
+        let region = inst.Placement.AvailabilityZone;
         idList.push({
             name: name,
-            id: instanceId
+            id: instanceId,
+            region: region
         });
     });
     return idList;
@@ -584,4 +594,10 @@ function getNamebyId(id, nameIdList){
 // Return true for empty list
 function listEmpty(list){
     return !(typeof list !== 'undefined' && list.length > 0);
+}
+
+// Get aws console link to the resource
+function getLink(tab){
+    let tabLink = '#' + tab;
+    return EC2_BASE_LINK + '?' + tabLink;
 }

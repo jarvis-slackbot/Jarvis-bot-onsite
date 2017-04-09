@@ -12,6 +12,13 @@ const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '
 const ec2 = require('./ec2.js');
 const argHelper = require('./arguments.js');
 
+// Link consts
+// URLs
+const EC2_BASE_LINK = 'https://console.aws.amazon.com/ec2/v2/home';
+const INST_TAB = 'Instances';
+const AMI_TAB = 'images';
+const EBS_TAB = 'Volumes';
+
 const DEFAULT_TIME = 5; // In minutes.
 const MIN_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
 const CPU_WARN = 80.0;  // CPU percent value >= to issue warning color
@@ -101,7 +108,7 @@ module.exports = {
                                     time + " " + timeLabel + ".\n";
                                 slackMsg.addColor(color);
                             }
-                            slackMsg.addTitle(msg.toTitle(name, id));
+                            slackMsg.addTitle(msg.toTitle(name, id), getLink(INST_TAB));
                             slackMsg.addText(text);
 
                             count++;
@@ -220,7 +227,7 @@ module.exports = {
 
                                         slackMsg.addColor(msg.SLACK_GREEN);
                                     }
-                                    slackMsg.addTitle(msg.toTitle(name, id));
+                                    slackMsg.addTitle(msg.toTitle(name, id),  getLink(INST_TAB));
                                     slackMsg.addText(text);
 
                                     count++;
@@ -286,7 +293,7 @@ module.exports = {
                                 ],
                             };
 
-                            cw.getMetricStatistics(readParams, function(err, writeData) {
+                            cw.getMetricStatistics(readParams, function(err, readData) {
 
                                 if (err) {
                                     reject(msg.errorMessage(JSON.stringify(err)));
@@ -309,7 +316,7 @@ module.exports = {
                                         ],
                                     };
 
-                                    cw.getMetricStatistics(writeParams, function(err, readData) {
+                                    cw.getMetricStatistics(writeParams, function(err, writeData) {
 
                                         if (err) {
                                             reject(msg.errorMessage(JSON.stringify(err)));
@@ -331,7 +338,7 @@ module.exports = {
                                                         'Disk Write: ' + writeOps + ' IOPS' + '\n';
                                                 slackMsg.addColor(msg.SLACK_GREEN);
                                             }
-                                            slackMsg.addTitle(msg.toTitle(name, instId));
+                                            slackMsg.addTitle(msg.toTitle(name, instId),  getLink(EBS_TAB));
                                             slackMsg.addText(text);
 
                                             count++;
@@ -469,4 +476,10 @@ function listEmpty(list){
 function hasUserTime(args){
     return args &&
         (args.hasOwnProperty('minutes') || args.hasOwnProperty('hours') || args.hasOwnProperty('days'));
+}
+
+// Get aws console link to the resource
+function getLink(tab){
+    let tabLink = '#' + tab;
+    return EC2_BASE_LINK + '?' + tabLink;
 }
