@@ -577,7 +577,13 @@ exports.commandList = {
                     type: String,
                     multiple: true,
                     ArgumentDescription: 'Filter objects by provided owner name (Not available in all regions)'
-                } // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
+                }, // Objects by owner name (ONLY AVAILABLE IN SOME REGIONS)
+                {
+                    name: 'max',
+                    alias: 'm',
+                    type: Number,
+                    ArgumentDescription: 'Max objects to retrieve per bucket'
+                }
             ],
             Examples: [
                 "/jarvis s3objects",

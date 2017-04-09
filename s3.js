@@ -266,7 +266,7 @@ module.exports = {
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                         }
                         catch (err) {
-                            text = err.toString();
+                            text = err.toString() + " Data error";
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
                         count++;
@@ -275,11 +275,11 @@ module.exports = {
                             resolve(slackMsg);
                         }
                     }).catch(err => {
-                        reject(msg.errorMessage(JSON.stringify(err)));
+                        reject(msg.errorMessage(JSON.stringify(err) + " Promise.all error"));
                     });
                 });
             }).catch(err => {
-                reject(msg.errorMessage(JSON.stringify(err)));
+                reject(msg.errorMessage(JSON.stringify(err) + " Error finding buckets"));
             });
         })
     },
@@ -344,12 +344,16 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let count = 0;
             let attachments = [];
+            let max = 0;
 
             bucketListWithTags().then(bucketList => {
                 // Argument processing here
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
+                    if(args.max){
+                        max = args.max;
+                    }
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if (listEmpty(bucketList)) {
@@ -368,7 +372,7 @@ module.exports = {
                             reject(msg.errorMessage(err.toString()));
                         }
                     } else {
-                        prom = objectsList(bucketName);
+                        prom = objectsListWithMax(bucketName, max);
                     }
 
                     prom.then((objList) => {
@@ -813,7 +817,7 @@ function getBucketVersioning(bucketName) {
 // Get bucket owner name
 function getBucketOwnerInfo(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getAcl({
+        s3Data.getBucketAcl({
             Bucket: bucketName
         }, (err, data) => {
             if (err) reject(err);
@@ -870,7 +874,7 @@ function sizeOfBucket(bucketname) {
                 }
             });
             resolve(sum);
-        });
+        }).catch(err => {reject(err.toString())});
     });
 } //sizeOfBucket
 
@@ -909,7 +913,25 @@ function objectName(bucketName){
 function objectsList(bucketName) {
     return new Promise((resolve, reject) => {
         let params = {
-            Bucket: bucketName
+            Bucket: bucketName,
+        };
+        s3Data.listObjectsV2(params, (err, data) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data.Contents);
+            }
+        });
+    })
+}
+
+// List objects per bucket name
+function objectsListWithMax(bucketName, max) {
+    if(!max) max = 0;
+    return new Promise((resolve, reject) => {
+        let params = {
+            Bucket: bucketName,
+            MaxKeys: max
         };
         s3Data.listObjectsV2(params, (err, data) => {
             if (err) {
