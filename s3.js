@@ -266,7 +266,7 @@ module.exports = {
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
                         }
                         catch (err) {
-                            text = err.toString();
+                            text = err.toString() + " Data error";
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
                         count++;
@@ -275,11 +275,11 @@ module.exports = {
                             resolve(slackMsg);
                         }
                     }).catch(err => {
-                        reject(msg.errorMessage(JSON.stringify(err)));
+                        reject(msg.errorMessage(JSON.stringify(err) + " Promise.all error"));
                     });
                 });
             }).catch(err => {
-                reject(msg.errorMessage(JSON.stringify(err)));
+                reject(msg.errorMessage(JSON.stringify(err) + " Error finding buckets"));
             });
         })
     },
@@ -817,7 +817,7 @@ function getBucketVersioning(bucketName) {
 // Get bucket owner name
 function getBucketOwnerInfo(bucketName) {
     return new Promise((resolve, reject) => {
-        s3Data.getAcl({
+        s3Data.getBucketAcl({
             Bucket: bucketName
         }, (err, data) => {
             if (err) reject(err);
@@ -874,7 +874,7 @@ function sizeOfBucket(bucketname) {
                 }
             });
             resolve(sum);
-        });
+        }).catch(err => {reject(err.toString())});
     });
 } //sizeOfBucket
 
