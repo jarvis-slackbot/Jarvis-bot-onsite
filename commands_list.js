@@ -505,7 +505,8 @@ exports.commandList = {
             Section: 'S3',
             Description: "Lists objects in S3 bucket(s). " +
             "Provides a list of objects based on users criteria from S3 buckets. " +
-            "Object filename and size are provided.",
+            "Object filename and size are provided." +
+            "\nWARNING: Filtering by --objtag or --objectkey will cause delays in output.",
             ShortDescription: "Lists objects in S3 bucket(s)",
             Arguments: [
                 {
@@ -589,10 +590,10 @@ exports.commandList = {
         },
         {
             Name: "s3acl",
-            //Function: require('./s3.js').getAcl(),
-            Description: "Retrieves the Life Cycle Configuration for an S3 bucket. " +
-            "The Life Cycle Configuration sets rules for the life of specified objects. " +
-            "Expiration dates, rules and more are provided.",
+            Function: require('./s3.js').getAcl,
+            Description: "Retrieves the Access Control List configuration for an S3 bucket. " +
+            "The Access Control List sets grants to manage access to the S3 bucket. " +
+            "Owner name, email, ID and more are retrieved for each grant.",
             ShortDescription: "Retrieves the Life Cycle Configuration for an S3 bucket.",
             Section: 'S3',
             Arguments: [
