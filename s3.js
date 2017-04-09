@@ -256,7 +256,7 @@ module.exports = {
 
                             text +=
                                 'Region: ' + region + '\n' +
-                                'Owner: ' + ownerName + '\n' +
+                               // 'Owner: ' + ownerName + '\n' +
                                 'Size: ' + size + '\n' +
                                 'Number of Objects: ' + objectsNumber + '\n' +
                                 'Accel Configuration: ' + accelConfig + '\n' +
@@ -351,9 +351,7 @@ module.exports = {
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
-                    if(args.max){
-                        max = args.max;
-                    }
+
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if (listEmpty(bucketList)) {
@@ -372,7 +370,7 @@ module.exports = {
                             reject(msg.errorMessage(err.toString()));
                         }
                     } else {
-                        prom = objectsListWithMax(bucketName, max);
+                        prom = objectsList(bucketName);
                     }
 
                     prom.then((objList) => {
@@ -462,7 +460,9 @@ module.exports = {
                                 attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
                             }
                             else{
-                                for(let i = 0; i < objList.length; i++){
+                                max = argHelper.hasArgs(args) && args.max && args.max <= objList.length
+                                    ? args.max : objList.length;
+                                for(let i = 0; i < max; i++){
                                     let size = getSizeString(objList[i].Size);
                                     text += objList[i].Key + ' (' + size + ')' + '\n';
                                 }
@@ -914,24 +914,6 @@ function objectsList(bucketName) {
     return new Promise((resolve, reject) => {
         let params = {
             Bucket: bucketName,
-        };
-        s3Data.listObjectsV2(params, (err, data) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(data.Contents);
-            }
-        });
-    })
-}
-
-// List objects per bucket name
-function objectsListWithMax(bucketName, max) {
-    if(!max) max = 0;
-    return new Promise((resolve, reject) => {
-        let params = {
-            Bucket: bucketName,
-            MaxKeys: max
         };
         s3Data.listObjectsV2(params, (err, data) => {
             if (err) {

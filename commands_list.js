@@ -555,6 +555,11 @@ exports.commandList = {
                     ArgumentDescription: 'Flag to sort objects by date last modifed'
                 }, // Sort by date modified
                 {
+                    name: 'date-range',
+                    type: String,
+                    ArgumentDescription: 'Get objects last modifed in a date range'
+                }, // Sort by date modified
+                {
                     name: 'search',
                     type: String,
                     multiple: true,
@@ -591,7 +596,8 @@ exports.commandList = {
                 "/jarvis s3objects -kt TagKey",
                 "/jarvis s3objects --alpha",
                 "/jarvis s3objects --search Keyword -s",
-                "/jarvis s3objects -ao OwnerName"
+                "/jarvis s3objects -ao OwnerName",
+                "/jarvis s3objects --date-range 3/4/2016-2/18/2017"
             ]
         },
         {
