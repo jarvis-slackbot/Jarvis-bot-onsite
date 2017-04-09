@@ -344,12 +344,16 @@ module.exports = {
         return new Promise((resolve, reject) => {
             let count = 0;
             let attachments = [];
+            let max = 0;
 
             bucketListWithTags().then(bucketList => {
                 // Argument processing here
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
                     bucketList = argHelper.bucketNameArgHandler(bucketList, args);
+                    if(args.max){
+                        max = args.max;
+                    }
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if (listEmpty(bucketList)) {
@@ -368,7 +372,7 @@ module.exports = {
                             reject(msg.errorMessage(err.toString()));
                         }
                     } else {
-                        prom = objectsList(bucketName);
+                        prom = objectsListWithMax(bucketName, max);
                     }
 
                     prom.then((objList) => {
@@ -909,7 +913,25 @@ function objectName(bucketName){
 function objectsList(bucketName) {
     return new Promise((resolve, reject) => {
         let params = {
-            Bucket: bucketName
+            Bucket: bucketName,
+        };
+        s3Data.listObjectsV2(params, (err, data) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data.Contents);
+            }
+        });
+    })
+}
+
+// List objects per bucket name
+function objectsListWithMax(bucketName, max) {
+    if(!max) max = 0;
+    return new Promise((resolve, reject) => {
+        let params = {
+            Bucket: bucketName,
+            MaxKeys: max
         };
         s3Data.listObjectsV2(params, (err, data) => {
             if (err) {
