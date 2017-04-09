@@ -293,7 +293,7 @@ module.exports = {
                                 ],
                             };
 
-                            cw.getMetricStatistics(readParams, function(err, writeData) {
+                            cw.getMetricStatistics(readParams, function(err, readData) {
 
                                 if (err) {
                                     reject(msg.errorMessage(JSON.stringify(err)));
@@ -316,7 +316,7 @@ module.exports = {
                                         ],
                                     };
 
-                                    cw.getMetricStatistics(writeParams, function(err, readData) {
+                                    cw.getMetricStatistics(writeParams, function(err, writeData) {
 
                                         if (err) {
                                             reject(msg.errorMessage(JSON.stringify(err)));
