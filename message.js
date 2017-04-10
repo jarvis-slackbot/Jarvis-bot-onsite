@@ -31,12 +31,12 @@ exports.pickResponse = function(message){
         response = cmd.parseCommand(message);
     }
     else{
-        response = first + ' is not a valid command';
+        response = first + ' is not a valid command. See /jarvis help';
         let simList = cmd.listSimilarCommands(first);
         if(!listEmpty(simList)){
-            response += ", did you mean:\n";
+            response += "\n\nDid you mean?\n";
             simList.forEach(sim => {
-                response += sim + '\n';
+                response += '\t' + sim + '\n';
             })
         }
 
