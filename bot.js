@@ -35,8 +35,9 @@ const api = botBuilder((message, apiRequest) => {
 }, { platforms: ['slackSlashCommand'] });
 
 api.intercept((event) => {
-    if (!event.slackEvent) // if this is a normal web request, let it run
+    if (!event.slackEvent){ // if this is a normal web request, let it run
         return event;
+    }
 
     var data = event.slackEvent;
     var userMsg = data.text;    // Users command (Everything after /jarvis)

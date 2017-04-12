@@ -31,11 +31,15 @@ exports.pickResponse = function(message){
         response = cmd.parseCommand(message);
     }
     else{
-        response = first + ' is not a valid command.\n';
-        // OLD AI code - Delete if decided to never implement AI
-        //response = ai.aiQuery(arg);
-        // If an API.ai intent turned this into a command
-        //response = isCommand(response) ? commandList.commands[response] : response;
+        response = first + ' is not a valid command. See /jarvis help';
+        let simList = cmd.listSimilarCommands(first);
+        if(!listEmpty(simList)){
+            response += "\n\nDid you mean?\n";
+            simList.forEach(sim => {
+                response += '\t' + sim + '\n';
+            })
+        }
+
     }
 
     return response;
@@ -144,4 +148,8 @@ function validColor(color){
 function cleanInput(message){
     // Any clean input code here, otherwise just split
     return message.split(" ");
+}
+// Return true for empty list
+function listEmpty(list) {
+    return !(typeof list !== 'undefined' && list.length > 0);
 }

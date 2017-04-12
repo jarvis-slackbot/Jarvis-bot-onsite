@@ -1,31 +1,22 @@
 /*
     Handles parsing commands and command arguments
  */
-/* Permissions from open-source
-
-string-similarity
-    https://www.npmjs.com/package/string-similarity
-    link: https://spdx.org/licenses/ISC
-ISC License:
-Copyright (c) 2004-2010 by Internet Systems Consortium, Inc. ("ISC") 
-Copyright (c) 1995-2003 by Internet Software Consortium
-
-Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
- */
-
-
 'use strict';
 
 const commandLineArgs = require('command-line-args');
 const stringSimilarity = require('string-similarity');
-
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
 
-const DEFAULT_HELP_SPACING = 60;
+const DEFAULT_HELP_SPACING = 40;
+const OPTIONS_HEADING = 'OPTIONS';
+const EXAMPLES_HEADING = 'EXAMPLES';
+const COMMANDS_HEADING = 'COMMANDS';
+const EC2_SECTION = 'EC2';
+const S3_SECTION = 'S3';
+
+const SIMILARITY_VALUE = 0.5;
+const MAX_CMD_SUGGESTIONS = 5;
 
 
 // Parse command and get select appropriate function
@@ -94,6 +85,19 @@ exports.parseCommand = function(message){
     return func;
 };
 
+exports.listSimilarCommands = function(first){
+    let cmdList = getCommandList();
+    let simList = [];
+
+    cmdList.forEach(cmd => {
+        let similarity = stringSimilarity.compareTwoStrings(cmd, first);
+        if (similarity >= SIMILARITY_VALUE && simList.length < MAX_CMD_SUGGESTIONS) {
+            simList.push(cmd);
+        }
+    });
+    return simList;
+};
+
 exports.isCommand = function(message){
   return (isCommand(message) || isAWSCommand(message));
 };
@@ -156,16 +160,93 @@ function isAWSCommand(first){
     return res;
 }
 
-// Commands
+// Returns list of all commands
+function getCommandList(){
+    let resList = [];
+    commandList.commands.forEach(cmd => {
+        resList.push(cmd.Name);
+    });
+    commandList.AWSCommands.forEach(cmd => {
+        resList.push(cmd.Name);
+    });
+    return resList;
+}
+
+// High level help for displaying commands
+// /jarvis help directs here for output
 function helpList(){
-    var str = "";
+    let helpStr = '';
+    let ec2Data = [];
+    let s3Data = [];
+    let otherData = [];
+    let exData = [];
+
     commandList.commands.forEach((cmd)=>{
-        str += cmd.Name + "\t\t" + cmd.Description + "\n";
+        otherData.push({
+            Command: cmd.Name,
+            Description: cmd.ShortDescription
+        });
     });
-    commandList.AWSCommands.forEach((awsCmd)=>{
-        str += awsCmd.Name + "\t\t" + awsCmd.Description + "\n";
+    commandList.AWSCommands.forEach((awsCmd)=> {
+        if (awsCmd.Section === EC2_SECTION){
+            ec2Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.ShortDescription
+            });
+        }
+        else if(awsCmd.Section === S3_SECTION){
+            s3Data.push({
+                Command: awsCmd.Name,
+                Description: awsCmd.ShortDescription
+            });
+        }
     });
-    return "Here are my available commands:\n" + toCodeBlock(str);
+    commandList.commands[0].Examples.forEach((ex) => {
+        exData.push({
+            Examples: ex
+        })
+    });
+
+    let otherCmds = columnify(otherData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let ec2Cmds = columnify(ec2Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let s3Cmds = columnify(s3Data,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    helpStr += 'HELP' + "\n\n" +
+        commandList.commands[0].Description + "\n\n\n" +
+        COMMANDS_HEADING + '\n' + otherCmds + '\n\n' +
+        'EC2 Commands' + ec2Cmds + '\n\n' +
+        'S3 Commands' + s3Cmds + '\n\n\n' +
+        EXAMPLES_HEADING  + exStr;
+
+    return "Here are my available commands:\n" + toCodeBlock(helpStr);
 }
 
 // Turn string into slack codeblock
@@ -196,6 +277,7 @@ function multiplyString(str, num){
 function helpForAWSCommand(command){
     let helpStr = '';
     let argsData = [];
+    let exData = [];
     let commandBlock = getAWSCommand(command);
 
     // Build arguments section
@@ -208,7 +290,7 @@ function helpForAWSCommand(command){
         argsLeftStr += '--' + arg.name + ' ';
         // If there is a type
         if(arg.type !== Boolean && arg.TypeExample){
-            argsLeftStr += ' ' + italic(arg.TypeExample);
+            argsLeftStr += ' [' + arg.TypeExample + ']';
             // Double the length is required here for some reason??
         }
         argsRightStr += arg.ArgumentDescription;
@@ -218,15 +300,36 @@ function helpForAWSCommand(command){
         });
     });
 
-    let argsStr = columnify(argsData,{
-        minWidth: 60,
+    // Build examples section
+    commandBlock.Examples.forEach((example) => {
+        exData.push({Examples: example});
     });
-    // Build title and description with args
-    helpStr += '\n\n' +
-        bold(commandBlock.Name) + "\n\n" +
-            commandBlock.Description + "\n\n" +
-            bold('Options') + '\n\n' +
-            argsStr;
 
-    return helpStr;
+    let argsStr = columnify(argsData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let exStr = columnify(exData,{
+        minWidth: DEFAULT_HELP_SPACING,
+        truncate: true,
+        headingTransform: function(heading) {
+            heading = '';
+            return heading;
+        }
+    });
+
+    let name = (commandBlock.Name).toUpperCase();
+    // Build title and description with args
+    helpStr += name + "\n\n" +
+            commandBlock.Description + "\n\n\n" +
+            OPTIONS_HEADING +
+            argsStr + '\n\n\n' +
+            EXAMPLES_HEADING  + exStr;
+
+    return toCodeBlock(helpStr);
 }
