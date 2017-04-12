@@ -1,14 +1,12 @@
 /*
     Handles parsing commands and command arguments
  */
-
 'use strict';
 
 const commandLineArgs = require('command-line-args');
+const stringSimilarity = require('string-similarity');
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
-let stringSimilarity = require('string-similarity');
-
 
 const DEFAULT_HELP_SPACING = 40;
 const OPTIONS_HEADING = 'OPTIONS';
@@ -47,9 +45,20 @@ exports.parseCommand = function(message){
                 // Must return a promise for proper message handling
                 func = new Promise(function(resolve, reject){
                     if (err.name === "UNKNOWN_OPTION"){
+                        var preparedText = "";
+                        //suggest most similar existing flag to the user's passed flag for their AWS command                        
+                        let cmd_flagNamesArray = []; //will hold '--flagName'
+                        cmd.Arguments.forEach((flag)=>{
+                            cmd_flagNamesArray.push("--" + flag.name);
+                        });
+                        let bestFlagMatch = (stringSimilarity.findBestMatch(message[0], cmd_flagNamesArray)).bestMatch.target;
+                        preparedText += "\nDid you mean: " + bestFlagMatch;
+
+                        //crates slacktemplate to hold the message. Final slack edit ends here.
                         var msg = require('./message.js').errorMessage(
-                            "Argument error: " + err.name + "\nSuggestion: Please use the --help flag for a list of valid arguments."
-                        );
+                            "Argument error: " + err.name + 
+                            "\nSuggestion: Please use the --help flag for a list of valid arguments."
+                            + preparedText);
                     }
                     else {
                         var msg = require('./message.js').errorMessage(
