@@ -7,6 +7,8 @@
 const commandLineArgs = require('command-line-args');
 const commandList = require('./commands_list').commandList;
 let columnify = require('columnify');
+let stringSimilarity = require('string-similarity');
+
 
 const DEFAULT_HELP_SPACING = 40;
 const OPTIONS_HEADING = 'OPTIONS';
@@ -14,6 +16,9 @@ const EXAMPLES_HEADING = 'EXAMPLES';
 const COMMANDS_HEADING = 'COMMANDS';
 const EC2_SECTION = 'EC2';
 const S3_SECTION = 'S3';
+
+const SIMILARITY_VALUE = 0.5;
+const MAX_CMD_SUGGESTIONS = 5;
 
 
 // Parse command and get select appropriate function
@@ -69,6 +74,19 @@ exports.parseCommand = function(message){
     }
 
     return func;
+};
+
+exports.listSimilarCommands = function(first){
+    let cmdList = getCommandList();
+    let simList = [];
+
+    cmdList.forEach(cmd => {
+        let similarity = stringSimilarity.compareTwoStrings(cmd, first);
+        if (similarity >= SIMILARITY_VALUE && simList.length < MAX_CMD_SUGGESTIONS) {
+            simList.push(cmd);
+        }
+    });
+    return simList;
 };
 
 exports.isCommand = function(message){
@@ -131,6 +149,18 @@ function isAWSCommand(first){
     });
 
     return res;
+}
+
+// Returns list of all commands
+function getCommandList(){
+    let resList = [];
+    commandList.commands.forEach(cmd => {
+        resList.push(cmd.Name);
+    });
+    commandList.AWSCommands.forEach(cmd => {
+        resList.push(cmd.Name);
+    });
+    return resList;
 }
 
 // High level help for displaying commands
