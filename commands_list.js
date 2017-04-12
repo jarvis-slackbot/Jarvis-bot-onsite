@@ -334,24 +334,6 @@ exports.commandList = {
             ]
         },
         {
-            Name: "health",
-            Function: require('./health.js').getAWSHealth(),
-            Section: 'Other',
-            Description: "Overall health status of the AWS system. This includes all AWS services.\n" +
-            "WARNING: May not be available in some regions.",
-            ShortDescription: "Overall health status of the AWS system.",
-            Arguments: [
-                {
-                    name: 'help',
-                    type: Boolean,
-                    ArgumentDescription: 'Displays this help information'
-                },
-            ],
-            Examples: [
-                "/jarvis health"
-            ]
-        },
-        {
             Name: "ec2ebs",
             Function: require('./ec2.js').getEBSInfo,
             Section: 'EC2',
@@ -424,7 +406,7 @@ exports.commandList = {
                     name: 'notag',
                     type: String,
                     multiple: true,
-                    ArgumentDescription: 'Filter results by instances that have a user specified tag'
+                    ArgumentDescription: 'Filter results by instances that do NOT have a specified tag'
                 },
                 {
                     name: 'tag',

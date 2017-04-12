@@ -366,13 +366,13 @@ function getUsersTime(args){
     type = hasUserTime(args) ? type : 'null';
     switch (type) {
         case MINUTES:
-            value = args.minutes;
+            value = args.minutes ? args.minutes : DEFAULT_TIME;
             break;
         case HOURS:
-            value = args.hours;
+            value = args.hours ? args.hours : DEFAULT_TIME;
             break;
         case DAYS:
-            value = args.days;
+            value = args.days ? args.days : DEFAULT_TIME;
             break;
         default:
             value = DEFAULT_TIME;
@@ -392,16 +392,16 @@ function getTimeMs(args){
 
     switch (type) {
         case MINUTES:
-            value = args.minutes;
+            value = args.minutes ? args.minutes : DEFAULT_TIME;
             value = value < MIN_TIME ? MIN_TIME : value;
             ms = (value * 60) * 1000;
             break;
         case HOURS:
-            value = args.hours;
+            value = args.hours ? args.hours : DEFAULT_TIME;
             ms = (value * 3600) * 1000;
             break;
         case DAYS:
-            value = args.days;
+            value = args.days ? args.days : DEFAULT_TIME;
             ms = (value * 3600 * 24) * 1000;
             break;
         default:
