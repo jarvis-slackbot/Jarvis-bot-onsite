@@ -429,7 +429,7 @@ module.exports = {
                             if (args.owner) {
                                 objList = filterObjectsByOwner(objList, args.owner);
                                 if (listEmpty(objList))
-                                    text += 'Filtering by owner name not available in all regions \n';
+                                    text += 'Filtering by owner name not available in all regions. \n';
                             }
                             // Objects older than date provided
                             // Date given by mm/dd/yyyy-mm/dd/yyyy

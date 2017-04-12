@@ -406,7 +406,7 @@ exports.commandList = {
                     name: 'notag',
                     type: String,
                     multiple: true,
-                    ArgumentDescription: 'Filter results by instances that have a user specified tag'
+                    ArgumentDescription: 'Filter results by instances that do NOT have a specified tag'
                 },
                 {
                     name: 'tag',
