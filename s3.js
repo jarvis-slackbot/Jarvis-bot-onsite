@@ -237,7 +237,7 @@ module.exports = {
 
                             text +=
                                 'Region: ' + region + '\n' +
-                               // 'Owner: ' + ownerName + '\n' +
+                                'Owner: ' + ownerName + '\n' +
                                 'Size: ' + size + '\n' +
                                 'Number of Objects: ' + objectsNumber + '\n' +
                                 'Accel Configuration: ' + accelConfig + '\n' +
