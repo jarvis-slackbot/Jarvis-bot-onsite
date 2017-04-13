@@ -48,7 +48,6 @@ module.exports = {
             var bucketNamesList = [];
             s3Data.listBuckets({}, function (err, data) {
                 if (err) {
-                    //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
                 } else { //code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
@@ -88,7 +87,6 @@ module.exports = {
 
                         if (err) {
                             text = err.message + '\n';
-                            //attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
 
                         try {
@@ -169,7 +167,7 @@ module.exports = {
                                         "Principals: \n";
                                     let principals = statement.Principal.AWS;
 
-                                    // Are there multiple pricipals??
+                                    // Are there multiple principals??
                                     if (Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
@@ -256,7 +254,7 @@ module.exports = {
 
                             text +=
                                 'Region: ' + region + '\n' +
-                               // 'Owner: ' + ownerName + '\n' +
+                                'Owner: ' + ownerName + '\n' +
                                 'Size: ' + size + '\n' +
                                 'Number of Objects: ' + objectsNumber + '\n' +
                                 'Accel Configuration: ' + accelConfig + '\n' +
