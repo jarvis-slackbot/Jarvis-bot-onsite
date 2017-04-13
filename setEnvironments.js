@@ -1,4 +1,6 @@
 //Developed to set environment variables at runtime for security reasons
+//Sets environment variables from env.js which module.exports a JSON
+
 var json = require('./.env.js').json;
 
 
