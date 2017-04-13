@@ -10,7 +10,7 @@ const qs = require('querystring');
 module.exports = {
 
     // AI.api call
-    aiQuery: function(phrase){
+    aiQuery: function (phrase) {
         var response = "Error!";
         var ai = "";
         var query = {
@@ -29,8 +29,7 @@ module.exports = {
         try {
             response = JSON.parse(ai.body);
             response = response.result.fulfillment.speech;
-        }
-        catch (err) {
+        } catch (err) {
             response = "Sorry, there was an error accessing my AI.\n" + err;
         }
 
