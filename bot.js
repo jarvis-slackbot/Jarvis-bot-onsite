@@ -41,9 +41,7 @@ api.intercept((event) => {
 
     var data = event.slackEvent;
     var userMsg = data.text;    // Users command (Everything after /jarvis)
-    //name = event.slackEvent.user_name;      // Users slack name
     var res = msg.pickResponse(userMsg);
-    //message.addAttachment("A").addText(res);  // Attachment to message
     // Does not work without this delay
     return promiseDelay(1000)
         .then(() => {
@@ -69,7 +67,3 @@ api.intercept((event) => {
 
 
 module.exports = api;
-
-
-//module.exports = auth.api;
-
