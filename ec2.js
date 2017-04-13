@@ -426,8 +426,8 @@ module.exports = {
                     instancesList.forEach((inst)=>{
                         var name = module.exports.getEC2Name(inst);
                         var id = inst.InstanceId;
-                        slackMsg.addAttachment(msg.getAttachNum(), getLink(INST_TAB));
-                        slackMsg.addTitle(msg.toTitle(name, id));
+                        slackMsg.addAttachment(msg.getAttachNum());
+                        slackMsg.addTitle(msg.toTitle(name, id), getLink(INST_TAB));
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         colorCounter++;
 
