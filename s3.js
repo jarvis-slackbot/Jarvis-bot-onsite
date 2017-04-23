@@ -398,7 +398,6 @@ module.exports = {
 
 
                         let text = '';
-                        text = 'obj: ' + typeof(prom) + '\n';
                         // Arguments filtering per object
                         if (argHelper.hasArgs(args)) {
 
