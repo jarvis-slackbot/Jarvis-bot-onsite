@@ -22,26 +22,25 @@ exports.hasArgs = (args) => {
 
 // Filter instances by tag value
 // Handler for tag arguments
-exports.filterInstListByTagValues = (instList,args) => {
+exports.filterInstListByTagValues = (instList, args) => {
     var newInstList = [];
     var tagData = getArgTagData(args);
     // If there is user tag data
-    if(tagData && tagData.Arg !== 'null') {
+    if (tagData && tagData.Arg !== 'null') {
 
         // notags was selected
-        if(tagData.Arg === 'notags')
+        if (tagData.Arg === 'notags')
             newInstList = getInstListWithNoTags(instList);
         // notag was selected
-        else if(tagData.Arg === 'notag')
-            newInstList = getInstListByNoTag(instList,tagData.Tag, tagData.Key);
+        else if (tagData.Arg === 'notag')
+            newInstList = getInstListByNoTag(instList, tagData.Tag, tagData.Key);
         // tag -- DEFAULT OPTION FOR MOST TAG COMMANDS, KEEP AT END OF CHECKS
-        else if(tagData.Arg === 'tag')
-            newInstList = getInstListbyTag(instList,tagData.Tag, tagData.Key);
+        else if (tagData.Arg === 'tag')
+            newInstList = getInstListbyTag(instList, tagData.Tag, tagData.Key);
         else
             newInstList = instList;
 
-    }
-    else{
+    } else {
         newInstList = instList;
     }
 
@@ -54,15 +53,14 @@ exports.filterEBSByEncryption = (volumes, args) => {
     var encryptedArg = args.hasOwnProperty('encrypted');
     var notEncryptedArg = args.hasOwnProperty('not-encrypted');
     // Args has an encrypted state provided from user (exclusive)
-    if(args &&
+    if (args &&
         ((encryptedArg || notEncryptedArg) && !(encryptedArg && notEncryptedArg))) {
         res = [];
         volumes.forEach((volume) => {
             var encrypted = volume.Encrypted;
-            if(encrypted && encryptedArg) {
+            if (encrypted && encryptedArg) {
                 res.push(volume);
-            }
-            else if (!encrypted && notEncryptedArg){
+            } else if (!encrypted && notEncryptedArg) {
                 res.push(volume);
             }
         });
@@ -73,7 +71,7 @@ exports.filterEBSByEncryption = (volumes, args) => {
 
 exports.bucketNameArgHandler = (bucketList, args) => {
     let resultList = bucketList;
-    if(args && args.name){
+    if (args && args.name) {
         let name = args.name.join(' ');
         resultList = getBucketsByName(bucketList, name);
     }
@@ -83,28 +81,27 @@ exports.bucketNameArgHandler = (bucketList, args) => {
 
 // Get buckets that match the name
 // Should usually be one result
-function getBucketsByName(bucketList, bucketName){
+function getBucketsByName(bucketList, bucketName) {
     let result = [];
     bucketList.forEach(bucket => {
         let name = bucket.name;
-        if(name === bucketName)
+        if (name === bucketName)
             result.push(bucket);
     });
     return result;
 }
 
 // Get user defined tag from argument
-function getArgTagData(args){
+function getArgTagData(args) {
     var tag = [];
     var argument = 'null';
     var res = null;
 
-    if(args) {
+    if (args) {
         if (args.hasOwnProperty('notags')) {
             tag = '';
             argument = 'notags';
-        }
-        else if(args.hasOwnProperty('notag')){
+        } else if (args.hasOwnProperty('notag')) {
             tag = args.notag;
             tag = tag.join(' '); // For tags with spaces
             argument = 'notag';
@@ -128,10 +125,10 @@ function getArgTagData(args){
 
 
 // Get inst list of all instances that have NO tags
-function getInstListWithNoTags(instList){
+function getInstListWithNoTags(instList) {
     var newInstList = [];
     instList.forEach((inst) => {
-        if(listEmpty(inst.Tags)){
+        if (listEmpty(inst.Tags)) {
             newInstList.push(inst);
         }
     });
@@ -142,7 +139,7 @@ function getInstListWithNoTags(instList){
 
 
 // Get inst list that doesn't contain the tag
-function getInstListByNoTag(instList, tagName, keyFlag){
+function getInstListByNoTag(instList, tagName, keyFlag) {
     var newInstList = [];
     instList.forEach((inst) => {
         var tags = inst.Tags;
@@ -154,14 +151,14 @@ function getInstListByNoTag(instList, tagName, keyFlag){
             }
 
         });
-        if(!hasTag)
+        if (!hasTag)
             newInstList.push(inst);
     });
     return newInstList;
 }
 
 // Get inst list that does contain the tag
-function getInstListbyTag(instList, tagName, keyFlag){
+function getInstListbyTag(instList, tagName, keyFlag) {
     var newInstList = [];
     instList.forEach((inst) => {
         var tags = inst.Tags;
@@ -176,11 +173,11 @@ function getInstListbyTag(instList, tagName, keyFlag){
     return newInstList;
 }
 
-function inList(value, list){
+function inList(value, list) {
     return list.indexOf(value) > -1;
 }
 
 // Return true for empty list
-function listEmpty(list){
+function listEmpty(list) {
     return !(typeof list !== 'undefined' && list.length > 0);
 }

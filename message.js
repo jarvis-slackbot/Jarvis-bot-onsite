@@ -22,18 +22,17 @@ exports.SLACK_LOGO_PURPLE = '#443642';
 
 // Decide what kind of question the user asked
 // Or if it's a statement/command
-exports.pickResponse = function(message){
+exports.pickResponse = function (message) {
     var response = "Pick Response Error";
     message = cleanInput(message);
     var first = message[0].toString();
 
-    if(cmd.isCommand(first)){
+    if (cmd.isCommand(first)) {
         response = cmd.parseCommand(message);
-    }
-    else{
+    } else {
         response = first + ' is not a valid command. See /jarvis help';
         let simList = cmd.listSimilarCommands(first);
-        if(!listEmpty(simList)){
+        if (!listEmpty(simList)) {
             response += "\n\nDid you mean?\n";
             simList.forEach(sim => {
                 response += '\t' + sim + '\n';
@@ -46,30 +45,30 @@ exports.pickResponse = function(message){
 };
 
 // Get next attachment number
-exports.getAttachNum = function() {
+exports.getAttachNum = function () {
     attachNum++;
     return attachNum.toString();
 };
 
 // Error message formater
-exports.errorMessage = function(text) {
+exports.errorMessage = function (text) {
     var str = 'Error: \n' + text.toString();
     return new SlackTemplate().addAttachment("err").addColor(this.SLACK_RED).addText(str);
 };
 
 //Capitalize first letter
-exports.capitalizeFirstLetter = function(str) {
+exports.capitalizeFirstLetter = function (str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 // Put name and id in consistent title format
-exports.toTitle = function(name, id){
+exports.toTitle = function (name, id) {
     return name + ' (' + id + ')';
 };
 
 // Create attachment data
 // Make color null if not needed
-exports.createAttachmentData = function(name, id, text, color){
+exports.createAttachmentData = function (name, id, text, color) {
     return {
         name: name,
         id: id,
@@ -80,7 +79,7 @@ exports.createAttachmentData = function(name, id, text, color){
 
 // Create attachment data
 // Make color null if not needed
-exports.createAttachmentData = function(name, id, link, text, color){
+exports.createAttachmentData = function (name, id, link, text, color) {
     return {
         name: name,
         id: id,
@@ -93,17 +92,17 @@ exports.createAttachmentData = function(name, id, link, text, color){
 // Function to help put attachment in order by item name
 // attachmentList is the list of unorder attachments
 // alternateColors is a boolean to allow for alternating attachment colors.
-exports.buildAttachments = function(attachmentList, alternateColors){
+exports.buildAttachments = function (attachmentList, alternateColors) {
     let slackMsg = new SlackTemplate();
     let colorCount = 0;
 
     // Sort instances alphabetically
-    attachmentList.sort(function(a, b){
+    attachmentList.sort(function (a, b) {
         let nameA = a.name;
         let nameB = b.name;
         let val = 0;
-        if(nameA < nameB) val = -1;
-        if(nameA > nameB) val = 1;
+        if (nameA < nameB) val = -1;
+        if (nameA > nameB) val = 1;
         return val;
     });
 
@@ -111,41 +110,39 @@ exports.buildAttachments = function(attachmentList, alternateColors){
         slackMsg.addAttachment(exports.getAttachNum());
 
         // Handle title
-        if(attachment.link){
-            attachment.id?
-                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id), attachment.link)
-                : slackMsg.addTitle(attachment.name, attachment.link);
+        if (attachment.link) {
+            attachment.id ?
+                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id), attachment.link) :
+                slackMsg.addTitle(attachment.name, attachment.link);
             slackMsg.addText(attachment.text);
-        }
-        else{
-            attachment.id?
-                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id))
-                : slackMsg.addTitle(attachment.name);
+        } else {
+            attachment.id ?
+                slackMsg.addTitle(exports.toTitle(attachment.name, attachment.id)) :
+                slackMsg.addTitle(attachment.name);
             slackMsg.addText(attachment.text);
         }
 
         // Color handling
-        if(!attachment.color && alternateColors){
+        if (!attachment.color && alternateColors) {
             let color = colorCount % 2 == 0 ? exports.SLACK_LOGO_BLUE : exports.SLACK_LOGO_PURPLE;
             slackMsg.addColor(color);
             colorCount++;
-        }
-        else if(validColor(attachment.color))
+        } else if (validColor(attachment.color))
             slackMsg.addColor(attachment.color);
     });
 
     return slackMsg;
 };
 
-function validColor(color){
-    return color && ((/^#[0-9A-F]{6}$/i.test(color))
-        || color === exports.SLACK_RED
-        || color === exports.SLACK_GREEN
-        || color === exports.SLACK_YELLOW);
+function validColor(color) {
+    return color && ((/^#[0-9A-F]{6}$/i.test(color)) ||
+        color === exports.SLACK_RED ||
+        color === exports.SLACK_GREEN ||
+        color === exports.SLACK_YELLOW);
 }
 
 // Clean and splice input.
-function cleanInput(message){
+function cleanInput(message) {
     // Any clean input code here, otherwise just split
     return message.split(" ");
 }

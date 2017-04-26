@@ -48,7 +48,6 @@ module.exports = {
             var bucketNamesList = [];
             s3Data.listBuckets({}, function (err, data) {
                 if (err) {
-                    //console.log(err, err.stack);
                     reject(msg.errorMessage(err.message));
                 } else { //code
                     //.Buckets returns array<map> with name & creationDate; .Owner returns map with DisplayName & ID
@@ -66,6 +65,7 @@ module.exports = {
     getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
             let attachCount = -1;
+            let count = 0;
             let slackMsg = new SlackTemplate();
 
             bucketListWithTags().then(bucketList => {
@@ -88,14 +88,41 @@ module.exports = {
 
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
-                    slackMsg.addAttachment(attachCount.toString());
-                    slackMsg.addTitle(bucketName, getLink(bucketName, FILES_TAB));
-                    slackMsg.addColor(attachCount % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
-                    attachCount--;
+
+                    let text = '';
+
+                    s3Data.getBucketTagging({
+                        Bucket: bucketName
+                    }, function (err, data) {
+
+                        if (err) {
+                            text = err.message + '\n';
+                        }
+
+                        try {
+
+                            if (data == null) {
+                                text += 'No tags found.';
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, null));
+                            } else {
+                                text += data.TagSet.length + ' tag(s) associated with bucket: \n';
+                                for (let i = 0; i < data.TagSet.length; i++) {
+                                    text += data.TagSet[i].Key + '\n';
+                                }
+                                attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_GREEN));
+                            }
+
+                        } catch (error) {
+                            text = error.toString();
+                            attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
+                        }
+                       count++;
+                        if (count === bucketList.length) {
+                            let slackMsg = msg.buildAttachments(attachments, true);
+                            resolve(slackMsg);
+                        }
                 });
-
-                resolve(slackMsg);
-
+                
             }).catch(err => {
                 resolve(err.toString());
             });
@@ -132,8 +159,7 @@ module.exports = {
                             text = err.message;
 
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
-                        }
-                        else {
+                        } else {
                             // Raw json
                             if (argHelper.hasArgs(args) && args.raw) {
                                 // Make json pretty
@@ -150,7 +176,7 @@ module.exports = {
                                         "Principals: \n";
                                     let principals = statement.Principal.AWS;
 
-                                    // Are there multiple pricipals??
+                                    // Are there multiple principals??
                                     if (Object.prototype.toString.call(principals) === '[object Array]') {
                                         principals.forEach(principal => {
                                             text += '\t\t' + principal;
@@ -162,8 +188,7 @@ module.exports = {
                                     text += "Action: " + statement.Action + "\n" +
                                         "Resource: " + statement.Resource;
                                     attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, null));
-                                }
-                                catch(err){
+                                } catch (err) {
                                     text = err.toString();
                                     text += '\nTry using --raw.';
                                     attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PERMISSIONS_TAB), text, msg.SLACK_RED));
@@ -245,8 +270,7 @@ module.exports = {
                                 'Logging: ' + logStatus + '\n';
 
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, null));
-                        }
-                        catch (err) {
+                        } catch (err) {
                             text = err.toString() + " Data error";
                             attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
                         }
@@ -294,9 +318,8 @@ module.exports = {
 
                             if (!logging) {
                                 text = 'Logging not enabled.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
-                            }
-                            else{
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_RED));
+                            } else {
                                 let target = logging.TargetBucket;
                                 let prefix = logging.TargetPrefix;
                                 text = 'Target Bucket: ' + target + '\n' +
@@ -306,7 +329,7 @@ module.exports = {
 
                         } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_RED));
                         }
 
                         count++;
@@ -355,49 +378,8 @@ module.exports = {
                     }
 
                     prom.then((objList) => {
-
-
-
-                        /*
-                        let olist = prom;
-                        prom = undefined;
-                        //Object.keys(prom).length
-                        //Object.keys(prom)[0]
-                        for (let k = 0; k < MAX; k++){
-                            let key = Object.keys(olist)[k];
-                            let value = olist[key];
-                            prom.key = value;
-                        }
-                        */
-                       
-                        /*
-                        //basics
-                        var key = "happyCount";
-                        var obj = {};
-                        obj[key] = value;
-                        array.push(obj);
-                        */
-                        
-                        
-                        /*
-                        size = function (objectsList) {
-                            for (object in objectsList){
-                                if (count == MAX){
-                                    //out
-                                }
-                                if (objectsList.hasOwnProperty(object)){
-                                    count++;
-                                }
-                            }
-                        }*/
-                        
-
-
-
-
-
-
                         let text = '';
+                      
                         // Arguments filtering per object
                         if (argHelper.hasArgs(args)) {
 
@@ -437,12 +419,11 @@ module.exports = {
 
                             if (!objList.length) {
                                 text += 'No objects found.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text,  msg.SLACK_RED));
-                            }
-                            else{
-                                max = argHelper.hasArgs(args) && args.max && args.max <= objList.length
-                                    ? args.max : objList.length;
-                                for(let i = 0; i < max; i++){
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, FILES_TAB), text, msg.SLACK_RED));
+                            } else {
+                                max = argHelper.hasArgs(args) && args.max && args.max <= objList.length ?
+                                    args.max : objList.length;
+                                for (let i = 0; i < max; i++) {
                                     let size = getSizeString(objList[i].Size);
                                     text += objList[i].Key + ' (' + size + ')' + '\n';
                                 }
@@ -501,12 +482,11 @@ module.exports = {
 
                             if (!grants || listEmpty(grants)) {
                                 text = 'Grant not applied.';
-                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
-                            }
-                            else{
+                                attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_RED));
+                            } else {
                                 let grantCount = 0;
                                 grants.forEach((grant) => {
-                                    if(grant.Grantee.DisplayName) {
+                                    if (grant.Grantee.DisplayName) {
                                         let email = grant.Grantee.EmailAddress ? grant.Grantee.EmailAddress : "None on file";
                                         let userId = grant.Grantee.ID ? grant.Grantee.ID : "Not found";
                                         let type = grant.Grantee.Type ? grant.Grantee.Type : "Not found";
@@ -529,7 +509,7 @@ module.exports = {
 
                         } catch (error) {
                             text = error.toString();
-                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text,  msg.SLACK_RED));
+                            attachments.push(msg.createAttachmentData(bucketName, null, getLink(bucketName, PROPERTIES_TAB), text, msg.SLACK_RED));
                         }
 
                         count++;
@@ -550,8 +530,8 @@ module.exports = {
 
 // Get console link
 // tab param is the tab query for the link
-function getLink(bucketName, tab){
-    return S3_BASE_LINK + bucketName + '/' +'?' + 'tab=' + tab;
+function getLink(bucketName, tab) {
+    return S3_BASE_LINK + bucketName + '/' + '?' + 'tab=' + tab;
 }
 
 //------------------------
@@ -562,7 +542,6 @@ function filterWithDateString(objList, dateString, reject) {
     let dateList = dateString.split('-');
     let resultList = [];
     if (dateList.length != 2) {
-        //TODO - handle length error
         reject(msg.errorMessage("Invalid date range. Example: Start Date-End Date (mm/dd/yyyy-mm/dd/yyyy)"));
     } else {
         // If asterisk, set date to earliest time (0) or now for end date
@@ -582,7 +561,6 @@ function filterWithDateString(objList, dateString, reject) {
         }
         // Handle specific error
         else {
-            // TODO - handle specific date error
             reject(msg.errorMessage("Date format incorrect. Dates should be in mm/dd/yyyy format."));
         }
     }
@@ -637,16 +615,16 @@ function filterObjectsByTag(bucketName, objectKey, key) {
 // Sort object list alphabetically
 // Per bucket basis
 
-function sortObjByAlpha(objList){
-        // Sort instances alphabetically
-        objList.sort(function(a, b){
-            let nameA = a.Key.toLowerCase();
-            let nameB = b.Key.toLowerCase();
-            let val = 0;
-            if(nameA < nameB) val = -1;
-            if(nameA > nameB) val = 1;
-            return val;
-        });
+function sortObjByAlpha(objList) {
+    // Sort instances alphabetically
+    objList.sort(function (a, b) {
+        let nameA = a.Key.toLowerCase();
+        let nameB = b.Key.toLowerCase();
+        let val = 0;
+        if (nameA < nameB) val = -1;
+        if (nameA > nameB) val = 1;
+        return val;
+    });
 }
 
 // Sort by file size, largest to smallest
@@ -837,7 +815,7 @@ function getBucketRegion(bucketName) {
             Bucket: bucketName
         }, (err, data) => {
             if (err) reject(err);
-            if(data.LocationConstraint)
+            if (data.LocationConstraint)
                 resolve(data.LocationConstraint);
             else
                 resolve("Not found");
@@ -857,7 +835,9 @@ function sizeOfBucket(bucketname) {
                 }
             });
             resolve(sum);
-        }).catch(err => {reject(err.toString())});
+        }).catch(err => {
+            reject(err.toString())
+        });
     });
 } //sizeOfBucket
 
@@ -871,26 +851,6 @@ function numberOfObjects(bucketName) {
         });
     });
 }
-/*
-// Get Object key
-function objectName(bucketName){
-    return new Promise((resolve, reject)=>{
-        let params = {
-            Bucket: bucketName
-        };
-        s3Data.listObjectsV2(params, (err, data) => {
-            if(err){
-                reject(err);
-            }
-            else{
-                for(let i = 0; i < data.Contents.length; i++){
-                    text = text + data.Contents[i].Key + '\n';
-                }
-                resolve(text);
-            }
-        });
-    })
-}*/
 
 // List objects per bucket name
 function objectsList(bucketName) {
@@ -966,25 +926,3 @@ function round(num) {
 function listEmpty(list) {
     return !(typeof list !== 'undefined' && list.length > 0);
 }
-
-
-
-
-
-
-
-
-
-/* SCRATCH CODE
- --DELETE-- Temp list. possible methods.
- (AWS.Request) getAcl(params = {}, callback)
- Gets the access control policy for the bucket.
- (AWS.Request) getBucketLocation(params = {}, callback)
- Returns the region the bucket resides in.
- (AWS.Request) headBucket(params = {}, callback)
- This operation is useful to determine if a bucket exists and you have permission to access it.
- (AWS.Request) headObject(params = {}, callback)
- The HEAD operation retrieves metadata from an object without returning the object itself.
- (AWS.Request) listBuckets(params = {}, callback)
- Returns a list of all buckets owned by the authenticated sender of the request.
- */

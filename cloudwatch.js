@@ -8,7 +8,11 @@ var botBuilder = require('claudia-bot-builder');
 const SlackTemplate = botBuilder.slackTemplate;
 const msg = require('./message.js');
 const aws = require('aws-sdk');
-const cw = new aws.CloudWatch({region: 'us-west-2', maxRetries: 15,apiVersion: '2010-08-01'});
+const cw = new aws.CloudWatch({
+    region: 'us-west-2',
+    maxRetries: 15,
+    apiVersion: '2010-08-01'
+});
 const ec2 = require('./ec2.js');
 const argHelper = require('./arguments.js');
 
@@ -21,7 +25,7 @@ const EBS_TAB = 'Volumes';
 
 const DEFAULT_TIME = 5; // In minutes.
 const MIN_TIME = 5; // In minutes. IF aws user has detailed metrics enabled, minimum value is 1. Else, minimum is 5.
-const CPU_WARN = 80.0;  // CPU percent value >= to issue warning color
+const CPU_WARN = 80.0; // CPU percent value >= to issue warning color
 const MINUTES = "Minutes";
 const HOURS = "Hours";
 const DAYS = "Days";
@@ -38,7 +42,7 @@ module.exports = {
     // EC2 --------------------------------------------------
 
     // CPU
-    getEc2Cpu: function(args){
+    getEc2Cpu: function (args) {
         return new Promise(function (resolve, reject) {
 
             var slackMsg = new SlackTemplate();
@@ -54,11 +58,11 @@ module.exports = {
             ec2.instList().then((instanceList) => {
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instanceList = argHelper.filterInstListByTagValues(instanceList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instanceList)){
+                if (listEmpty(instanceList)) {
                     reject(msg.errorMessage("No instances found."));
                 }
 
@@ -72,7 +76,7 @@ module.exports = {
                         EndTime: date,
                         MetricName: 'CPUUtilization',
                         Namespace: 'AWS/EC2',
-                        Period: getPeriod(timems),    // Seconds
+                        Period: getPeriod(timems), // Seconds
                         StartTime: date2,
                         Dimensions: [
                             {
@@ -80,7 +84,7 @@ module.exports = {
                                 Value: id
                             },
                         ],
-                        Statistics:[
+                        Statistics: [
                             'Average'
                         ]
                     };
@@ -95,11 +99,11 @@ module.exports = {
                             slackMsg.addAttachment(msg.getAttachNum());
 
                             // Server is offline or terminated
-                            if(!dataPoint){
+                            if (!dataPoint) {
                                 text +=
                                     "No CPU data found.";
                                 slackMsg.addColor(msg.SLACK_RED);
-                            // Server online
+                                // Server online
                             } else {
                                 var average = round(dataPoint.Average);
                                 var color = (average >= CPU_WARN) ? msg.SLACK_YELLOW : msg.SLACK_GREEN;
@@ -112,7 +116,7 @@ module.exports = {
                             slackMsg.addText(text);
 
                             count++;
-                            if(count === instanceList.length){
+                            if (count === instanceList.length) {
                                 resolve(slackMsg);
                             }
 
@@ -123,9 +127,9 @@ module.exports = {
 
         });
     },
-    
-// NETWORK
-    getEc2Network: function(args) {
+
+    // NETWORK
+    getEc2Network: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
 
@@ -141,11 +145,11 @@ module.exports = {
             ec2.instList().then((instanceList) => {
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instanceList = argHelper.filterInstListByTagValues(instanceList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instanceList)){
+                if (listEmpty(instanceList)) {
                     reject(msg.errorMessage("No instances found."));
                 }
 
@@ -161,8 +165,8 @@ module.exports = {
                         Period: getPeriod(timems),
                         StartTime: date2,
                         Dimensions: [{
-                            Name: 'InstanceId',
-                            Value: id
+                                Name: 'InstanceId',
+                                Value: id
                         },
 
                         ],
@@ -197,41 +201,37 @@ module.exports = {
                                         var networkOut = dataPointOut.Average;
                                         var networkInType;
                                         var networkOutType;
-                                        if(networkIn >= 1000000) {
+                                        if (networkIn >= 1000000) {
                                             networkInType = ' mb.';
-                                            networkIn = networkIn/1000000;
-                                        }
-                                        else if(networkIn > 1000 ){
+                                            networkIn = networkIn / 1000000;
+                                        } else if (networkIn > 1000) {
                                             networkInType = ' kb.';
-                                            networkIn = networkIn/1000;
-                                        }
-                                        else{
+                                            networkIn = networkIn / 1000;
+                                        } else {
                                             networkInType = ' bytes.';
                                         }
 
-                                        if(networkOut >= 1000000) {
+                                        if (networkOut >= 1000000) {
                                             networkOutType = ' mb.';
-                                            networkOut = networkOut/1000000;
-                                        }
-                                        else if(networkOut > 1000 ){
+                                            networkOut = networkOut / 1000000;
+                                        } else if (networkOut > 1000) {
                                             networkOutType = ' kb.';
-                                            networkOut = networkOut/1000;
-                                        }
-                                        else{
+                                            networkOut = networkOut / 1000;
+                                        } else {
                                             networkOutType = ' bytes.';
                                         }
-                                            text +=
-                                                '\nAverage Network Usage in the last ' + time + ' ' + timeLabel + ':' +
-                                                "\nNetwork usage In: " + roundInt(networkIn) + networkInType +
-                                                "\nNetwork usage Out: " + roundInt(networkOut) + networkOutType;
+                                        text +=
+                                            '\nAverage Network Usage in the last ' + time + ' ' + timeLabel + ':' +
+                                            "\nNetwork usage In: " + roundInt(networkIn) + networkInType +
+                                            "\nNetwork usage Out: " + roundInt(networkOut) + networkOutType;
 
                                         slackMsg.addColor(msg.SLACK_GREEN);
                                     }
-                                    slackMsg.addTitle(msg.toTitle(name, id),  getLink(INST_TAB));
+                                    slackMsg.addTitle(msg.toTitle(name, id), getLink(INST_TAB));
                                     slackMsg.addText(text);
 
                                     count++;
-                                    if(count === instanceList.length){
+                                    if (count === instanceList.length) {
                                         resolve(slackMsg);
                                     }
                                 }
@@ -239,13 +239,13 @@ module.exports = {
                         }
                     });
                 });
+            });
         });
-    });
     },
 
 
     // Disk EBS usage
-    getEc2Disk: function(args) {
+    getEc2Disk: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
 
@@ -261,106 +261,105 @@ module.exports = {
             ec2.instList().then((instanceList) => {
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instanceList = argHelper.filterInstListByTagValues(instanceList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instanceList)){
+                if (listEmpty(instanceList)) {
                     reject(msg.errorMessage("No instances found."));
                 }
 
-                    instanceList.forEach(function (inst) {
-                        var name = ec2.getEC2Name(inst);
-                        var instId = inst.InstanceId;
-                        var text = "";
-                        var ebsList = ec2.getEBSVolumes(inst);
-                        ebsList.forEach(function(devID){
-                            var id = devID;
-                            var readParams = {
-                                EndTime: date,
-                                MetricName: 'VolumeReadOps',
-                                Namespace: 'AWS/EBS',
-                                Period: getPeriod(timems),
-                                StartTime: date2,
-                                Dimensions: [{
+                instanceList.forEach(function (inst) {
+                    var name = ec2.getEC2Name(inst);
+                    var instId = inst.InstanceId;
+                    var text = "";
+                    var ebsList = ec2.getEBSVolumes(inst);
+                    ebsList.forEach(function (devID) {
+                        var id = devID;
+                        var readParams = {
+                            EndTime: date,
+                            MetricName: 'VolumeReadOps',
+                            Namespace: 'AWS/EBS',
+                            Period: getPeriod(timems),
+                            StartTime: date2,
+                            Dimensions: [{
                                     Name: 'VolumeId',
                                     Value: id
                                 },
 
                                 ],
-                                Statistics: [
+                            Statistics: [
                                     'Average'
                                 ],
-                            };
+                        };
 
-                            cw.getMetricStatistics(readParams, function(err, readData) {
+                        cw.getMetricStatistics(readParams, function (err, readData) {
 
-                                if (err) {
-                                    reject(msg.errorMessage(JSON.stringify(err)));
-                                } else {
+                            if (err) {
+                                reject(msg.errorMessage(JSON.stringify(err)));
+                            } else {
 
-                                    var writeParams = {
-                                        EndTime: date,
-                                        MetricName: 'VolumeWriteOps',
-                                        Namespace: 'AWS/EBS',
-                                        Period: getPeriod(timems),
-                                        StartTime: date2,
-                                        Dimensions: [{
+                                var writeParams = {
+                                    EndTime: date,
+                                    MetricName: 'VolumeWriteOps',
+                                    Namespace: 'AWS/EBS',
+                                    Period: getPeriod(timems),
+                                    StartTime: date2,
+                                    Dimensions: [{
                                             Name: 'VolumeId',
                                             Value: id
                                         },
 
                                         ],
-                                        Statistics: [
+                                    Statistics: [
                                             'Average'
                                         ],
-                                    };
+                                };
 
-                                    cw.getMetricStatistics(writeParams, function(err, writeData) {
+                                cw.getMetricStatistics(writeParams, function (err, writeData) {
 
-                                        if (err) {
-                                            reject(msg.errorMessage(JSON.stringify(err)));
+                                    if (err) {
+                                        reject(msg.errorMessage(JSON.stringify(err)));
+                                    } else {
+                                        slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
+                                        var writeOps = writeData.Datapoints[0] ?
+                                            writeData.Datapoints[0] / getPeriod(timems) : "Not found";
+                                        var readOps = readData.Datapoints[0] ?
+                                            readData.Datapoints[0] / getPeriod(timems) : "Not found";
+
+                                        if (writeOps === "Not found" && readOps === "Not found") {
+                                            slackMsg.addColor(msg.SLACK_RED);
+                                            text += "No data found.\n"
                                         } else {
-                                            slackMsg.addAttachment(msg.getAttachNum()); // Attach for each instance
-                                            var writeOps = writeData.Datapoints[0] ?
-                                                writeData.Datapoints[0] / getPeriod(timems) : "Not found";
-                                            var readOps = readData.Datapoints[0] ?
-                                                readData.Datapoints[0] / getPeriod(timems) : "Not found";
-
-                                            if(writeOps === "Not found" && readOps === "Not found"){
-                                                slackMsg.addColor(msg.SLACK_RED);
-                                                text += "No data found.\n"
-                                            }
-                                            else {
-                                                text += 'Average Disk I/O operations in last ' + time +
-                                                    ' ' + timeLabel + ':\n';
-                                                text += 'Disk Read: ' + readOps + ' IOPS' + '\n' +
-                                                        'Disk Write: ' + writeOps + ' IOPS' + '\n';
-                                                slackMsg.addColor(msg.SLACK_GREEN);
-                                            }
-                                            slackMsg.addTitle(msg.toTitle(name, instId),  getLink(EBS_TAB));
-                                            slackMsg.addText(text);
-
-                                            count++;
-                                            if(count === instanceList.length){
-                                                resolve(slackMsg);
-                                            }
-
+                                            text += 'Average Disk I/O operations in last ' + time +
+                                                ' ' + timeLabel + ':\n';
+                                            text += 'Disk Read: ' + readOps + ' IOPS' + '\n' +
+                                                'Disk Write: ' + writeOps + ' IOPS' + '\n';
+                                            slackMsg.addColor(msg.SLACK_GREEN);
                                         }
-                                    });
+                                        slackMsg.addTitle(msg.toTitle(name, instId), getLink(EBS_TAB));
+                                        slackMsg.addText(text);
 
-                                }
-                            });
+                                        count++;
+                                        if (count === instanceList.length) {
+                                            resolve(slackMsg);
+                                        }
+
+                                    }
+                                });
+
+                            }
                         });
-                        
                     });
+
+                });
             });
         });
     }
 };
 
 // Get user entered time.
-function getUsersTime(args){
+function getUsersTime(args) {
     var value;
     var type = getTimeType(args);
     type = hasUserTime(args) ? type : 'null';
@@ -382,7 +381,7 @@ function getUsersTime(args){
 
 // Pass in entire argument object from user
 // Returns start time in ms
-function getTimeMs(args){
+function getTimeMs(args) {
     var value;
     var type = getTimeType(args);
     var ms;
@@ -413,21 +412,18 @@ function getTimeMs(args){
 }
 
 // Return type of time
-function getTimeType(args){
+function getTimeType(args) {
     var type;
 
-    if(hasUserTime(args)) {
+    if (hasUserTime(args)) {
         if (args.hasOwnProperty('minutes')) {
             type = MINUTES;
-        }
-        else if (args.hasOwnProperty('hours')) {
+        } else if (args.hasOwnProperty('hours')) {
             type = HOURS;
-        }
-        else if (args.hasOwnProperty('days')) {
+        } else if (args.hasOwnProperty('days')) {
             type = DAYS;
         }
-    }
-    else{
+    } else {
         type = DEFAULT_TIME_TYPE;
     }
 
@@ -436,22 +432,22 @@ function getTimeType(args){
 
 // Period must be a multiple of MIN_PERIOD
 // returns seconds
-function getPeriod(timems){
+function getPeriod(timems) {
     var period = Math.floor(timems / 1000); // put it into seconds
-    if(timems < MIN_PERIOD) {
+    if (timems < MIN_PERIOD) {
         period = MIN_PERIOD;
     }
     // Round period to 60 second interval
     // More or less extra safety, these values should ALWAYS be in 60 second intervals from user
-    else if(period < PERIOD_15){
+    else if (period < PERIOD_15) {
         period = period - (period % MIN_PERIOD);
     }
     // 15 day period
-    else if(period < PERIOD_63){
+    else if (period < PERIOD_63) {
         period = period - (period % PERIOD_15_TIME);
     }
     // 63 day period
-    else{
+    else {
         period = period - (period % PERIOD_63_TIME);
     }
 
@@ -460,26 +456,26 @@ function getPeriod(timems){
 }
 
 // Round to two decimal places
-function round(avg){
+function round(avg) {
     return +avg.toFixed(2);
 }
 // Round to 0 decimal places
-function roundInt(avg){
+function roundInt(avg) {
     return +avg.toFixed(0);
 }
 
 // Return true for empty list
-function listEmpty(list){
+function listEmpty(list) {
     return !(typeof list !== 'undefined' && list.length > 0);
 }
 // If user entered a time value or not
-function hasUserTime(args){
+function hasUserTime(args) {
     return args &&
         (args.hasOwnProperty('minutes') || args.hasOwnProperty('hours') || args.hasOwnProperty('days'));
 }
 
 // Get aws console link to the resource
-function getLink(tab){
+function getLink(tab) {
     let tabLink = '#' + tab;
     return EC2_BASE_LINK + '?' + tabLink;
 }

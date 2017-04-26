@@ -11,8 +11,8 @@ exports.commandList = {
             Name: "help",
             Function: "Cannot call myself!",
             Description: "Lists available commands. Commands are sub-divided into AWS sections. " +
-            "To see more info on a specific command, use: \n /jarvis [command] --help\n\n" +
-            "Please refer to the user manual for more extensive information of each command.",
+                "To see more info on a specific command, use: \n /jarvis [command] --help\n\n" +
+                "Please refer to the user manual for more extensive information of each command.",
             ShortDescription: "Lists available commands.",
             Examples: [
                 "/jarvis [command]"
@@ -28,7 +28,7 @@ exports.commandList = {
             Function: require('./ec2.js').getStatus,
             Section: 'EC2',
             Description: "Instance health status. Shows current status information for the EC2 instances. " +
-            "Instance State, System Status and Instance Status are provided.",
+                "Instance State, System Status and Instance Status are provided.",
             ShortDescription: "Instance health status.", // Description for /help
             Arguments: [
                 {
@@ -62,8 +62,8 @@ exports.commandList = {
             Function: require('./ec2.js').getAMIStatus,
             Section: 'EC2',
             Description: "Amazon Machine Image (AMI) status information. Image information for images " +
-            "currently attached to an EC2 instance. Status is pending, available, invalid, deregistered, " +
-            "transient, failed or error.",
+                "currently attached to an EC2 instance. Status is pending, available, invalid, deregistered, " +
+                "transient, failed or error.",
             ShortDescription: "Amazon Machine Image (AMI) status information.", // Description for /help
             Arguments: [
                 {
@@ -96,10 +96,10 @@ exports.commandList = {
             Name: "ec2cpu",
             Function: require('./cloudwatch').getEc2Cpu,
             Section: 'EC2',
-            Description:"Current server CPU usage. CPU usage is displayed as a percentage from 0 to 100%. " +
-            "The usage data is an average of the CPU usage over a period of time. " +
-            "The default time period is the last 5 minutes. " +
-            "All time periods are the difference between current time and the time provided.",
+            Description: "Current server CPU usage. CPU usage is displayed as a percentage from 0 to 100%. " +
+                "The usage data is an average of the CPU usage over a period of time. " +
+                "The default time period is the last 5 minutes. " +
+                "All time periods are the difference between current time and the time provided.",
             ShortDescription: "Current server CPU usage.",
             Arguments: [
                 {
@@ -154,10 +154,10 @@ exports.commandList = {
             Function: require('./cloudwatch').getEc2Disk,
             Section: 'EC2',
             Description: "Instance volume usage information. " +
-            "Retrieves read/write IOPS (Input/Output Operations per Second). " +
-            "The usage data is an average of the volume usage over a period of time. " +
-            "The default time period is the last 5 minutes. " +
-            "All time periods are the difference between current time and the time provided.",
+                "Retrieves read/write IOPS (Input/Output Operations per Second). " +
+                "The usage data is an average of the volume usage over a period of time. " +
+                "The default time period is the last 5 minutes. " +
+                "All time periods are the difference between current time and the time provided.",
             ShortDescription: "Instance volume usage information.",
             Arguments: [
                 {
@@ -212,10 +212,10 @@ exports.commandList = {
             Function: require('./cloudwatch').getEc2Network,
             Section: 'EC2',
             Description: "Instance network usage information. " +
-            "Retrieves size of data transferred in and out of the instance network. " +
-            "The usage data is an average of the network usage over a period of time. " +
-            "The default time period is the last 5 minutes. " +
-            "All time periods are the difference between current time and the time provided.",
+                "Retrieves size of data transferred in and out of the instance network. " +
+                "The usage data is an average of the network usage over a period of time. " +
+                "The default time period is the last 5 minutes. " +
+                "All time periods are the difference between current time and the time provided.",
             ShortDescription: "Instance network usage information.",
             Arguments: [
                 {
@@ -270,7 +270,7 @@ exports.commandList = {
             Function: require('./ec2.js').getHardwareInfo,
             Section: 'EC2',
             Description: "Generic EC2 instance information. Retrieves \"everyday\" information about an EC2 instance. " +
-            "Instance ID, Attached AMI, Instance Type, Region and more are provided.",
+                "Instance ID, Attached AMI, Instance Type, Region and more are provided.",
             ShortDescription: "Generic EC2 instance information.",
             Arguments: [
                 {
@@ -304,7 +304,7 @@ exports.commandList = {
             Function: require('./ec2.js').getNetworkInfo,
             Section: 'EC2',
             Description: "Instance network information. Retrieves information about the instance network configuration." +
-            "Instance ID, Network Status, Public IP, Private IP and more are provided.",
+                "Instance ID, Network Status, Public IP, Private IP and more are provided.",
             ShortDescription: "Instance network information.",
             Arguments: [
                 {
@@ -338,8 +338,8 @@ exports.commandList = {
             Function: require('./ec2.js').getEBSInfo,
             Section: 'EC2',
             Description: "EBS (Elastic Block Storage) volume information. " +
-            "Retrieves EBS information for volumes attached to an EC2 instance. " +
-            "Volume Size, Region, Status, Encryption State and more are provided.",
+                "Retrieves EBS information for volumes attached to an EC2 instance. " +
+                "Volume Size, Region, Status, Encryption State and more are provided.",
             ShortDescription: "EBS (Elastic Block Storage) volume information.",
             Arguments: [
                 {
@@ -388,8 +388,8 @@ exports.commandList = {
             Function: require('./ec2.js').getByTag,
             Section: 'EC2',
             Description: "Lists instances by specified tag data. " +
-            "Instance Name/ID provided for all instances that match the users filter criteria. " +
-            "If no arguments are provided, then all instances will be listed.",
+                "Instance Name/ID provided for all instances that match the users filter criteria. " +
+                "If no arguments are provided, then all instances will be listed.",
             ShortDescription: "Lists instances by specified tag data.",
             Arguments: [
                 {
@@ -437,8 +437,8 @@ exports.commandList = {
             Function: require('./s3.js').getS3Tags,
             Section: 'S3',
             Description: "Lists buckets by specified tag data. " +
-            "Bucket Name/ID provided for all buckets that match the users filter criteria. " +
-            "If no arguments are provided, then all buckets will be listed.",
+                "Bucket Name/ID provided for all buckets that match the users filter criteria. " +
+                "If no arguments are provided, then all buckets will be listed.",
             ShortDescription: "Lists buckets by specified tag data.",
             Arguments: [
                 {
@@ -486,9 +486,9 @@ exports.commandList = {
             Function: require('./s3.js').getS3BucketObject,
             Section: 'S3',
             Description: "Lists objects in S3 bucket(s). " +
-            "Provides a list of objects based on users criteria from S3 buckets. " +
-            "Object filename and size are provided." +
-            "\nWARNING: Filtering by --objtag or --objectkey will cause delays in output.",
+                "Provides a list of objects based on users criteria from S3 buckets. " +
+                "Object filename and size are provided." +
+                "\nWARNING: Filtering by --objtag or --objectkey will cause delays in output.",
             ShortDescription: "Lists objects in S3 bucket(s)",
             Arguments: [
                 {
@@ -586,8 +586,8 @@ exports.commandList = {
             Name: "s3acl",
             Function: require('./s3.js').getAcl,
             Description: "Retrieves the Access Control List configuration for an S3 bucket. " +
-            "The Access Control List sets grants to manage access to the S3 bucket. " +
-            "Owner name, email, ID and more are retrieved for each grant.",
+                "The Access Control List sets grants to manage access to the S3 bucket. " +
+                "Owner name, email, ID and more are retrieved for each grant.",
             ShortDescription: "Retrieves the Life Cycle Configuration for an S3 bucket.",
             Section: 'S3',
             Arguments: [
@@ -630,7 +630,7 @@ exports.commandList = {
             Function: require('./s3.js').getBucketPolicy,
             ShortDescription: "Retrieves S3 bucket policy information.",
             Description: "Retrieves S3 bucket policy information. S3 bucket policy is the access policy for a bucket. " +
-            "Policy version, ID, SID, Principals and more are provided.",
+                "Policy version, ID, SID, Principals and more are provided.",
             Section: 'S3',
             Arguments: [
                 {
@@ -679,7 +679,7 @@ exports.commandList = {
             Function: require('./s3.js').getBucketInfo,
             ShortDescription: "Generic bucket information.",
             Description: "Generic bucket information.  Retrieves \"everyday\" information about an S3 bucket. " +
-            "Bucket region, owner, size and more are provided.",
+                "Bucket region, owner, size and more are provided.",
             Section: 'S3',
             Arguments: [
                 {
@@ -728,8 +728,8 @@ exports.commandList = {
             Function: require('./s3.js').bucketLoggingInfo,
             ShortDescription: "Bucket logging information.",
             Description: "Bucket logging information. " +
-            "Logging provides records of access requests to the bucket. Logs are usually stored in a target bucket. " +
-            "Target Bucket and Target Prefix are provided.",
+                "Logging provides records of access requests to the bucket. Logs are usually stored in a target bucket. " +
+                "Target Bucket and Target Prefix are provided.",
             Section: 'S3',
             Arguments: [
                 {

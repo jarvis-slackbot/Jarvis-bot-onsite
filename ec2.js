@@ -12,7 +12,11 @@ const argHelper = require('./arguments.js');
 
 // AWS EC2
 const aws = require('aws-sdk');
-const ec2Data = new aws.EC2({region: 'us-west-2', maxRetries: 15, apiVersion: '2016-11-15'});
+const ec2Data = new aws.EC2({
+    region: 'us-west-2',
+    maxRetries: 15,
+    apiVersion: '2016-11-15'
+});
 
 
 // EC2 server states
@@ -33,7 +37,7 @@ const EBS_TAB = 'Volumes';
 
 module.exports = {
 
-// Server up or down (EC2 Only)
+    // Server up or down (EC2 Only)
     getStatus: function (args) {
         return new Promise(function (resolve, reject) {
 
@@ -41,14 +45,13 @@ module.exports = {
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instancesList)){
+                if (listEmpty(instancesList)) {
                     reject(msg.errorMessage("No instances found."));
-                }
-                else {
+                } else {
                     // Get name/id pair only
                     instancesList = getInstNameIdFromList(instancesList);
                     var idList = getIdsFromList(instancesList);
@@ -79,16 +82,16 @@ module.exports = {
                                 'System Status: ' + sysStatus + '\n';
 
                             // If there are system details, add to information
-                            (listEmpty(sysDetails)) ? text += '' : sysDetails.forEach((detail) => {
-                                    text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
-                                        msg.capitalizeFirstLetter(detail.Status) + '\n';
-                                });
+                            (listEmpty(sysDetails)) ? text += '': sysDetails.forEach((detail) => {
+                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                                    msg.capitalizeFirstLetter(detail.Status) + '\n';
+                            });
                             text += 'Instance Status: ' + instStatus + '\n';
                             // If there are instance details, add to information
-                            (listEmpty(instDetails)) ? text += '' : instDetails.forEach((detail) => {
-                                    text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
-                                        msg.capitalizeFirstLetter(detail.Status) + '\n';
-                                });
+                            (listEmpty(instDetails)) ? text += '': instDetails.forEach((detail) => {
+                                text += '\t' + msg.capitalizeFirstLetter(detail.Name) + ': ' +
+                                    msg.capitalizeFirstLetter(detail.Status) + '\n';
+                            });
 
                             slackMsg.addColor(status === EC2_ONLINE ? msg.SLACK_GREEN : msg.SLACK_RED);
 
@@ -107,8 +110,8 @@ module.exports = {
         });
     },
 
-// Get the state of all AMI images owned by user.
-// Finds all images used by the users instances and gets status of those instances.
+    // Get the state of all AMI images owned by user.
+    // Finds all images used by the users instances and gets status of those instances.
     getAMIStatus: function (args) {
         return new Promise(function (resolve, reject) {
 
@@ -137,19 +140,17 @@ module.exports = {
                     ec2Data.describeImages(paramsImg, function (err, data) {
                         if (err) {
                             reject(msg.errorMessage(err.message));
-                        }
-                        else {
+                        } else {
                             var images = data.Images;
 
                             // Argument processing here
-                            if(argHelper.hasArgs(args)){
+                            if (argHelper.hasArgs(args)) {
                                 images = argHelper.filterInstListByTagValues(images, args);
                             }
                             // Either no instances match criteria OR no instances on AWS
-                            if(listEmpty(images)){
+                            if (listEmpty(images)) {
                                 reject(msg.errorMessage("No instances found."));
-                            }
-                            else {
+                            } else {
                                 images.forEach(function (image) {
                                     var amiName = image.Name;
                                     var id = image.ImageId;
@@ -186,7 +187,7 @@ module.exports = {
                         }
                     });
                 }
-            // Pass error message on to bot.
+                // Pass error message on to bot.
             }).catch((err) => {
                 reject(msg.errorMessage(err));
             });
@@ -194,21 +195,20 @@ module.exports = {
     },
 
     // Get available hardware information about each instance.
-    getHardwareInfo: function(args){
+    getHardwareInfo: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
             var colorCounter = 0;
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instancesList)){
+                if (listEmpty(instancesList)) {
                     reject(msg.errorMessage("No instances found."));
-                }
-                else {
+                } else {
                     instancesList.forEach(function (inst) {
 
                         var text = "";
@@ -247,7 +247,7 @@ module.exports = {
                             'ENA Support: ' + ena + '\n';
 
                         slackMsg.addAttachment(msg.getAttachNum());
-                        slackMsg.addTitle(msg.toTitle(name, instanceId),getLink(INST_TAB));
+                        slackMsg.addTitle(msg.toTitle(name, instanceId), getLink(INST_TAB));
                         // Give every other instance a different color
                         slackMsg.addColor(colorCounter % 2 == 0 ? msg.SLACK_LOGO_BLUE : msg.SLACK_LOGO_PURPLE);
                         slackMsg.addText(text);
@@ -262,21 +262,20 @@ module.exports = {
         });
     },
     // Get network information of an instance
-    getNetworkInfo: function(args){
+    getNetworkInfo: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
             var colorCounter = 0;
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instancesList)){
+                if (listEmpty(instancesList)) {
                     reject(msg.errorMessage("No instances found."));
-                }
-                else {
+                } else {
                     instancesList.forEach(function (inst) {
                         var text = "";
                         var name = module.exports.getEC2Name(inst);
@@ -329,7 +328,7 @@ module.exports = {
     },
 
     // Get attached EBS information
-    getEBSInfo: function(args){
+    getEBSInfo: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
             var colorCounter = 0;
@@ -338,22 +337,21 @@ module.exports = {
                 DryRun: false,
             };
 
-            ec2Data.describeVolumes(params, function(err, data){
-                if(err){
+            ec2Data.describeVolumes(params, function (err, data) {
+                if (err) {
                     reject(msg.errorMessage(err.message));
                 }
                 var volumes = data.Volumes;
 
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     volumes = argHelper.filterInstListByTagValues(volumes, args);
                     volumes = argHelper.filterEBSByEncryption(volumes, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(volumes)){
+                if (listEmpty(volumes)) {
                     reject(msg.errorMessage("No instances found."));
-                }
-                else {
+                } else {
                     volumes.forEach((vol) => {
                         var text = '';
                         slackMsg.addAttachment(msg.getAttachNum());
@@ -407,23 +405,23 @@ module.exports = {
     },
 
     // Get instance by tag information
-    getByTag: function(args){
+    getByTag: function (args) {
         return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
             var colorCounter = 0;
 
             module.exports.instList().then((instancesList) => {
                 // Argument processing here
-                if(argHelper.hasArgs(args)){
+                if (argHelper.hasArgs(args)) {
                     instancesList = argHelper.filterInstListByTagValues(instancesList, args);
                 }
                 // Either no instances match criteria OR no instances on AWS
-                if(listEmpty(instancesList)){
+                if (listEmpty(instancesList)) {
                     reject(msg.errorMessage("No instances found matching your criteria."));
                 }
                 // Return data
                 else {
-                    instancesList.forEach((inst)=>{
+                    instancesList.forEach((inst) => {
                         var name = module.exports.getEC2Name(inst);
                         var id = inst.InstanceId;
                         slackMsg.addAttachment(msg.getAttachNum());
@@ -442,7 +440,7 @@ module.exports = {
     },
 
     // Get list of instances with all of instance information
-    instList: function() {
+    instList: function () {
         return new Promise(function (resolve, reject) {
 
             var instanceList = [];
@@ -465,12 +463,12 @@ module.exports = {
                     });
 
                     // Sort instances alphabetically
-                    instanceList.sort(function(a, b){
+                    instanceList.sort(function (a, b) {
                         var nameA = module.exports.getEC2Name(a).toUpperCase();
                         var nameB = module.exports.getEC2Name(b).toUpperCase();
                         var val = 0;
-                        if(nameA < nameB) val = -1;
-                        if(nameA > nameB) val = 1;
+                        if (nameA < nameB) val = -1;
+                        if (nameA > nameB) val = 1;
                         return val;
                     });
 
@@ -483,16 +481,16 @@ module.exports = {
     },
 
     // Get instance EBS volume ID's per instance
-    getEBSVolumes: function(inst){
+    getEBSVolumes: function (inst) {
         var attachedEbsVols = [];
         var attachedDevs = inst.BlockDeviceMappings;
-            if(attachedDevs != null){
-                attachedDevs.forEach(function(dev){
-                    var ebs = dev.Ebs;
-                    var ebsID = ebs.VolumeId;
-                    attachedEbsVols.push(ebsID);
-                });
-            }
+        if (attachedDevs != null) {
+            attachedDevs.forEach(function (dev) {
+                var ebs = dev.Ebs;
+                var ebsID = ebs.VolumeId;
+                attachedEbsVols.push(ebsID);
+            });
+        }
         return attachedEbsVols;
     },
 
@@ -508,57 +506,57 @@ module.exports = {
 
         return name;
     },
-    
-    getEC2SecurityInfo: function(){
-        return new Promise(function(resolve, reject){
+
+    getEC2SecurityInfo: function () {
+        return new Promise(function (resolve, reject) {
             var slackMsg = new SlackTemplate();
-            
+
             module.exports.instList().then((instanceList) => {
-                instanceList.forEach(function (inst){
-                   var text = '';
-                   var name = module.exports.getEC2Name(inst);
-                   var instanceId = inst.InstanceId;
-                   var secGroups = inst.SecurityGroups ? inst.SecurityGroups : 'No security groups found.';
-                   var iamRole = inst.Role ? inst.Role : 'No role found.';
-                    
-                   text += 'Security Groups: \n';
-                   slackMsg.addAttachment(msg.getAttachNum());
-                   if (secGroups === 'No security groups found.'){
+                instanceList.forEach(function (inst) {
+                    var text = '';
+                    var name = module.exports.getEC2Name(inst);
+                    var instanceId = inst.InstanceId;
+                    var secGroups = inst.SecurityGroups ? inst.SecurityGroups : 'No security groups found.';
+                    var iamRole = inst.Role ? inst.Role : 'No role found.';
+
+                    text += 'Security Groups: \n';
+                    slackMsg.addAttachment(msg.getAttachNum());
+                    if (secGroups === 'No security groups found.') {
                         text += '' + secGroups;
                         slackMsg.addColor(msg.SLACK_YELLOW);
-                   } else {
-                       secGroups.forEach(function (group){
-                           text += '\tName: '+ group.GroupName + '\tId: '+ group.GroupId;
-                       });
-                       slackMsg.addColor(msg.SLACK_GREEN);
-                   }
-                    
-                   text += '\n\nIAM Role: ';
-                   if (iamRole === 'No role found.'){
-                       text += '' + iamRole;
-                       slackMsg.addColor(msg.SLACK_YELLOW);
-                   } else {
-                       text += '' + iamRole.RoleName;
-                       slackMsg.addColor(msg.SLACK_GREEN);
-                   }
-                   slackMsg.addTitle(msg.toTitle(name, instanceId), getLink(INST_TAB));
-                   slackMsg.addText(text);
-                    
+                    } else {
+                        secGroups.forEach(function (group) {
+                            text += '\tName: ' + group.GroupName + '\tId: ' + group.GroupId;
+                        });
+                        slackMsg.addColor(msg.SLACK_GREEN);
+                    }
+
+                    text += '\n\nIAM Role: ';
+                    if (iamRole === 'No role found.') {
+                        text += '' + iamRole;
+                        slackMsg.addColor(msg.SLACK_YELLOW);
+                    } else {
+                        text += '' + iamRole.RoleName;
+                        slackMsg.addColor(msg.SLACK_GREEN);
+                    }
+                    slackMsg.addTitle(msg.toTitle(name, instanceId), getLink(INST_TAB));
+                    slackMsg.addText(text);
+
                 });
                 resolve(slackMsg);
-            }).catch((err) =>{
+            }).catch((err) => {
                 reject(msg.errorMessage(err));
-            });   
+            });
         });
     }
-            
-            
+
+
 };
 
 // Similar to getInstNameIdList without making API call
-function getInstNameIdFromList(instancesList){
+function getInstNameIdFromList(instancesList) {
     var idList = [];
-    instancesList.forEach(function(inst){
+    instancesList.forEach(function (inst) {
         var name = module.exports.getEC2Name(inst);
         var instanceId = inst.InstanceId;
         let region = inst.Placement.AvailabilityZone;
@@ -572,19 +570,19 @@ function getInstNameIdFromList(instancesList){
 }
 
 // Get inst id list - helps avoid another API call
-function getIdsFromList(nameIdList){
+function getIdsFromList(nameIdList) {
     var idList = [];
-    nameIdList.forEach((inst)=>{
+    nameIdList.forEach((inst) => {
         idList.push(inst.id);
     });
     return idList;
 }
 
 // get inst name by id in id/name list - helps avoid another API call
-function getNamebyId(id, nameIdList){
+function getNamebyId(id, nameIdList) {
     var name = 'Unknown';
-    nameIdList.forEach((inst)=>{
-        if(inst.id === id){
+    nameIdList.forEach((inst) => {
+        if (inst.id === id) {
             name = inst.name;
         }
     });
@@ -592,12 +590,12 @@ function getNamebyId(id, nameIdList){
 }
 
 // Return true for empty list
-function listEmpty(list){
+function listEmpty(list) {
     return !(typeof list !== 'undefined' && list.length > 0);
 }
 
 // Get aws console link to the resource
-function getLink(tab){
+function getLink(tab) {
     let tabLink = '#' + tab;
     return EC2_BASE_LINK + '?' + tabLink;
 }
