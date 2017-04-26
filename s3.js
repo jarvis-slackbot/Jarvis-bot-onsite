@@ -64,13 +64,22 @@ module.exports = {
 
     getS3Tags: function (args) {
         return new Promise((resolve, reject) => {
+            let attachCount = -1;
             let count = 0;
-            let attachments = [];
+            let slackMsg = new SlackTemplate();
 
             bucketListWithTags().then(bucketList => {
                 // Argument processing here
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                    bucketList.sort((a, b) => {
+                        let nameA = a.name.toLowerCase();
+                        let nameB = b.name.toLowerCase();
+                        let val = 0;
+                        if(nameA < nameB) val = -1;
+                        if(nameA > nameB) val = 1;
+                        return val;
+                    });
                 }
                 // Either no instances match criteria OR no instances on AWS
                 if (listEmpty(bucketList)) {
@@ -79,6 +88,7 @@ module.exports = {
 
                 bucketList.forEach(bucket => {
                     let bucketName = bucket.name;
+
                     let text = '';
 
                     s3Data.getBucketTagging({
@@ -106,15 +116,15 @@ module.exports = {
                             text = error.toString();
                             attachments.push(msg.createAttachmentData(bucketName, null, text, msg.SLACK_RED));
                         }
-
-                        count++;
+                       count++;
                         if (count === bucketList.length) {
                             let slackMsg = msg.buildAttachments(attachments, true);
                             resolve(slackMsg);
                         }
-
-                    })
                 });
+                
+            }).catch(err => {
+                resolve(err.toString());
             });
         });
     },
@@ -369,7 +379,7 @@ module.exports = {
 
                     prom.then((objList) => {
                         let text = '';
-                        text = 'obj: ' + typeof (prom) + '\n';
+                      
                         // Arguments filtering per object
                         if (argHelper.hasArgs(args)) {
 
