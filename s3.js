@@ -71,6 +71,11 @@ module.exports = {
                 // Argument processing here
                 if (argHelper.hasArgs(args)) {
                     bucketList = argHelper.filterInstListByTagValues(bucketList, args);
+                }
+                // Either no instances match criteria OR no instances on AWS
+                if (listEmpty(bucketList)) {
+                    reject(msg.errorMessage("No buckets found."));
+                } else {
                     bucketList.sort((a, b) => {
                         let nameA = a.name.toLowerCase();
                         let nameB = b.name.toLowerCase();
@@ -79,10 +84,6 @@ module.exports = {
                         if(nameA > nameB) val = 1;
                         return val;
                     });
-                }
-                // Either no instances match criteria OR no instances on AWS
-                if (listEmpty(bucketList)) {
-                    reject(msg.errorMessage("No buckets found."));
                 }
 
                 bucketList.forEach(bucket => {
