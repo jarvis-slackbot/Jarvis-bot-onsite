@@ -442,8 +442,8 @@ ul#menu li a:hover{
  color: #FFF;
 }
 
-#capitalone{
- background-image: url(capitalone5.png);
+#logoremoved{
+ background-image: url(logoremoved5.png);
  background-size: contain;
  background-repeat: no-repeat;
  max-width: 100%;
